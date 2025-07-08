@@ -261,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedUA = customUAInput.value.trim();
     const maxTouchPoints = parseInt(touchPointsInput.value, 10) || 0;
     const touchSpoofEnabled = touchToggle.checked;
+    const applyScope = document.querySelector('input[name="apply-scope"]:checked').value;
 
     if (!selectedUA) {
       showStatus('Please select a profile or enter a custom user agent', 'error');
@@ -270,7 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const settings = {
       selectedUA,
       maxTouchPoints,
-      touchSpoofEnabled
+      touchSpoofEnabled,
+      applyScope
     };
 
     browser.runtime.sendMessage({
@@ -278,7 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
       data: settings
     }).then((response) => {
       if (response && response.success !== false) {
-        showStatus('Settings applied successfully! Reload pages to see changes.');
+        const scopeText = applyScope === 'current' ? 'current tab' : 'all tabs';
+        showStatus(`Settings applied to ${scopeText} successfully! Reload pages to see changes.`);
       } else {
         showStatus('Failed to apply settings', 'error');
       }
@@ -320,34 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Advanced Settings
   function openAdvancedSettings() {
-    // Create a new popup window for advanced settings
-    const width = 800;
-    const height = 700;
-    const left = (screen.width - width) / 2;
-    const top = (screen.height - height) / 2;
-    
-    if (browser.windows && browser.windows.create) {
-      browser.windows.create({
-        url: browser.runtime.getURL('advanced-settings.html'),
-        type: 'popup',
-        width: width,
-        height: height,
-        left: left,
-        top: top
-      }, (window) => {
-        if (browser.runtime.lastError) {
-          // Fallback: try to open in a new tab
-          browser.tabs.create({
-            url: browser.runtime.getURL('advanced-settings.html')
-          });
-        }
-      });
-    } else {
-      // Fallback for browsers that don't support popup windows
-      browser.tabs.create({
-        url: browser.runtime.getURL('advanced-settings.html')
-      });
-    }
+    // Open advanced settings in a new tab
+    browser.tabs.create({
+      url: browser.runtime.getURL('advanced-settings.html')
+    });
   }
 
   // Event Listeners

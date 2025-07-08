@@ -23,10 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusMessage = document.getElementById('statusMessage');
   const statusText = document.getElementById('statusText');
 
+  // Tab-specific settings elements
+  const refreshTabsBtn = document.getElementById('refreshTabsBtn');
+  const clearAllTabsBtn = document.getElementById('clearAllTabsBtn');
+  const tabSettingsItems = document.getElementById('tabSettingsItems');
+
   // State
   let websiteRules = [];
   let blockList = [];
   let editingRule = null;
+
+  // Tab-specific state
+  let tabSettings = [];
 
   // Initialize
   init();
@@ -38,19 +46,18 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRules();
     renderBlockList();
     setupEventListeners();
+    loadTabSettings();
   }
 
   function renderBlockList() {
     if (blockList.length === 0) {
       blockItems.innerHTML = `
         <div class="empty-state">
-          <div class="icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
-            </svg>
-          </div>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
+          </svg>
           <p>No blocked websites yet</p>
-          <p>Add websites where user agent spoofing should be disabled</p>
+          <small>Add websites where user agent spoofing should be disabled</small>
         </div>
       `;
       return;
@@ -115,6 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
       blockUrlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addBlock();
       });
+
+      // Tab-specific buttons
+      refreshTabsBtn.addEventListener('click', loadTabSettings);
+      clearAllTabsBtn.addEventListener('click', clearAllTabSettings);
     }
 
     function loadSettings() {
@@ -320,13 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (websiteRules.length === 0) {
         rulesItems.innerHTML = `
         <div class="empty-state">
-          <div class="icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-            </svg>
-          </div>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
           <p>No custom website rules yet</p>
-          <p>Add rules to apply specific user agents to certain websites</p>
+          <small>Add rules to apply specific user agents to certain websites</small>
         </div>
       `;
         return;
@@ -364,13 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (blockList.length === 0) {
         blockItems.innerHTML = `
         <div class="empty-state">
-          <div class="icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
-            </svg>
-          </div>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
+          </svg>
           <p>No blocked websites yet</p>
-          <p>Add websites where user agent spoofing should be disabled</p>
+          <small>Add websites where user agent spoofing should be disabled</small>
         </div>
       `;
         return;
@@ -479,6 +486,129 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus('All settings have been reset');
       }
     }
+
+    // Tab-specific settings functions
+  function loadTabSettings() {
+    browser.runtime.sendMessage({ type: 'get-tab-settings' }).then((settings) => {
+      tabSettings = settings || [];
+      renderTabSettings();
+    }).catch((error) => {
+      console.error('Failed to load tab settings:', error);
+      tabSettings = [];
+      renderTabSettings();
+    });
+  }
+
+  function renderTabSettings() {
+    if (tabSettings.length === 0) {
+      tabSettingsItems.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+            <path d="M14,2A8,8 0 0,1 22,10A8,8 0 0,1 14,18A8,8 0 0,1 6,10A8,8 0 0,1 14,2M14,4A6,6 0 0,0 8,10A6,6 0 0,0 14,16A6,6 0 0,0 20,10A6,6 0 0,0 14,4Z"/>
+          </svg>
+          <p>No tab-specific settings found</p>
+          <small>Apply settings to individual tabs from the main popup to see them here</small>
+        </div>
+      `;
+      return;
+    }
+
+    tabSettingsItems.innerHTML = tabSettings.map(tab => `
+      <div class="rule-item" data-tab-id="${tab.tabId}">
+        <div class="item-website">
+          <div class="website-url">${escapeHtml(tab.url)}</div>
+          <div class="website-title">${escapeHtml(tab.title || 'Untitled')}</div>
+        </div>
+        <div class="item-ua">${escapeHtml(tab.userAgent).substring(0, 60)}${tab.userAgent.length > 60 ? '...' : ''}</div>
+        <div class="item-touch">${tab.touchPoints || 0}</div>
+        <div class="item-actions">
+          <button class="copy-btn" data-tab-id="${tab.tabId}" title="Copy settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+          </button>
+          <button class="delete-btn" data-tab-id="${tab.tabId}" title="Remove tab settings">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    // Add event listeners
+    document.querySelectorAll('.rule-item .copy-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tabId = parseInt(e.target.closest('button').getAttribute('data-tab-id'));
+        copyTabSettings(tabId);
+      });
+    });
+
+    document.querySelectorAll('.rule-item .delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tabId = parseInt(e.target.closest('button').getAttribute('data-tab-id'));
+        deleteTabSettings(tabId);
+      });
+    });
+  }
+
+  function copyTabSettings(tabId) {
+    const tab = tabSettings.find(t => t.tabId === tabId);
+    if (!tab) return;
+
+    const settingsText = `User Agent: ${tab.userAgent}\nTouch Points: ${tab.touchPoints || 0}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(settingsText).then(() => {
+        showStatus('Tab settings copied to clipboard', 'success');
+      }).catch(() => {
+        fallbackCopyText(settingsText);
+      });
+    } else {
+      fallbackCopyText(settingsText);
+    }
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showStatus('Tab settings copied to clipboard', 'success');
+    } catch (err) {
+      showStatus('Failed to copy settings', 'error');
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function deleteTabSettings(tabId) {
+    if (confirm('Are you sure you want to remove settings for this tab?')) {
+      browser.runtime.sendMessage({
+        type: 'delete-tab-settings',
+        tabId: tabId
+      }).then(() => {
+        showStatus('Tab settings removed', 'success');
+        loadTabSettings();
+      }).catch((error) => {
+        console.error('Failed to delete tab settings:', error);
+        showStatus('Failed to remove tab settings', 'error');
+      });
+    }
+  }
+
+  function clearAllTabSettings() {
+    if (confirm('Are you sure you want to clear all tab-specific settings? This action cannot be undone.')) {
+      browser.runtime.sendMessage({ type: 'clear-all-tab-settings' }).then(() => {
+        showStatus('All tab settings cleared', 'success');
+        loadTabSettings();
+      }).catch((error) => {
+        console.error('Failed to clear tab settings:', error);
+        showStatus('Failed to clear tab settings', 'error');
+      });
+    }
+  }
 
     function showStatus(message, type = 'success') {
       statusText.textContent = message;
