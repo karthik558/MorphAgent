@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const themeToggle = document.getElementById('theme-toggle');
   const deviceCards = document.querySelectorAll('.device-card');
+  const browserSelect = document.getElementById('browser-select');
   const platformSelect = document.getElementById('platform-select');
   const profileSelect = document.getElementById('profile-select');
   const customUAInput = document.getElementById('custom-ua');
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   let currentCategory = null;
+  let currentBrowser = null;
   let currentPlatform = null;
   let selectedProfile = null;
   let isInitialized = false;
@@ -22,47 +24,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Browser compatibility
   const browser = window.browser || window.chrome;
 
+  // Initialize browser types from profiles.js
+  const availableBrowserTypes = window.browserTypes || {
+    all: { name: 'All Browsers', pattern: '' },
+    chrome: { name: 'Google Chrome', pattern: 'Chrome' },
+    firefox: { name: 'Mozilla Firefox', pattern: 'Firefox' },
+    safari: { name: 'Safari', pattern: 'Safari' },
+    edge: { name: 'Microsoft Edge', pattern: 'Edg' },
+    opera: { name: 'Opera', pattern: 'OPR' },
+    samsung: { name: 'Samsung Internet', pattern: 'SamsungBrowser' }
+  };
+
+  // Use new profiles structure or fall back to legacy
+  const profilesData = window.profiles || window.profilesStructured || {};
+  
+  // Debug: Log the loaded profiles data
+  console.log('Loaded profiles data:', profilesData);
+  console.log('Available categories:', Object.keys(profilesData));
+
   // Fallback for profiles if new structure isn't available
-  if (typeof profilesStructured === 'undefined' && typeof profiles !== 'undefined') {
-    // Create structured profiles from legacy array
-    window.profilesStructured = {
-      desktop: {
-        name: 'Desktop & Laptop',
-        platforms: {
-          mixed: {
-            name: 'All Platforms',
-            variants: profiles.filter(p => !p.name.toLowerCase().includes('iphone') && !p.name.toLowerCase().includes('ipad') && !p.name.toLowerCase().includes('android')).map(p => ({ ...p, touchPoints: 0 }))
-          }
-        }
-      },
-      mobile: {
-        name: 'Mobile Devices',
-        platforms: {
-          mixed: {
-            name: 'All Platforms', 
-            variants: profiles.filter(p => p.name.toLowerCase().includes('iphone') || p.name.toLowerCase().includes('android')).map(p => ({ ...p, touchPoints: 5 }))
-          }
-        }
-      },
-      tablet: {
-        name: 'Tablet Devices',
-        platforms: {
-          mixed: {
-            name: 'All Platforms',
-            variants: profiles.filter(p => p.name.toLowerCase().includes('ipad')).map(p => ({ ...p, touchPoints: 10 }))
-          }
-        }
-      },
-      gaming: {
-        name: 'Gaming Devices',
-        platforms: {
-          mixed: {
-            name: 'All Platforms',
-            variants: []
-          }
-        }
-      }
-    };
+  if (typeof profiles === 'undefined' && typeof profilesStructured !== 'undefined') {
+    // Use the legacy structured profiles
+    window.profiles = profilesStructured;
   }
 
   // Theme Management
@@ -101,6 +84,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(console.error);
   });
 
+
+
+  // Filter profiles by browser type
+  function filterProfilesByBrowser(profiles, browserType) {
+    if (!browserType || browserType === 'all') {
+      return profiles;
+    }
+    
+    const browserPattern = availableBrowserTypes[browserType].pattern;
+    if (!browserPattern) {
+      return profiles;
+    }
+    
+    return profiles.filter(profile => 
+      profile.ua && profile.ua.includes(browserPattern)
+    );
+  }
+
   // Device Category Selection
   function initDeviceCards() {
     deviceCards.forEach(card => {
@@ -118,6 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     currentCategory = category;
+    currentPlatform = null; // Reset platform when category changes
+    currentBrowser = null; // Reset browser when category changes
+    
+    // Populate platforms for this category
     populatePlatforms(category);
   }
 
@@ -125,11 +130,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function populatePlatforms(category) {
     // Clear existing options
     platformSelect.innerHTML = '<option value="">Select platform...</option>';
+    browserSelect.innerHTML = '<option value="">Select browser...</option>';
     profileSelect.innerHTML = '<option value="">Select profile...</option>';
+    
+    // Reset current state
+    currentPlatform = null;
+    currentBrowser = null;
+    
+    if (!profilesData[category] || !profilesData[category].platforms) {
+      console.warn('No platforms found for category:', category);
+      return;
+    }
 
-    if (!profilesStructured[category] || !profilesStructured[category].platforms) return;
-
-    const platforms = profilesStructured[category].platforms;
+    const platforms = profilesData[category].platforms;
     
     Object.keys(platforms).forEach(platformKey => {
       const platform = platforms[platformKey];
@@ -140,27 +153,97 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function populateProfiles(category, platform) {
-    // Clear existing options
+  // Update browser options based on selected platform
+  function updateBrowserOptions() {
+    // Clear existing browser options
+    browserSelect.innerHTML = '<option value="">Select browser...</option>';
     profileSelect.innerHTML = '<option value="">Select profile...</option>';
-
-    if (!profilesStructured[category] || !profilesStructured[category].platforms[platform]) return;
-
-    const variants = profilesStructured[category].platforms[platform].variants;
     
-    variants.forEach((profile, index) => {
-      const option = document.createElement('option');
-      option.value = index;
-      option.textContent = profile.name;
-      profileSelect.appendChild(option);
+    if (!currentPlatform) {
+      return;
+    }
+    
+    // Add browser options based on current platform
+    Object.keys(availableBrowserTypes).forEach(browserKey => {
+      const browser = availableBrowserTypes[browserKey];
+      
+      // Check if browser should be shown for current platform
+      const shouldShow = browser.platforms.includes('all') || 
+                        browser.platforms.includes(currentPlatform);
+      
+      if (shouldShow) {
+        const option = document.createElement('option');
+        option.value = browserKey;
+        option.textContent = browser.name;
+        browserSelect.appendChild(option);
+      }
     });
   }
 
-  function selectProfile(category, platform, index) {
-    const profile = profilesStructured[category].platforms[platform].variants[index];
-    if (!profile) return;
+  function populateProfiles(category, platform, browserType) {
+    // Clear existing options
+    profileSelect.innerHTML = '<option value="">Select profile...</option>';
 
-    selectedProfile = { category, platform, index, profile };
+    if (!profilesData[category] || !profilesData[category].platforms[platform]) {
+      console.warn('No profiles found for category/platform:', category, platform);
+      return;
+    }
+
+    let variants = profilesData[category].platforms[platform].variants;
+    
+    if (!variants || variants.length === 0) {
+      console.warn('No variants found for:', category, platform);
+      return;
+    }
+    
+    // Filter by browser type if selected
+    if (browserType && browserType !== 'all') {
+      variants = filterProfilesByBrowser(variants, browserType);
+    }
+    
+    // Create a mapping for original indices
+    const originalIndices = [];
+    let filteredIndex = 0;
+    
+    variants.forEach((profile, originalIndex) => {
+      // Find the original index in the unfiltered array
+      const originalVariants = profilesData[category].platforms[platform].variants;
+      const realIndex = originalVariants.findIndex(p => p.name === profile.name && p.ua === profile.ua);
+      
+      const option = document.createElement('option');
+      option.value = filteredIndex;
+      option.textContent = profile.name;
+      option.dataset.originalIndex = realIndex;
+      profileSelect.appendChild(option);
+      
+      originalIndices[filteredIndex] = realIndex;
+      filteredIndex++;
+    });
+    
+    // Store the mapping for later use
+    profileSelect.dataset.originalIndices = JSON.stringify(originalIndices);
+  }
+
+  function selectProfile(category, platform, index, browserType = null) {
+    if (!profilesData[category] || !profilesData[category].platforms[platform]) {
+      console.warn('Invalid category/platform:', category, platform);
+      return;
+    }
+    
+    let variants = profilesData[category].platforms[platform].variants;
+    
+    // Filter by browser type if selected
+    if (browserType && browserType !== 'all') {
+      variants = filterProfilesByBrowser(variants, browserType);
+    }
+    
+    const profile = variants[index];
+    if (!profile) {
+      console.warn('Profile not found at index:', index);
+      return;
+    }
+
+    selectedProfile = { category, platform, index, profile, browserType };
     
     // Update UI
     customUAInput.value = profile.ua;
@@ -168,7 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update selects
     platformSelect.value = platform;
+    if (browserType) {
+      browserSelect.value = browserType;
+    }
     profileSelect.value = index;
+    
+    console.log('Selected profile:', profile.name, 'UA:', profile.ua);
   }
 
   // Event Listeners for selects
@@ -177,9 +265,20 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPlatform = platform;
     
     if (platform && currentCategory) {
-      populateProfiles(currentCategory, platform);
+      // Update browser options immediately when platform is selected
+      updateBrowserOptions();
     } else {
+      browserSelect.innerHTML = '<option value="">Select browser...</option>';
       profileSelect.innerHTML = '<option value="">Select profile...</option>';
+    }
+  });
+
+  browserSelect.addEventListener('change', (e) => {
+    currentBrowser = e.target.value;
+    
+    // Populate profiles with browser filter if category and platform are selected
+    if (currentCategory && currentPlatform) {
+      populateProfiles(currentCategory, currentPlatform, currentBrowser);
     }
   });
 
@@ -187,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const index = parseInt(e.target.value);
     
     if (!isNaN(index) && currentCategory && currentPlatform) {
-      selectProfile(currentCategory, currentPlatform, index);
+      selectProfile(currentCategory, currentPlatform, index, currentBrowser);
     }
   });
 
@@ -268,14 +367,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Find matching profile for the rule's UA
     let foundProfile = false;
     
-    Object.keys(profilesStructured).forEach(category => {
-      Object.keys(profilesStructured[category].platforms || {}).forEach(platform => {
-        profilesStructured[category].platforms[platform].variants.forEach((profile, index) => {
+    Object.keys(profilesData).forEach(category => {
+      Object.keys(profilesData[category].platforms || {}).forEach(platform => {
+        profilesData[category].platforms[platform].variants.forEach((profile, index) => {
           if (profile.ua === rule.userAgent) {
             selectCategory(category);
             currentPlatform = platform;
-            populateProfiles(category, platform);
-            selectProfile(category, platform, index);
+            updateBrowserOptions();
+            populateProfiles(category, platform, null);
+            selectProfile(category, platform, index, null);
             foundProfile = true;
           }
         });
@@ -301,14 +401,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Try to find matching profile
         let foundProfile = false;
         
-        Object.keys(profilesStructured).forEach(category => {
-          Object.keys(profilesStructured[category].platforms || {}).forEach(platform => {
-            profilesStructured[category].platforms[platform].variants.forEach((profile, index) => {
+        Object.keys(profilesData).forEach(category => {
+          Object.keys(profilesData[category].platforms || {}).forEach(platform => {
+            profilesData[category].platforms[platform].variants.forEach((profile, index) => {
               if (profile.ua === settings.selectedUA) {
                 selectCategory(category);
                 currentPlatform = platform;
-                populateProfiles(category, platform);
-                selectProfile(category, platform, index);
+                updateBrowserOptions();
+                populateProfiles(category, platform, null);
+                selectProfile(category, platform, index, null);
                 foundProfile = true;
               }
             });
@@ -446,13 +547,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetSettings() {
     // Get default profile (first desktop profile)
     const defaultCategory = 'desktop';
-    const defaultPlatform = Object.keys(profilesStructured[defaultCategory].platforms)[0];
-    const defaultProfile = profilesStructured[defaultCategory].platforms[defaultPlatform].variants[0];
+    const defaultPlatform = Object.keys(profilesData[defaultCategory].platforms)[0];
+    const defaultProfile = profilesData[defaultCategory].platforms[defaultPlatform].variants[0];
 
     selectCategory(defaultCategory);
     currentPlatform = defaultPlatform;
-    populateProfiles(defaultCategory, defaultPlatform);
-    selectProfile(defaultCategory, defaultPlatform, 0);
+    updateBrowserOptions();
+    populateProfiles(defaultCategory, defaultPlatform, null);
+    selectProfile(defaultCategory, defaultPlatform, 0, null);
     
     touchToggle.checked = false;
     touchPointsInput.value = 0;
@@ -515,6 +617,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize Extension
   function init() {
+    // Check if profiles data is available
+    if (!profilesData || Object.keys(profilesData).length === 0) {
+      console.error('No profiles data available!');
+      showStatus('Error: Profile data not loaded. Please refresh the extension.', 'error');
+      return;
+    }
+    
     initTheme();
     initDeviceCards();
     initTouchControls();
@@ -527,4 +636,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start the extension
   init();
-}); 
+});

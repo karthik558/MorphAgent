@@ -1,6 +1,40 @@
 // Enhanced Device/Browser Profiles for UA Spoofing (2025 Edition)
 // Organized by categories with platform subcategories
 
+// Browser types with their typical patterns
+const browserTypes = {
+  all: {
+    name: 'All Browsers',
+    icon: 'all',
+    pattern: '',
+    platforms: ['all']
+  },
+  chrome: {
+    name: 'Google Chrome',
+    icon: 'chrome',
+    pattern: 'Chrome',
+    platforms: ['all']
+  },
+  firefox: {
+    name: 'Mozilla Firefox', 
+    icon: 'firefox',
+    pattern: 'Firefox',
+    platforms: ['all']
+  },
+  safari: {
+    name: 'Safari',
+    icon: 'safari', 
+    pattern: 'Safari',
+    platforms: ['ios', 'macos'] // Only show Safari on Apple devices
+  },
+  edge: {
+    name: 'Microsoft Edge',
+    icon: 'edge',
+    pattern: 'Edg',
+    platforms: ['all']
+  }
+};
+
 const profiles = {
   mobile: {
     name: 'Mobile Devices',
@@ -760,9 +794,10 @@ Object.keys(profiles).forEach(category => {
 
 // Export both new structure and legacy compatibility
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { profiles, legacyProfiles };
+  module.exports = { profiles, legacyProfiles, browserTypes };
 } else {
   // For browser environment, maintain backward compatibility
-  window.profiles = legacyProfiles;
+  window.profiles = profiles;
   window.profilesStructured = profiles;
+  window.browserTypes = browserTypes;
 }
