@@ -268,27 +268,71 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const settings = {
-      selectedUA,
-      maxTouchPoints,
-      touchSpoofEnabled,
-      applyScope
-    };
+    if (applyScope === 'current') {
+      // Get current tab URL and create a site-specific rule
+      browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+        if (tabs.length === 0) {
+          showStatus('Unable to get current tab information', 'error');
+          return;
+        }
 
-    browser.runtime.sendMessage({
-      type: 'set-settings',
-      data: settings
-    }).then((response) => {
-      if (response && response.success !== false) {
-        const scopeText = applyScope === 'current' ? 'current tab' : 'all tabs';
-        showStatus(`Settings applied to ${scopeText} successfully! Reload pages to see changes.`);
-      } else {
-        showStatus('Failed to apply settings', 'error');
-      }
-    }).catch((error) => {
-      console.error('Failed to save settings:', error);
-      showStatus('Failed to save settings', 'error');
-    });
+        const currentTab = tabs[0];
+        const url = new URL(currentTab.url);
+        const hostname = url.hostname;
+
+        // Create site-specific rule
+        const rule = {
+          id: Date.now(),
+          website: hostname,
+          userAgent: selectedUA,
+          touchPoints: touchSpoofEnabled ? maxTouchPoints : 0
+        };
+
+        // Get existing rules and add/update this one
+        browser.storage.sync.get(['websiteRules']).then(result => {
+          let websiteRules = result.websiteRules || [];
+          
+          // Remove existing rule for this website
+          websiteRules = websiteRules.filter(r => r.website !== hostname);
+          
+          // Add new rule
+          websiteRules.push(rule);
+
+          // Save updated rules
+          browser.storage.sync.set({ websiteRules }).then(() => {
+            showStatus(`Settings applied to ${hostname} successfully! Reload page to see changes.`);
+          }).catch(error => {
+            console.error('Failed to save site-specific rule:', error);
+            showStatus('Failed to save site-specific rule', 'error');
+          });
+        });
+      }).catch(error => {
+        console.error('Failed to get current tab:', error);
+        showStatus('Failed to get current tab information', 'error');
+      });
+    } else {
+      // Apply globally
+      const settings = {
+        selectedUA,
+        maxTouchPoints,
+        touchSpoofEnabled,
+        applyScope
+      };
+
+      browser.runtime.sendMessage({
+        type: 'set-settings',
+        data: settings
+      }).then((response) => {
+        if (response && response.success !== false) {
+          showStatus('Settings applied to all tabs successfully! Reload pages to see changes.');
+        } else {
+          showStatus('Failed to apply settings', 'error');
+        }
+      }).catch((error) => {
+        console.error('Failed to save settings:', error);
+        showStatus('Failed to save settings', 'error');
+      });
+    }
   }
 
   function resetSettings() {
@@ -306,13 +350,20 @@ document.addEventListener('DOMContentLoaded', () => {
     touchPointsInput.value = 0;
     touchControls.classList.remove('visible');
 
+    // Reset to browser default user agent (not the selected profile)
+    const resetData = {
+      selectedUA: navigator.userAgent, // Use browser's original UA
+      maxTouchPoints: 0,
+      touchSpoofEnabled: false,
+      applyScope: 'current'
+    };
+
+    // Clear the custom UA input
+    customUAInput.value = '';
+
     browser.runtime.sendMessage({
       type: 'set-settings',
-      data: {
-        selectedUA: defaultProfile.ua,
-        maxTouchPoints: 0,
-        touchSpoofEnabled: false
-      }
+      data: resetData
     }).then(() => {
       showStatus('Settings reset to default');
     }).catch((error) => {

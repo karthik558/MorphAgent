@@ -119,6 +119,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') addOrUpdateRule();
       });
 
+      // Storage change listeners
+      const browser = window.browser || window.chrome;
+      browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync') {
+          if (changes.websiteRules) {
+            websiteRules = changes.websiteRules.newValue || [];
+            renderRules();
+          }
+          if (changes.blockList) {
+            blockList = changes.blockList.newValue || [];
+            renderBlockList();
+          }
+        }
+      });
+
       blockUrlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addBlock();
       });
