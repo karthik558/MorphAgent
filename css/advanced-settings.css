@@ -212,6 +212,7 @@ body {
 .add-block-btn,
 .export-btn,
 .import-btn,
+.debug-btn,
 .reset-btn {
   padding: 8px 16px;
   border: 1px solid var(--border-light);
@@ -236,7 +237,8 @@ body {
 }
 
 .export-btn:hover,
-.import-btn:hover {
+.import-btn:hover,
+.debug-btn:hover {
   background: var(--success);
   border-color: var(--success);
   color: white;
@@ -257,6 +259,7 @@ body {
 .add-block-btn .icon svg,
 .export-btn .icon svg,
 .import-btn .icon svg,
+.debug-btn .icon svg,
 .reset-btn .icon svg {
   width: 16px;
   height: 16px;
@@ -524,6 +527,7 @@ body.dark-mode .add-rule-btn,
 body.dark-mode .add-block-btn,
 body.dark-mode .export-btn,
 body.dark-mode .import-btn,
+body.dark-mode .debug-btn,
 body.dark-mode .reset-btn {
   background: var(--primary-dark);
   border-color: var(--border-dark);
@@ -538,7 +542,8 @@ body.dark-mode .add-block-btn:hover {
 }
 
 body.dark-mode .export-btn:hover,
-body.dark-mode .import-btn:hover {
+body.dark-mode .import-btn:hover,
+body.dark-mode .debug-btn:hover {
   background: var(--success);
   border-color: var(--success);
   color: white;

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const addBlockBtn = document.getElementById('addBlockBtn');
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
+  const debugBtn = document.getElementById('debugBtn');
   const resetAllBtn = document.getElementById('resetAllBtn');
   const importFile = document.getElementById('importFile');
 
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Import/Export
       exportBtn.addEventListener('click', exportSettings);
       importBtn.addEventListener('click', () => importFile.click());
+      debugBtn.addEventListener('click', openFirefoxDebug);
       importFile.addEventListener('change', importSettings);
 
       // Reset all
@@ -390,6 +392,19 @@ document.addEventListener('DOMContentLoaded', () => {
           deleteBlock(blockId);
         });
       });
+    }
+
+    function openFirefoxDebug() {
+      try {
+        // Open Firefox debugging page in a new tab
+        browser.tabs.create({
+          url: 'about:debugging#/runtime/this-firefox'
+        });
+        showStatus('Firefox debugging page opened in new tab', 'success');
+      } catch (error) {
+        console.error('Failed to open Firefox debugging page:', error);
+        showStatus('Failed to open debugging page', 'error');
+      }
     }
 
     function exportSettings() {
