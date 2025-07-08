@@ -211,13 +211,91 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessage.textContent = message;
     statusMessage.className = `status-message visible ${type}`;
     
-    setTimeout(() => {
+    // Clear any existing timeout
+    if (statusMessage.timeoutId) {
+      clearTimeout(statusMessage.timeoutId);
+    }
+    
+    // Set new timeout
+    statusMessage.timeoutId = setTimeout(() => {
       statusMessage.classList.remove('visible');
+      statusMessage.timeoutId = null;
     }, 3000);
   }
 
   // Settings Management
   function loadSettings() {
+    // First, check if current tab has specific settings
+    browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+      if (tabs.length > 0) {
+        const currentTab = tabs[0];
+        if (currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('moz-extension://') && !currentTab.url.startsWith('about:')) {
+          try {
+            const url = new URL(currentTab.url);
+            const hostname = url.hostname;
+            
+            // Check if current tab has specific settings
+            browser.storage.sync.get(['websiteRules']).then(result => {
+              const websiteRules = result.websiteRules || [];
+              const currentRule = websiteRules.find(rule => rule.website === hostname);
+              
+              if (currentRule) {
+                // Load current tab specific settings
+                loadTabSpecificSettings(currentRule);
+                return;
+              }
+              
+              // No tab-specific settings, load global settings
+              loadGlobalSettings();
+            }).catch(() => {
+              loadGlobalSettings();
+            });
+          } catch (error) {
+            loadGlobalSettings();
+          }
+        } else {
+          loadGlobalSettings();
+        }
+      } else {
+        loadGlobalSettings();
+      }
+    }).catch(() => {
+      loadGlobalSettings();
+    });
+  }
+
+  function loadTabSpecificSettings(rule) {
+    // Find matching profile for the rule's UA
+    let foundProfile = false;
+    
+    Object.keys(profilesStructured).forEach(category => {
+      Object.keys(profilesStructured[category].platforms || {}).forEach(platform => {
+        profilesStructured[category].platforms[platform].variants.forEach((profile, index) => {
+          if (profile.ua === rule.userAgent) {
+            selectCategory(category);
+            currentPlatform = platform;
+            populateProfiles(category, platform);
+            selectProfile(category, platform, index);
+            foundProfile = true;
+          }
+        });
+      });
+    });
+
+    if (!foundProfile) {
+      customUAInput.value = rule.userAgent || '';
+    }
+
+    touchToggle.checked = rule.touchPoints > 0;
+    touchPointsInput.value = rule.touchPoints || 0;
+    touchControls.classList.toggle('visible', touchToggle.checked);
+    
+    // Set apply scope to current tab since this is a tab-specific rule
+    const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
+    if (currentRadio) currentRadio.checked = true;
+  }
+
+  function loadGlobalSettings() {
     browser.runtime.sendMessage({ type: 'get-settings' }).then((settings) => {
       if (settings) {
         // Try to find matching profile
@@ -244,12 +322,20 @@ document.addEventListener('DOMContentLoaded', () => {
         touchToggle.checked = !!settings.touchSpoofEnabled;
         touchPointsInput.value = settings.maxTouchPoints || 0;
         touchControls.classList.toggle('visible', touchToggle.checked);
+        
+        // Set apply scope to all tabs for global settings
+        const allRadio = document.querySelector('input[name="apply-scope"][value="all"]');
+        if (allRadio) allRadio.checked = true;
       } else {
         // Set defaults
         selectCategory('desktop');
         touchToggle.checked = false;
         touchPointsInput.value = 0;
         touchControls.classList.remove('visible');
+        
+        // Default to current tab
+        const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
+        if (currentRadio) currentRadio.checked = true;
       }
     }).catch((error) => {
       console.error('Failed to load settings:', error);
@@ -277,8 +363,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const currentTab = tabs[0];
-        const url = new URL(currentTab.url);
-        const hostname = url.hostname;
+        
+        // Validate tab URL
+        if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:')) {
+          showStatus('Cannot apply settings to this type of page', 'error');
+          return;
+        }
+
+        let hostname;
+        try {
+          const url = new URL(currentTab.url);
+          hostname = url.hostname;
+          
+          if (!hostname) {
+            showStatus('Invalid URL detected', 'error');
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to parse URL:', currentTab.url, error);
+          showStatus('Failed to parse current page URL', 'error');
+          return;
+        }
 
         // Create site-specific rule
         const rule = {
@@ -300,11 +405,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Save updated rules
           browser.storage.sync.set({ websiteRules }).then(() => {
-            showStatus(`Settings applied to ${hostname} successfully! Reload page to see changes.`);
+            showStatus(`Applied to ${hostname}! Reload page to see changes.`);
           }).catch(error => {
             console.error('Failed to save site-specific rule:', error);
             showStatus('Failed to save site-specific rule', 'error');
           });
+        }).catch(error => {
+          console.error('Failed to get existing rules:', error);
+          showStatus('Failed to access storage', 'error');
         });
       }).catch(error => {
         console.error('Failed to get current tab:', error);

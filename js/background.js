@@ -112,6 +112,45 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
     });
     return true;
+  } else if (message.type === 'get-tab-settings') {
+    // Get all active tabs and check which ones have custom UA settings
+    browser.tabs.query({}).then(tabs => {
+      const tabSettings = [];
+      
+      tabs.forEach(tab => {
+        if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('moz-extension://') && !tab.url.startsWith('about:')) {
+          try {
+            const url = new URL(tab.url);
+            const hostname = url.hostname;
+            
+            // Check if this hostname has a custom rule
+            const matchingRule = websiteRules.find(rule => {
+              return matchesPattern(hostname, rule.website) || matchesPattern(tab.url, rule.website);
+            });
+            
+            if (matchingRule) {
+              tabSettings.push({
+                tabId: tab.id,
+                url: tab.url,
+                hostname: hostname,
+                title: tab.title || 'Untitled',
+                userAgent: matchingRule.userAgent,
+                touchPoints: matchingRule.touchPoints || 0,
+                ruleId: matchingRule.id
+              });
+            }
+          } catch (error) {
+            // Skip invalid URLs
+          }
+        }
+      });
+      
+      sendResponse(tabSettings);
+    }).catch(error => {
+      console.error('Failed to get tab settings:', error);
+      sendResponse([]);
+    });
+    return true;
   }
 });
 

@@ -126,6 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (changes.websiteRules) {
             websiteRules = changes.websiteRules.newValue || [];
             renderRules();
+            // Also refresh tab settings since they depend on website rules
+            loadTabSettings();
           }
           if (changes.blockList) {
             blockList = changes.blockList.newValue || [];
