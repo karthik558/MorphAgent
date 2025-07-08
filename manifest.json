@@ -1,0 +1,52 @@
+{
+  "manifest_version": 2,
+  "name": "MorphAgent",
+  "version": "2.0.0",
+  "description": "Modern GitHub-inspired extension for user agent spoofing with 70+ device profiles and touch support.",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "permissions": [
+    "storage",
+    "webRequest",
+    "webRequestBlocking",
+    "tabs",
+    "windows",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_title": "MorphAgent",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    "advanced-settings.html",
+    "advanced-settings.css",
+    "advanced-settings.js",
+    "profiles.js"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "morph-agent@karthiklal.in",
+      "strict_min_version": "68.0"
+    }
+  },
+  "homepage_url": "https://github.com/karthik558/MorphAgent"
+} 

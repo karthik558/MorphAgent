@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Settings - MorphAgent</title>
+  <link rel="stylesheet" href="advanced-settings.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1>Advanced Settings</h1>
+          <p>Manage custom website rules and block lists</p>
+        </div>
+        <div class="header-actions">
+          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <svg class="theme-icon light-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+            </svg>
+            <svg class="theme-icon dark-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z"/>
+            </svg>
+          </button>
+          <button class="close-btn" id="closeBtn" title="Close">
+            <span class="icon">✕</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Website Rules Section -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>Website-Specific Rules</h2>
+          <p>Set custom user agents for specific websites</p>
+        </div>
+        
+        <div class="rules-container">
+          <div class="add-rule-form">
+            <div class="form-row">
+              <div class="input-group">
+                <label for="websiteUrl">Website URL or Pattern</label>
+                <input type="text" id="websiteUrl" placeholder="e.g., google.com or *.example.com">
+              </div>
+              <div class="input-group">
+                <label for="customUserAgent">Custom User Agent</label>
+                <select id="customUserAgent">
+                  <option value="">Select from profiles...</option>
+                  <option value="custom">Enter custom UA...</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="touchPoints">Touch Points</label>
+                <input type="number" id="touchPoints" min="0" max="20" value="0" placeholder="0-20">
+              </div>
+              <button class="add-rule-btn" id="addRuleBtn">
+                <span class="icon">+</span>
+                Add Rule
+              </button>
+            </div>
+            
+            <div class="custom-ua-input" id="customUaInput" style="display: none;">
+              <label for="customUaText">Custom User Agent String</label>
+              <textarea id="customUaText" placeholder="Enter custom user agent string..."></textarea>
+            </div>
+          </div>
+
+          <div class="rules-list">
+            <div class="list-header">
+              <span>Website</span>
+              <span>User Agent</span>
+              <span>Touch Points</span>
+              <span>Actions</span>
+            </div>
+            <div class="rules-items" id="rulesItems">
+              <!-- Rules will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Block List Section -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>Block List</h2>
+          <p>Websites where user agent spoofing should be disabled</p>
+        </div>
+        
+        <div class="blocklist-container">
+          <div class="add-block-form">
+            <div class="form-row">
+              <div class="input-group">
+                <label for="blockUrl">Website URL or Pattern</label>
+                <input type="text" id="blockUrl" placeholder="e.g., bank.com or *.financial.org">
+              </div>
+              <button class="add-block-btn" id="addBlockBtn">
+                <span class="icon">+</span>
+                Add to Block List
+              </button>
+            </div>
+          </div>
+
+          <div class="block-list">
+            <div class="list-header">
+              <span>Blocked Website</span>
+              <span>Actions</span>
+            </div>
+            <div class="block-items" id="blockItems">
+              <!-- Blocked items will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Import/Export Section -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>Import / Export</h2>
+          <p>Backup and restore your settings</p>
+        </div>
+        
+        <div class="import-export-container">
+          <div class="action-buttons">
+            <button class="export-btn" id="exportBtn">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                </svg>
+              </span>
+              Export Settings
+            </button>
+            <button class="import-btn" id="importBtn">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16v-6H5l7-7 7 7h-4v6H9zm-4 4h14v2H5z"/>
+                </svg>
+              </span>
+              Import Settings
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+          </div>
+          
+          <div class="reset-section">
+            <button class="reset-btn" id="resetAllBtn">
+              <span class="icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+                </svg>
+              </span>
+              Reset All Settings
+            </button>
+            <p class="reset-warning">This will permanently delete all custom rules and block list entries</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Status Message -->
+    <div class="status-message" id="statusMessage" style="display: none;">
+      <span class="status-text" id="statusText"></span>
+    </div>
+  </div>
+
+  <script src="profiles.js"></script>
+  <script src="advanced-settings.js"></script>
+</body>
+</html>
