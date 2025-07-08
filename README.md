@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="icon.png" alt="Icon" width="96" height="96" />
+<img src="icons/icon.png" alt="Icon" width="96" height="96" />
 
 # MorphAgent
 
