@@ -110,7 +110,7 @@ body.dark-mode .header {
 }
 
 .logo-icon {
-  color: var(--accent-primary);
+  color: var(--text-primary-light);
   flex-shrink: 0;
 }
 
@@ -122,6 +122,10 @@ body.dark-mode .header {
 }
 
 body.dark-mode .title {
+  color: var(--text-primary-dark);
+}
+
+body.dark-mode .logo-icon {
   color: var(--text-primary-dark);
 }
 
