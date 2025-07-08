@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "description": "Modern GitHub-inspired extension for user agent spoofing with 70+ device profiles and touch support.",
   "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
+    "16": "icons/icon.png",
+    "48": "icons/icon.png",
+    "128": "icons/icon.png"
   },
   "permissions": [
     "storage",
@@ -17,30 +17,30 @@
     "<all_urls>"
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["js/background.js"],
     "persistent": true
   },
   "browser_action": {
     "default_popup": "popup.html",
     "default_title": "MorphAgent",
     "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
+      "16": "icons/icon.png",
+      "48": "icons/icon.png",
+      "128": "icons/icon.png"
     }
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["js/content.js"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     "advanced-settings.html",
-    "advanced-settings.css",
-    "advanced-settings.js",
-    "profiles.js"
+    "css/advanced-settings.css",
+    "js/advanced-settings.js",
+    "js/profiles.js"
   ],
   "browser_specific_settings": {
     "gecko": {
