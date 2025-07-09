@@ -12,59 +12,67 @@
 ![Version](https://img.shields.io/badge/version-2.0.0-black.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
+
 </div>
 
-## 📑 **Table of Contents**
+## **Screenshots**
 
-- [Key Features](#key-features)
-- [Browser Compatibility](#browser-compatibility) 
-- [Installation](#installation)
-- [Usage Guide](#usage-guide)
-- [Special Features](#special-features)
-- [Device Database](#device-database)
-- [Known Limitations](#known-limitations)
-- [Development](#development)
-- [License](#license)
-- [Author](#author)
+<div align="center">
+
+<table>
+   <tr>
+      <th colspan="2" style="text-align:center; font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
+   </tr>
+   <tr>
+      <td>
+         <img src="src/home_light.png" alt="Light Mode Interface" width="300" />
+         <div>Light Mode</div>
+      </td>
+      <td>
+         <img src="src/home_dark.png" alt="Dark Mode Interface" width="300" />
+         <div>Dark Mode</div>
+      </td>
+   </tr>
+   <tr>
+      <th colspan="2" style="text-align:center; font-size:1.1em;">Touch Points Configuration</th>
+   </tr>
+   <tr>
+      <td>
+         <img src="src/touchpoints_light.png" alt="Touch Points Light" width="300" />
+         <div>Touch Points (Light)</div>
+      </td>
+      <td>
+         <img src="src/touchpoints_dark.png" alt="Touch Points Dark" width="300" />
+         <div>Touch Points (Dark)</div>
+      </td>
+   </tr>
+</table>
+
+</div>
 
 ---
 
-## Key Features
+## **Key Features**
 
 ### Modern Interface
 - Dark/light themes with smooth transitions
 - Responsive device grid with intuitive category selection
 - Advanced settings page for power users
-- Professional SVG iconography throughout
 
 ### Advanced Spoofing
 - User Agent switching with 70+ modern profiles
 - Touch point spoofing with customizable `maxTouchPoints`
 - Per-website rules for automatic profile switching
-- Block list support to disable spoofing on specific sites
+- Block list support to disable spoofing on sensitive sites
 
 ### Comprehensive Profiles
-- Latest devices: iPhone 15 Pro Max, Galaxy S24 Ultra, iPad Pro M4
-- Modern browsers: Chrome 123+, Firefox 124+, Safari 17.4+
-- Current OS versions: iOS 17.4, Android 14, Windows 11, macOS Sonoma
-- Legacy support: Older devices and browsers included
+- Latest devices: iPhone 16 Pro Max, Galaxy S25 Ultra, iPad Pro M4
+- Modern browsers: Chrome 139+, Firefox 136+, Safari 18.4+
+- Current OS versions: iOS 18.4, Android 15, Windows 11, macOS Sequoia
 
 ---
 
-## Browser Compatibility
-
-| Browser | Support | Manifest | Status | Notes |
-|---------|---------|----------|---------|-------|
-| **Firefox** | ✅ **Full Support** | V2 | **Recommended** | Complete API access |
-| **Chrome** | ❌ Not Supported | V3 | Limited | API restrictions |
-| **Edge** | ❌ Not Supported | V3 | Limited | API restrictions |
-| **Safari** | ❌ Not Supported | - | No Support | WebExtension limitations |
-
-> **⚠️ Important**: MorphAgent is designed exclusively for **Firefox** with Manifest V2. Chromium-based browsers (Chrome, Edge, Brave, etc.) use Manifest V3, which severely restricts the APIs needed for comprehensive user agent spoofing. Only Firefox provides the necessary permissions and APIs for full functionality.
-
----
-
-## Installation
+## **Installation**
 
 ### Firefox (Recommended)
 1. **Download**: Clone or download this repository
@@ -78,109 +86,84 @@
 
 ---
 
-## Usage Guide
+## **Quick Start**
 
-### Quick Start (30 seconds)
 1. Click the MorphAgent icon in your Firefox toolbar
-2. Select device category: Mobile, Tablet, or Desktop  
-3. Choose specific profile from the interactive device grid
+2. Select device category: Mobile, Tablet, Desktop, or Gaming  
+3. Choose specific profile from the device grid
 4. Toggle touch spoofing (automatically sets appropriate touch points)
 5. Apply changes - refresh pages to see the new user agent
 
 ### Advanced Configuration
-Click **"Advanced Settings"** in the popup for power-user features:
-
+Click **"Advanced Settings"** for power-user features:
 - Custom User Agents: Enter any UA string manually  
-- Touch Point Control: Fine-tune maxTouchPoints (0-20)
 - Website Rules: Set automatic profiles for specific domains
 - Block List: Disable spoofing on banking/sensitive sites  
 - Import/Export: Backup and share your configuration
 
-### Pro Tips
-- Use wildcard patterns in website rules: `*.example.com`
-- Block sensitive sites like banking to avoid security issues
-- Export settings before major changes as backup
-- Reset everything via Advanced Settings if issues occur
-
 ---
 
-## Special Features
+## **Device Database**
 
-### Smart Touch Spoofing
-```javascript
-// Automatically detects and sets appropriate touch points
-Mobile devices: 5-10 touch points
-Tablets: 10 touch points  
-Desktop: 0 touch points (no touch)
-Custom: 0-20 configurable
-```
-
-### Per-Website Rules
-- Automatic switching based on domain patterns
-- Wildcard support for subdomain matching
-- Priority system for rule conflicts
-- Touch point overrides per website
-
-### Privacy & Security
-- Local storage only - no data collection
-- Block list protection for sensitive sites
-- Secure settings export with encryption option
-- Reset functionality for clean slate
-
----
-
-## Device Database
-
-### Mobile Devices (20+ profiles)
-- iPhone 15 Pro Max/Pro (iOS 17.4)
-- iPhone 14 series (iOS 17.3)
-- Samsung Galaxy S24 Ultra/Plus (Android 14)
-- Google Pixel 8 Pro/8 (Android 14)
-- OnePlus 12, Xiaomi 14 Ultra
-- Nothing Phone (2a), Sony Xperia 1 VI
+### Mobile Devices (30+ profiles)
+- iPhone 16 Pro Max/Pro (iOS 18.5)
+- Samsung Galaxy S25 Ultra/Plus (Android 15)
+- Google Pixel 9 Pro (Android 15)
+- OnePlus 13, Xiaomi 15 Ultra
 
 ### Tablets (15+ profiles)
-- iPad Pro 12.9"/11" M4 (iPadOS 17.4)
-- iPad Air M2 (iPadOS 17.4)
-- Samsung Galaxy Tab S9 series
-- Microsoft Surface Pro 10
-- Lenovo Tab P12 Pro
+- iPad Pro 13"/11" M4 (iPadOS 18.4)
+- Samsung Galaxy Tab S10 Ultra
+- Microsoft Surface Pro 11
 
 ### Desktop (35+ profiles)
-- Chrome 123+ (Windows 11, macOS, Linux)
-- Firefox 124+ (All platforms)
-- Safari 17.4+ (macOS Sonoma)
-- Edge 123+ (Windows, macOS)
-- Opera, Brave, Arc browsers
+- Chrome 139+ (Windows 11, macOS, Linux)
+- Firefox 136+ (All platforms)
+- Safari 18.4+ (macOS Sequoia)
+- Edge 138+ (Windows, macOS)
+
+### Gaming Devices (10+ profiles)
+- PlayStation 5, Xbox Series X
+- Steam Deck, ROG Ally X
+- Nintendo Switch
 
 ---
 
-## Known Limitations
+## **Privacy & Security**
 
-| Limitation | Impact | Solution/Workaround |
-|------------|---------|---------------------|
-| **Chromium Manifest V3** | Cannot modify User-Agent headers | **Use Firefox exclusively** |
-| **Advanced Fingerprinting** | Some sites detect spoofing anyway | Combine with VPN + privacy tools |
-| **Touch API Scope** | Only affects `navigator.maxTouchPoints` | Sufficient for most use cases |
-| **Extension Detection** | Sites may block extensions | Use private/incognito mode |
-| **JavaScript Fingerprinting** | Screen size, timezone, etc. not spoofed | Use comprehensive privacy setup |
-
-### Why Firefox Only?
-- **Manifest V2**: Full access to `webRequest` API for header modification
-- **Manifest V3**: Chromium's restrictions prevent User-Agent header changes
-- **API Permissions**: Firefox provides necessary extension capabilities
-- **Future-Proof**: Firefox committed to supporting essential privacy tools
+- **Local Storage Only** - No data collection or tracking
+- **Block List Protection** - Secure banking and sensitive sites
+- **Open Source** - Full transparency and community auditing
+- **Permissions Minimal** - Only requests necessary browser APIs
 
 ---
 
-## Development
+## **Known Limitations**
+
+- **Firefox Only**: Designed exclusively for Firefox with Manifest V2
+- **Content Security Policy**: Some sites may detect spoofing attempts
+- **Touch API Scope**: Only affects `navigator.maxTouchPoints`
+- **Banking Sites**: Recommended to use block list for financial websites
+
+---
+
+## **Development**
 
 ### Contributing
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test on Firefox
-5. Submit a pull request
+3. Test on Firefox
+4. Submit a pull request
+
+### Project Structure
+```
+MorphAgent/
+├── manifest.json          # Extension manifest
+├── popup.html/css/js/     # Main interface
+├── advanced-settings.*    # Advanced configuration
+├── js/profiles.js         # Device database
+└── js/background.js       # Core spoofing logic
+```
 
 ---
 
