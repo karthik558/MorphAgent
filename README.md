@@ -13,6 +13,12 @@
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
 
+---
+
+## **Official Firefox Extension**
+
+MorphAgent is now available on the official Mozilla Firefox Add-ons store.
+
 </div>
 
 ## **Screenshots**
@@ -74,7 +80,26 @@
 
 ## **Installation**
 
-### Firefox (Recommended)
+### **Official Firefox Extension**
+
+Get MorphAgent directly from the Mozilla Firefox Add-ons store:
+
+<a href="https://addons.mozilla.org/en-US/firefox/addon/morphagent/" target="_blank">
+  <img src="https://img.shields.io/badge/Install_from_Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white&labelColor=2D3748" alt="Install from Firefox Add-ons" />
+</a>
+
+**Installation:**
+1. Visit the [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/morphagent/)
+2. Click "Add to Firefox"
+3. Confirm permissions
+4. Start using MorphAgent from your toolbar
+
+---
+
+### **Manual Installation**
+
+For development and testing:
+
 1. **Download**: Clone or download this repository
    ```bash
    git clone https://github.com/karthik558/MorphAgent.git
