@@ -5,6 +5,9 @@ const UA_HEADER = 'User-Agent';
 let cachedUA = navigator.userAgent; // Default to browser UA
 let websiteRules = [];
 let blockList = [];
+let jsBlockEnabled = false; // Global JS blocking toggle
+let jsBlockedSites = []; // Per-site JS blocking from website rules
+let jsProtectEnabled = false; // Global JS detection protection toggle
 
 console.log('[UserAgent Extension] Service worker loaded. Default UA:', cachedUA);
 
@@ -12,10 +15,15 @@ console.log('[UserAgent Extension] Service worker loaded. Default UA:', cachedUA
 async function loadSettings() {
   try {
     const syncData = await browser.storage.sync.get(['websiteRules', 'blockList']);
-    const localData = await browser.storage.local.get(['selectedUA']);
+    const localData = await browser.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled']);
     
     websiteRules = syncData.websiteRules || [];
     blockList = syncData.blockList || [];
+    jsBlockEnabled = !!localData.jsBlockEnabled;
+    jsProtectEnabled = !!localData.jsProtectEnabled;
+    
+    // Build list of sites with JS blocking from website rules
+    jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
     
     if (localData.selectedUA) {
       cachedUA = localData.selectedUA;
@@ -24,7 +32,10 @@ async function loadSettings() {
     
     console.log('[UserAgent Extension] Loaded settings:', {
       websiteRules: websiteRules.length,
-      blockList: blockList.length
+      blockList: blockList.length,
+      jsBlockEnabled: jsBlockEnabled,
+      jsBlockedSites: jsBlockedSites.length,
+      jsProtectEnabled: jsProtectEnabled
     });
   } catch (error) {
     console.error('[UserAgent Extension] Error loading settings:', error);
@@ -39,6 +50,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync') {
     if (changes.websiteRules) {
       websiteRules = changes.websiteRules.newValue || [];
+      jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
       console.log('[UserAgent Extension] Website rules updated:', websiteRules.length);
     }
     if (changes.blockList) {
@@ -46,9 +58,19 @@ browser.storage.onChanged.addListener((changes, areaName) => {
       console.log('[UserAgent Extension] Block list updated:', blockList.length);
     }
   }
-  if (areaName === 'local' && changes.selectedUA) {
-    cachedUA = changes.selectedUA.newValue;
-    console.log('[UserAgent Extension] Global UA updated:', cachedUA);
+  if (areaName === 'local') {
+    if (changes.selectedUA) {
+      cachedUA = changes.selectedUA.newValue;
+      console.log('[UserAgent Extension] Global UA updated:', cachedUA);
+    }
+    if (changes.jsBlockEnabled !== undefined) {
+      jsBlockEnabled = !!changes.jsBlockEnabled.newValue;
+      console.log('[UserAgent Extension] JS blocking updated:', jsBlockEnabled);
+    }
+    if (changes.jsProtectEnabled !== undefined) {
+      jsProtectEnabled = !!changes.jsProtectEnabled.newValue;
+      console.log('[UserAgent Extension] JS protection updated:', jsProtectEnabled);
+    }
   }
 });
 
@@ -101,13 +123,21 @@ function getUserAgentForUrl(url) {
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'get-settings') {
-    browser.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled']).then(sendResponse);
+    browser.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled', 'jsBlockEnabled', 'jsProtectEnabled']).then(sendResponse);
     return true;
   } else if (message.type === 'set-settings') {
     browser.storage.local.set(message.data).then(() => {
       if (message.data.selectedUA) {
         cachedUA = message.data.selectedUA;
         console.log('[UserAgent Extension] UA updated from popup:', cachedUA);
+      }
+      if (message.data.jsBlockEnabled !== undefined) {
+        jsBlockEnabled = !!message.data.jsBlockEnabled;
+        console.log('[UserAgent Extension] JS blocking updated from popup:', jsBlockEnabled);
+      }
+      if (message.data.jsProtectEnabled !== undefined) {
+        jsProtectEnabled = !!message.data.jsProtectEnabled;
+        console.log('[UserAgent Extension] JS protection updated from popup:', jsProtectEnabled);
       }
       sendResponse({ success: true });
     });
@@ -171,4 +201,42 @@ browser.webRequest.onBeforeSendHeaders.addListener(
   },
   { urls: ["<all_urls>"] },
   ["blocking", "requestHeaders"]
+);
+
+// Check if JavaScript should be blocked for a given URL
+function shouldBlockJavaScript(url) {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    // Check site-specific JS blocking rules first
+    for (const rule of websiteRules) {
+      if (rule.jsBlocked && (matchesPattern(hostname, rule.website) || matchesPattern(url, rule.website))) {
+        return true;
+      }
+    }
+    
+    // Check global JS blocking
+    return jsBlockEnabled;
+  } catch (error) {
+    return jsBlockEnabled;
+  }
+}
+
+// Intercept script requests to block JavaScript
+browser.webRequest.onBeforeRequest.addListener(
+  function(details) {
+    if (shouldBlockJavaScript(details.url)) {
+      // Don't block extension's own scripts
+      if (details.url.startsWith('moz-extension://') || details.url.startsWith('chrome-extension://')) {
+        return {};
+      }
+      
+      console.log('[UserAgent Extension] Blocked script:', details.url);
+      return { cancel: true };
+    }
+    return {};
+  },
+  { urls: ["<all_urls>"], types: ["script"] },
+  ["blocking"]
 ); 

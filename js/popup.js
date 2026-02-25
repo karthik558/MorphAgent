@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('ua-form');
   const resetBtn = document.getElementById('reset-btn');
   const settingsBtn = document.getElementById('settings-btn');
+  const jsBlockToggle = document.getElementById('js-block-toggle');
+  const jsProtectToggle = document.getElementById('js-protect-toggle');
 
   // State
   let currentCategory = null;
@@ -389,6 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
     touchToggle.checked = rule.touchPoints > 0;
     touchPointsInput.value = rule.touchPoints || 0;
     touchControls.classList.toggle('visible', touchToggle.checked);
+    jsBlockToggle.checked = !!rule.jsBlocked;
+    jsProtectToggle.checked = !!rule.jsProtected;
     
     // Set apply scope to current tab since this is a tab-specific rule
     const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
@@ -423,6 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
         touchToggle.checked = !!settings.touchSpoofEnabled;
         touchPointsInput.value = settings.maxTouchPoints || 0;
         touchControls.classList.toggle('visible', touchToggle.checked);
+        jsBlockToggle.checked = !!settings.jsBlockEnabled;
+        jsProtectToggle.checked = !!settings.jsProtectEnabled;
         
         // Set apply scope to all tabs for global settings
         const allRadio = document.querySelector('input[name="apply-scope"][value="all"]');
@@ -433,6 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
         touchToggle.checked = false;
         touchPointsInput.value = 0;
         touchControls.classList.remove('visible');
+        jsBlockToggle.checked = false;
+        jsProtectToggle.checked = false;
         
         // Default to current tab
         const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
@@ -448,6 +456,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedUA = customUAInput.value.trim();
     const maxTouchPoints = parseInt(touchPointsInput.value, 10) || 0;
     const touchSpoofEnabled = touchToggle.checked;
+    const jsBlockEnabled = jsBlockToggle.checked;
+    const jsProtectEnabled = jsProtectToggle.checked;
     const applyScope = document.querySelector('input[name="apply-scope"]:checked').value;
 
     if (!selectedUA) {
@@ -491,7 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
           id: Date.now(),
           website: hostname,
           userAgent: selectedUA,
-          touchPoints: touchSpoofEnabled ? maxTouchPoints : 0
+          touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
+          jsBlocked: jsBlockEnabled,
+          jsProtected: jsProtectEnabled
         };
 
         // Get existing rules and add/update this one
@@ -525,6 +537,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedUA,
         maxTouchPoints,
         touchSpoofEnabled,
+        jsBlockEnabled,
+        jsProtectEnabled,
         applyScope
       };
 
@@ -559,12 +573,16 @@ document.addEventListener('DOMContentLoaded', () => {
     touchToggle.checked = false;
     touchPointsInput.value = 0;
     touchControls.classList.remove('visible');
+    jsBlockToggle.checked = false;
+    jsProtectToggle.checked = false;
 
     // Reset to browser default user agent (not the selected profile)
     const resetData = {
       selectedUA: navigator.userAgent, // Use browser's original UA
       maxTouchPoints: 0,
       touchSpoofEnabled: false,
+      jsBlockEnabled: false,
+      jsProtectEnabled: false,
       applyScope: 'current'
     };
 

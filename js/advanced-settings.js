@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const customUaInput = document.getElementById('customUaInput');
   const customUaText = document.getElementById('customUaText');
   const touchPointsInput = document.getElementById('touchPoints');
+  const jsBlockRuleCheckbox = document.getElementById('jsBlockRule');
+  const jsProtectRuleCheckbox = document.getElementById('jsProtectRule');
   const blockUrlInput = document.getElementById('blockUrl');
 
   const rulesItems = document.getElementById('rulesItems');
@@ -250,6 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
         website: website,
         userAgent: userAgent,
         touchPoints: touchPoints,
+        jsBlocked: jsBlockRuleCheckbox.checked,
+        jsProtected: jsProtectRuleCheckbox.checked,
         created: editingRule ? editingRule.created : new Date().toISOString()
       };
 
@@ -272,6 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
       customUserAgentSelect.value = '';
       customUaText.value = '';
       touchPointsInput.value = '0';
+      jsBlockRuleCheckbox.checked = false;
+      jsProtectRuleCheckbox.checked = false;
       customUaInput.style.display = 'none';
 
       saveSettings();
@@ -283,6 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
       editingRule = rule;
       websiteUrlInput.value = rule.website;
       touchPointsInput.value = rule.touchPoints || 0;
+      jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
+      jsProtectRuleCheckbox.checked = !!rule.jsProtected;
 
       // Try to find the UA in the select options
       const option = Array.from(customUserAgentSelect.options).find(opt => opt.value === rule.userAgent);
@@ -363,6 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="item-website">${escapeHtml(rule.website)}</div>
         <div class="item-ua">${escapeHtml(truncateUA(rule.userAgent))}</div>
         <div class="item-touch">${rule.touchPoints || 0}</div>
+        <div class="item-js-blocked">${rule.jsBlocked ? '&#10003; Yes' : 'No'}</div>
+        <div class="item-js-protected">${rule.jsProtected ? '&#10003; Yes' : 'No'}</div>
         <div class="item-actions">
           <button class="edit-btn" data-rule='${JSON.stringify(rule)}'>Edit</button>
           <button class="delete-btn" data-rule-id="${rule.id}">Delete</button>
@@ -494,6 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
         blockUrlInput.value = '';
         customUserAgentSelect.value = '';
         customUaText.value = '';
+        jsBlockRuleCheckbox.checked = false;
+        jsProtectRuleCheckbox.checked = false;
         customUaInput.style.display = 'none';
         addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
 
