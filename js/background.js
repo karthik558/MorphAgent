@@ -123,7 +123,7 @@ function getUserAgentForUrl(url) {
 // Listen for messages from popup
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'get-settings') {
-    browser.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled', 'jsBlockEnabled', 'jsProtectEnabled']).then(sendResponse);
+    browser.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled', 'jsBlockEnabled', 'jsProtectEnabled', 'uiState']).then(sendResponse);
     return true;
   } else if (message.type === 'set-settings') {
     browser.storage.local.set(message.data).then(() => {
