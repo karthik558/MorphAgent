@@ -23,6 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedProfile = null;
   let isInitialized = false;
 
+  // Set version from manifest
+  const manifest = chrome.runtime.getManifest();
+  const versionBadge = document.getElementById('version-badge');
+  if (versionBadge && manifest.version) {
+    versionBadge.textContent = 'v' + manifest.version;
+  }
+
   // Browser compatibility
   const browser = window.browser || window.chrome;
 

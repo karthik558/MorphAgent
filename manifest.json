@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "MorphAgent",
-  "version": "2.0.0",
+  "version": "3.1.0",
   "description": "Modern GitHub-inspired extension for user agent spoofing with 70+ device profiles and touch support.",
   "icons": {
     "16": "icons/icon.png",
