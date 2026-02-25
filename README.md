@@ -6,11 +6,12 @@
 
 # MorphAgent
 
-> **Modern User Agent & Touch Spoofer Extension**  
-> Professional-grade browser spoofing for Firefox
+> **Modern User Agent & Anti-Fingerprinting Extension**  
+> Professional-grade browser spoofing & detection shield for Firefox
 
-![Version](https://img.shields.io/badge/version-2.0.0-black.svg?style=flat-square)
-![Firefox](https://img.shields.io/badge/Firefox-Manifest-black.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.1.0-black.svg?style=flat-square)
+![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2-black.svg?style=flat-square)
+![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
 
 ---
@@ -62,19 +63,41 @@ MorphAgent is now available on the official Mozilla Firefox Add-ons store.
 
 ### Modern Interface
 - Dark/light themes with smooth transitions
-- Responsive device grid with intuitive category selection
+- Responsive device grid with intuitive category selection (Mobile, Tablet, Desktop, Gaming)
+- Three-tier cascading selection: Platform → Browser → Profile
+- Browser-type filtering (Chrome, Firefox, Safari, Edge) with platform-aware visibility
+- Apply scope selector: **Current Tab** or **All Tabs**
+- UI state persistence — popup remembers your last selection
 - Advanced settings page for power users
 
 ### Advanced Spoofing
-- User Agent switching with 70+ modern profiles
-- Touch point spoofing with customizable `maxTouchPoints`
-- Per-website rules for automatic profile switching
+- User Agent switching with **130+ modern profiles**
+- HTTP header interception & JavaScript `navigator` property spoofing
+- Touch point spoofing with customizable `maxTouchPoints` (0–20)
+- Per-website rules with wildcard pattern matching for automatic profile switching
 - Block list support to disable spoofing on sensitive sites
+- JavaScript blocking (global & per-site) via HTTP-level + content-level enforcement
+- Custom UA string input for any arbitrary user agent
+
+### Detection Shield (14 Anti-Fingerprinting Protections)
+- **Canvas fingerprint protection** — noise injection into `toDataURL()` and `toBlob()`
+- **WebGL fingerprint protection** — spoofs GPU vendor/renderer strings
+- **Screen dimension spoofing** — device-accurate width, height, colorDepth, pixelDepth
+- **Hardware concurrency & device memory spoofing**
+- **Plugin & MimeType array spoofing** — realistic plugin lists per browser
+- **Network connection spoofing** — effectiveType, downlink, rtt, saveData
+- **Battery API protection** — fake battery for mobile, removed for desktop
+- **Permissions API interception** — notifications return `'prompt'`
+- **WebDriver & automation marker removal** — cleans 14+ fingerprint properties
+- **Language spoofing** — consistent `navigator.languages` and `navigator.language`
+- **`window.chrome` object management** — present for Chrome/Edge, absent for Firefox/Safari
+- **`Function.prototype.toString` cloaking** — all spoofed functions return `[native code]`
 
 ### Comprehensive Profiles
-- Latest devices: iPhone 16 Pro Max, Galaxy S25 Ultra, iPad Pro M4
-- Modern browsers: Chrome 139+, Firefox 136+, Safari 18.4+
-- Current OS versions: iOS 18.4, Android 15, Windows 11, macOS Sequoia
+- Latest devices: iPhone 17 Pro Max, Galaxy S26 Ultra, Pixel 10 Pro XL, iPad Pro M5
+- Modern browsers: Chrome 145+, Firefox 142+, Safari 26.3+, Edge 145+
+- Current OS versions: iOS 19, Android 16, Windows 11, macOS Tahoe
+- Gaming devices: PS5 Pro, Nintendo Switch 2, Steam Deck OLED 2, ROG Ally 2
 
 ---
 
@@ -121,52 +144,72 @@ For development and testing:
 
 ### Advanced Configuration
 Click **"Advanced Settings"** for power-user features:
-- Custom User Agents: Enter any UA string manually  
-- Website Rules: Set automatic profiles for specific domains
-- Block List: Disable spoofing on banking/sensitive sites  
-- Import/Export: Backup and share your configuration
+- **Website Rules**: Set automatic profiles for specific domains with wildcard support
+- **Block List**: Disable spoofing on banking/sensitive sites
+- **Tab-Specific Settings**: View, copy, and manage per-tab UA overrides
+- **Import/Export**: Backup and share your configuration as JSON
+- **Custom User Agents**: Enter any UA string manually
+- **Open Firefox Debug**: Quick shortcut to `about:debugging`
+- **Reset All Settings**: Factory reset with confirmation
 
 ---
 
-## **Device Database**
+## **Device Database (130+ Profiles)**
 
-### Mobile Devices (30+ profiles)
-- iPhone 16 Pro Max/Pro (iOS 18.5)
-- Samsung Galaxy S25 Ultra/Plus (Android 15)
-- Google Pixel 9 Pro (Android 15)
-- OnePlus 13, Xiaomi 15 Ultra
+### Mobile Devices (50+ profiles)
+- **iPhone**: 17 Pro Max, 17 Pro, 17 Air, 17 Plus, 17, SE 4th Gen (iOS 19)
+- **Samsung**: Galaxy S26 Ultra/Plus/S26, Z Fold 7, Z Flip 7 (Android 16)
+- **Google**: Pixel 10 Pro XL, Pixel 10 Pro, Pixel 10 (Android 16)
+- **OnePlus 14**, **Xiaomi 16 Ultra**, **Nothing Phone (3)**
 
-### Tablets (15+ profiles)
-- iPad Pro 13"/11" M4 (iPadOS 18.4)
-- Samsung Galaxy Tab S10 Ultra
-- Microsoft Surface Pro 11
+### Tablets (20+ profiles)
+- **iPad**: Pro 13"/11" M5, Air 13"/11" M3 (iPadOS 19)
+- **Samsung**: Galaxy Tab S11 Ultra/Plus (Android 16)
+- **Microsoft**: Surface Pro 12 (Windows 11)
 
-### Desktop (35+ profiles)
-- Chrome 139+ (Windows 11, macOS, Linux)
-- Firefox 136+ (All platforms)
-- Safari 18.4+ (macOS Sequoia)
-- Edge 138+ (Windows, macOS)
+### Desktop (40+ profiles)
+- Chrome 145+ (Windows 11, macOS, Linux)
+- Firefox 142+ (All platforms)
+- Safari 26.3+ (macOS Tahoe)
+- Edge 145+ (Windows, macOS)
+- Opera 117+, Brave 1.78+
 
-### Gaming Devices (10+ profiles)
-- PlayStation 5, Xbox Series X
-- Steam Deck, ROG Ally X
-- Nintendo Switch
+### Gaming Devices (16 profiles)
+- **Console**: PS5 Pro (System 9.00), Xbox Series X/S, Nintendo Switch 2
+- **Handheld**: Steam Deck OLED 2, ROG Ally 2, Lenovo Legion Go S, MSI Claw 8 AI+
 
 ---
 
 ## **Privacy & Security**
 
-- **Local Storage Only** - No data collection or tracking
-- **Block List Protection** - Secure banking and sensitive sites
-- **Open Source** - Full transparency and community auditing
-- **Permissions Minimal** - Only requests necessary browser APIs
+- **Local Storage Only** — No data collection, analytics, or tracking
+- **Detection Shield** — 14 anti-fingerprinting protections to reduce your digital footprint
+- **Block List Protection** — Safeguard banking and sensitive sites from spoofing
+- **JS Blocking** — Global and per-site JavaScript execution control
+- **Open Source** — Full transparency and community auditing
+- **Minimal Permissions** — Only requests necessary browser APIs
+
+---
+
+## **What's New in v3.1.0**
+
+- **130+ device profiles** — up from 70+, now including 2026 flagships
+- **Detection Shield** — 14 anti-fingerprinting protections (canvas, WebGL, screen, battery, plugins, and more)
+- **Browser-type filtering** — filter profiles by Chrome, Firefox, Safari, or Edge
+- **Tab-specific settings viewer** — view, copy, and manage per-tab overrides
+- **Apply scope selector** — choose between Current Tab and All Tabs
+- **Canvas & WebGL fingerprint protection** — noise injection and GPU spoofing
+- **Screen dimension spoofing** — device-accurate resolution overrides
+- **Network & hardware spoofing** — connection type, CPU cores, device memory
+- **UI state persistence** — popup remembers your selections across reopens
+- **Dynamic version badge** — auto-reads version from manifest
 
 ---
 
 ## **Known Limitations**
 
 - **Firefox Only**: Designed exclusively for Firefox with Manifest V2
-- **Content Security Policy**: Some sites may detect spoofing attempts
+- **Content Security Policy**: Some sites with strict CSP may limit content script injection
 - **Touch API Scope**: Only affects `navigator.maxTouchPoints`
 - **Banking Sites**: Recommended to use block list for financial websites
 
@@ -183,11 +226,21 @@ Click **"Advanced Settings"** for power-user features:
 ### Project Structure
 ```
 MorphAgent/
-├── manifest.json          # Extension manifest
-├── popup.html/css/js/     # Main interface
-├── advanced-settings.*    # Advanced configuration
-├── js/profiles.js         # Device database
-└── js/background.js       # Core spoofing logic
+├── manifest.json              # Extension manifest (v3.1.0)
+├── popup.html                 # Main popup interface
+├── popup.css                  # Popup styles
+├── advanced-settings.html     # Advanced settings page
+├── css/
+│   ├── popup.css              # Popup stylesheet
+│   └── advanced-settings.css  # Settings stylesheet
+├── js/
+│   ├── popup.js               # Popup logic & UI
+│   ├── background.js          # Core spoofing & header interception
+│   ├── content.js             # Navigator/fingerprint spoofing (14 protections)
+│   ├── profiles.js            # Device database (130+ profiles)
+│   └── advanced-settings.js   # Settings page logic
+├── icons/                     # Extension icons
+└── src/                       # Screenshots & assets
 ```
 
 ---
@@ -205,8 +258,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Developed by KARTHIK LAL**
 - GitHub: [@karthik558](https://github.com/karthik558)
 - Design: Modern interface with dark/light themes
-- Features: Advanced per-site spoofing capabilities  
-- Database: Comprehensive device profile collection (70+ profiles)
+- Features: Advanced per-site spoofing with Detection Shield (14 protections)
+- Database: Comprehensive device profile collection (130+ profiles)
 - UX: Enhanced user experience and professional polish
 
 ---
@@ -215,7 +268,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for developers who value browser privacy and testing**
 
-*MorphAgent - Transform your browser identity with professional-grade spoofing*
+*MorphAgent - Transform your browser identity with professional-grade spoofing & anti-fingerprinting*
 
 **⭐ Star this repo if MorphAgent helps your development workflow!**
 
