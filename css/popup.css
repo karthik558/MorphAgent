@@ -28,6 +28,12 @@
   box-sizing: border-box;
 }
 
+html {
+  width: 400px;
+  height: 580px;
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -38,6 +44,10 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  width: 400px;
+  height: 580px;
+  max-width: 400px;
+  max-height: 580px;
 }
 
 /* Hide scrollbars globally */
@@ -68,6 +78,8 @@ body.dark-mode {
 .extension-container {
   width: 400px;
   height: 580px;
+  max-width: 400px;
+  max-height: 580px;
   background: var(--primary-light);
   border: 1px solid var(--border-light);
   border-radius: 12px;

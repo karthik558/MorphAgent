@@ -366,26 +366,46 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadTabSpecificSettings(rule) {
-    // Find matching profile for the rule's UA
-    let foundProfile = false;
-    
-    Object.keys(profilesData).forEach(category => {
-      Object.keys(profilesData[category].platforms || {}).forEach(platform => {
-        profilesData[category].platforms[platform].variants.forEach((profile, index) => {
-          if (profile.ua === rule.userAgent) {
-            selectCategory(category);
-            currentPlatform = platform;
-            updateBrowserOptions();
-            populateProfiles(category, platform, null);
-            selectProfile(category, platform, index, null);
-            foundProfile = true;
-          }
+    // Restore full UI state if available
+    if (rule.uiState && rule.uiState.category) {
+      const { category, platform, browserType, profileIndex } = rule.uiState;
+      selectCategory(category);
+      if (platform) {
+        currentPlatform = platform;
+        platformSelect.value = platform;
+        updateBrowserOptions();
+        if (browserType) {
+          currentBrowser = browserType;
+          browserSelect.value = browserType;
+        }
+        populateProfiles(category, platform, browserType || null);
+        if (profileIndex !== null && profileIndex !== undefined) {
+          selectProfile(category, platform, profileIndex, browserType || null);
+        }
+      }
+    } else {
+      // Fallback: find matching profile by UA string
+      let foundProfile = false;
+      
+      Object.keys(profilesData).forEach(category => {
+        Object.keys(profilesData[category].platforms || {}).forEach(platform => {
+          profilesData[category].platforms[platform].variants.forEach((profile, index) => {
+            if (!foundProfile && profile.ua === rule.userAgent) {
+              selectCategory(category);
+              currentPlatform = platform;
+              platformSelect.value = platform;
+              updateBrowserOptions();
+              populateProfiles(category, platform, null);
+              selectProfile(category, platform, index, null);
+              foundProfile = true;
+            }
+          });
         });
       });
-    });
 
-    if (!foundProfile) {
-      customUAInput.value = rule.userAgent || '';
+      if (!foundProfile) {
+        customUAInput.value = rule.userAgent || '';
+      }
     }
 
     touchToggle.checked = rule.touchPoints > 0;
@@ -402,26 +422,46 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadGlobalSettings() {
     browser.runtime.sendMessage({ type: 'get-settings' }).then((settings) => {
       if (settings) {
-        // Try to find matching profile
-        let foundProfile = false;
-        
-        Object.keys(profilesData).forEach(category => {
-          Object.keys(profilesData[category].platforms || {}).forEach(platform => {
-            profilesData[category].platforms[platform].variants.forEach((profile, index) => {
-              if (profile.ua === settings.selectedUA) {
-                selectCategory(category);
-                currentPlatform = platform;
-                updateBrowserOptions();
-                populateProfiles(category, platform, null);
-                selectProfile(category, platform, index, null);
-                foundProfile = true;
-              }
+        // Restore full UI state if available
+        if (settings.uiState && settings.uiState.category) {
+          const { category, platform, browserType, profileIndex } = settings.uiState;
+          selectCategory(category);
+          if (platform) {
+            currentPlatform = platform;
+            platformSelect.value = platform;
+            updateBrowserOptions();
+            if (browserType) {
+              currentBrowser = browserType;
+              browserSelect.value = browserType;
+            }
+            populateProfiles(category, platform, browserType || null);
+            if (profileIndex !== null && profileIndex !== undefined) {
+              selectProfile(category, platform, profileIndex, browserType || null);
+            }
+          }
+        } else {
+          // Fallback: find matching profile by UA string
+          let foundProfile = false;
+          
+          Object.keys(profilesData).forEach(category => {
+            Object.keys(profilesData[category].platforms || {}).forEach(platform => {
+              profilesData[category].platforms[platform].variants.forEach((profile, index) => {
+                if (!foundProfile && profile.ua === settings.selectedUA) {
+                  selectCategory(category);
+                  currentPlatform = platform;
+                  platformSelect.value = platform;
+                  updateBrowserOptions();
+                  populateProfiles(category, platform, null);
+                  selectProfile(category, platform, index, null);
+                  foundProfile = true;
+                }
+              });
             });
           });
-        });
 
-        if (!foundProfile) {
-          customUAInput.value = settings.selectedUA || '';
+          if (!foundProfile) {
+            customUAInput.value = settings.selectedUA || '';
+          }
         }
 
         touchToggle.checked = !!settings.touchSpoofEnabled;
@@ -503,7 +543,13 @@ document.addEventListener('DOMContentLoaded', () => {
           userAgent: selectedUA,
           touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
           jsBlocked: jsBlockEnabled,
-          jsProtected: jsProtectEnabled
+          jsProtected: jsProtectEnabled,
+          uiState: {
+            category: currentCategory,
+            platform: currentPlatform,
+            browserType: currentBrowser,
+            profileIndex: selectedProfile ? selectedProfile.index : null
+          }
         };
 
         // Get existing rules and add/update this one
@@ -539,7 +585,13 @@ document.addEventListener('DOMContentLoaded', () => {
         touchSpoofEnabled,
         jsBlockEnabled,
         jsProtectEnabled,
-        applyScope
+        applyScope,
+        uiState: {
+          category: currentCategory,
+          platform: currentPlatform,
+          browserType: currentBrowser,
+          profileIndex: selectedProfile ? selectedProfile.index : null
+        }
       };
 
       browser.runtime.sendMessage({
