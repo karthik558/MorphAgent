@@ -65,18 +65,33 @@
             configurable: true
           });
           
-          // Also spoof appName and platform for consistency
+          // Also spoof appName, platform, vendor, and other properties for consistency
           const getPlatform = (ua) => {
+            if (ua.includes('iPhone')) return 'iPhone';
+            if (ua.includes('iPad')) return 'iPad';
+            if (ua.includes('iPod')) return 'iPod';
+            if (ua.includes('Android')) return 'Linux armv81';
             if (ua.includes('Windows')) return 'Win32';
-            if (ua.includes('Mac OS X')) return 'MacIntel';
+            if (ua.includes('Macintosh') || (ua.includes('Mac OS X') && !ua.includes('iPhone') && !ua.includes('iPad'))) return 'MacIntel';
             if (ua.includes('Linux')) return 'Linux x86_64';
-            if (ua.includes('Android')) return 'Linux armv7l';
-            return 'unknown';
+            return 'Win32';
           };
           
           const getAppName = (ua) => {
-            if (ua.includes('Firefox')) return 'Netscape';
-            return 'Netscape'; // Most browsers use 'Netscape' for compatibility
+            return 'Netscape'; // All modern browsers use 'Netscape' for compatibility
+          };
+          
+          const getVendor = (ua) => {
+            const isSafariUA = ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR');
+            const isiOSUA = ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod');
+            if (isSafariUA || isiOSUA) return 'Apple Computer, Inc.';
+            if (ua.includes('Firefox')) return '';
+            return 'Google Inc.';
+          };
+          
+          const getProductSub = (ua) => {
+            if (ua.includes('Firefox')) return '20100101';
+            return '20030107';
           };
           
           Object.defineProperty(Navigator.prototype, 'platform', {
@@ -88,6 +103,40 @@
             get: function() { return getAppName(customUA); },
             configurable: true
           });
+          
+          Object.defineProperty(Navigator.prototype, 'vendor', {
+            get: function() { return getVendor(customUA); },
+            configurable: true
+          });
+          
+          Object.defineProperty(Navigator.prototype, 'vendorSub', {
+            get: function() { return ''; },
+            configurable: true
+          });
+          
+          Object.defineProperty(Navigator.prototype, 'product', {
+            get: function() { return 'Gecko'; },
+            configurable: true
+          });
+          
+          Object.defineProperty(Navigator.prototype, 'productSub', {
+            get: function() { return getProductSub(customUA); },
+            configurable: true
+          });
+          
+          // Hide Firefox-specific properties when not spoofing as Firefox
+          if (!customUA.includes('Firefox')) {
+            // buildID is Firefox-only, other browsers don't have it
+            Object.defineProperty(Navigator.prototype, 'buildID', {
+              get: function() { return undefined; },
+              configurable: true
+            });
+            // oscpu is Firefox-only
+            Object.defineProperty(Navigator.prototype, 'oscpu', {
+              get: function() { return undefined; },
+              configurable: true
+            });
+          }
           
         } catch (e) {
           console.warn('Failed to spoof navigator properties:', e);
@@ -226,8 +275,9 @@
           
           // --- 3. Spoof navigator.vendor ---
           const getVendor = () => {
-            if (isChrome || isEdge || isOpera || isSafari) return 'Google Inc.';
+            if (isSafari || isiOS) return 'Apple Computer, Inc.';
             if (isFirefox) return '';
+            if (isChrome || isEdge || isOpera) return 'Google Inc.';
             return 'Google Inc.';
           };
           
@@ -240,6 +290,40 @@
             get: function() { return ''; },
             configurable: true
           });
+          
+          // Spoof productSub (Firefox = '20100101', Chrome/Safari = '20030107')
+          Object.defineProperty(Navigator.prototype, 'productSub', {
+            get: function() { return isFirefox ? '20100101' : '20030107'; },
+            configurable: true
+          });
+          
+          // Hide Firefox-specific properties when spoofing as non-Firefox
+          if (!isFirefox) {
+            Object.defineProperty(Navigator.prototype, 'buildID', {
+              get: function() { return undefined; },
+              configurable: true
+            });
+            Object.defineProperty(Navigator.prototype, 'oscpu', {
+              get: function() { return undefined; },
+              configurable: true
+            });
+          } else {
+            // When spoofing as Firefox, set realistic buildID and oscpu
+            Object.defineProperty(Navigator.prototype, 'buildID', {
+              get: function() { return '20181001000000'; },
+              configurable: true
+            });
+            const getOscpu = () => {
+              if (isWindows) return 'Windows NT 10.0; Win64; x64';
+              if (isMac) return 'Intel Mac OS X 10.15';
+              if (isLinux) return 'Linux x86_64';
+              return 'Windows NT 10.0; Win64; x64';
+            };
+            Object.defineProperty(Navigator.prototype, 'oscpu', {
+              get: function() { return getOscpu(); },
+              configurable: true
+            });
+          }
           
           // --- 4. Spoof navigator.plugins & mimeTypes ---
           // Fake a realistic plugin list for Chrome/Edge
@@ -544,8 +628,11 @@
             };
           }
           
-          // --- 13. Spoof window.chrome for Chrome UA ---
-          if ((isChrome || isEdge) && !window.chrome) {
+          // --- 13. Spoof window.chrome for Chrome UA and remove for Safari/Firefox ---
+          if ((isSafari || isiOS) && window.chrome) {
+            // Safari/iOS should NOT have window.chrome
+            try { delete window.chrome; } catch(e) { window.chrome = undefined; }
+          } else if ((isChrome || isEdge) && !window.chrome) {
             window.chrome = {
               app: { isInstalled: false, InstallState: { DISABLED: 'disabled', INSTALLED: 'installed', NOT_INSTALLED: 'not_installed' }, RunningState: { CANNOT_RUN: 'cannot_run', READY_TO_RUN: 'ready_to_run', RUNNING: 'running' } },
               runtime: { OnInstalledReason: { CHROME_UPDATE: 'chrome_update', INSTALL: 'install', SHARED_MODULE_UPDATE: 'shared_module_update', UPDATE: 'update' }, OnRestartRequiredReason: { APP_UPDATE: 'app_update', OS_UPDATE: 'os_update', PERIODIC: 'periodic' }, PlatformArch: { ARM: 'arm', ARM64: 'arm64', MIPS: 'mips', MIPS64: 'mips64', X86_32: 'x86-32', X86_64: 'x86-64' }, PlatformNaclArch: { ARM: 'arm', MIPS: 'mips', MIPS64: 'mips64', X86_32: 'x86-32', X86_64: 'x86-64' }, PlatformOs: { ANDROID: 'android', CROS: 'cros', LINUX: 'linux', MAC: 'mac', OPENBSD: 'openbsd', WIN: 'win' }, RequestUpdateCheckStatus: { NO_UPDATE: 'no_update', THROTTLED: 'throttled', UPDATE_AVAILABLE: 'update_available' } },
