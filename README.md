@@ -41,16 +41,16 @@ MorphAgent is now available on the official Mozilla Firefox Add-ons store.
       </td>
    </tr>
    <tr>
-      <th colspan="2" style="text-align:center; font-size:1.1em;">Touch Points Configuration</th>
+      <th colspan="2" style="text-align:center; font-size:1.1em;">Features Overview</th>
    </tr>
    <tr>
       <td>
-         <img src="src/touchpoints_light.png" alt="Touch Points Light" width="300" />
-         <div>Touch Points (Light)</div>
+         <img src="src/features_light.png" alt="Features Light" width="300" />
+         <div>Features (Light)</div>
       </td>
       <td>
-         <img src="src/touchpoints_dark.png" alt="Touch Points Dark" width="300" />
-         <div>Touch Points (Dark)</div>
+         <img src="src/features_dark.png" alt="Features Dark" width="300" />
+         <div>Features (Dark)</div>
       </td>
    </tr>
 </table>
