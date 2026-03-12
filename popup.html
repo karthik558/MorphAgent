@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MorphAgent</title>
   <link rel="stylesheet" href="css/popup.css">
+  <script>
+    // Detect mobile Firefox (popup opens as full tab, not constrained popup)
+    if (window.innerWidth !== 400 || window.innerHeight > 600) {
+      document.documentElement.classList.add('mobile');
+    }
+  </script>
 </head>
 <body>
   <div class="extension-container">

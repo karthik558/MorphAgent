@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "MorphAgent",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Modern GitHub-inspired extension for user agent spoofing with 70+ device profiles and touch support.",
   "icons": {
     "16": "icons/icon.png",
@@ -46,6 +46,9 @@
     "gecko": {
       "id": "morph-agent@karthiklal.in",
       "strict_min_version": "68.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "113.0"
     }
   },
   "homepage_url": "https://github.com/karthik558/MorphAgent"
