@@ -1,4 +1,4 @@
-// background.js - MorphAgent 4.0.0
+// background.js - MorphAgent 4.0.2
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 
 const api = typeof browser !== 'undefined' ? browser : chrome;

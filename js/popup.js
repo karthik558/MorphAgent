@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const browser = window.browser || window.chrome;
 
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.0.0' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.0.2' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;

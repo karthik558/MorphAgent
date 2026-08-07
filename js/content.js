@@ -1,4 +1,4 @@
-// content.js - MorphAgent 4.0.0
+// content.js - MorphAgent 4.0.2
 // 10-Tier Anti-Fingerprinting & Stealth Content Injection Suite
 
 (function() {
