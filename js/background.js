@@ -307,6 +307,28 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Setup Context Menus
+const TOP_10_UAS = [
+  { id: 'ua-win-chrome', title: 'Windows - Chrome', ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' },
+  { id: 'ua-win-firefox', title: 'Windows - Firefox', ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0) Gecko/20100101 Firefox/142.0', category: 'desktop' },
+  { id: 'ua-win-edge', title: 'Windows - Edge', ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', category: 'desktop' },
+  { id: 'ua-mac-safari', title: 'macOS - Safari', ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15', category: 'desktop' },
+  { id: 'ua-mac-chrome', title: 'macOS - Chrome', ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' },
+  { id: 'ua-ios-safari', title: 'iOS - Safari (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
+  { id: 'ua-ios-chrome', title: 'iOS - Chrome (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.0.0 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
+  { id: 'ua-android-chrome', title: 'Android - Chrome', ua: 'Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', touch: true, category: 'mobile' },
+  { id: 'ua-linux-firefox', title: 'Linux - Firefox', ua: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0', category: 'desktop' },
+  { id: 'ua-chromeos-chrome', title: 'ChromeOS - Chrome', ua: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' }
+];
+
+const STANDARD_LOCS = [
+  { id: 'std-ny', name: 'New York, USA', lat: 40.7128, lng: -74.0060 },
+  { id: 'std-lon', name: 'London, UK', lat: 51.5074, lng: -0.1278 },
+  { id: 'std-tok', name: 'Tokyo, Japan', lat: 35.6762, lng: 139.6503 },
+  { id: 'std-par', name: 'Paris, France', lat: 48.8566, lng: 2.3522 },
+  { id: 'std-sf', name: 'San Francisco, USA', lat: 37.7749, lng: -122.4194 },
+  { id: 'std-syd', name: 'Sydney, Australia', lat: -33.8688, lng: 151.2093 }
+];
+
 function setupContextMenus() {
   if (!api.contextMenus) return;
   try {
@@ -318,23 +340,32 @@ function setupContextMenus() {
       });
 
       api.contextMenus.create({
-        id: 'morph-agent-mobile',
+        id: 'morph-agent-switch-ua',
         parentId: 'morph-agent-root',
-        title: 'Switch to iPhone 17 Pro Max',
+        title: 'Quick Switch User Agent',
         contexts: ['all']
       });
-
-      api.contextMenus.create({
-        id: 'morph-agent-desktop',
-        parentId: 'morph-agent-root',
-        title: 'Switch to Chrome 145 (Desktop)',
-        contexts: ['all']
+      
+      TOP_10_UAS.forEach(uaObj => {
+        api.contextMenus.create({
+          id: uaObj.id,
+          parentId: 'morph-agent-switch-ua',
+          title: uaObj.title,
+          contexts: ['all']
+        });
       });
 
       api.contextMenus.create({
         id: 'morph-agent-separator',
         parentId: 'morph-agent-root',
         type: 'separator',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-switch-location',
+        parentId: 'morph-agent-root',
+        title: 'Quick Switch Location',
         contexts: ['all']
       });
 
@@ -372,6 +403,46 @@ function setupContextMenus() {
         title: 'Open Advanced Settings & Builder...',
         contexts: ['all']
       });
+
+      // Add standard preset locations
+      STANDARD_LOCS.forEach(loc => {
+        api.contextMenus.create({
+          id: 'loc-' + loc.id,
+          parentId: 'morph-agent-switch-location',
+          title: `${loc.name} (${loc.lat}, ${loc.lng})`,
+          contexts: ['all']
+        });
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-switch-location-sep',
+        parentId: 'morph-agent-switch-location',
+        type: 'separator',
+        contexts: ['all']
+      });
+
+      // Fetch custom locations
+      api.storage.sync.get(['customLocations']).then(res => {
+        const locs = res.customLocations || [];
+        if (locs.length === 0) {
+          api.contextMenus.create({
+            id: 'morph-agent-no-locs',
+            parentId: 'morph-agent-switch-location',
+            title: 'No custom locations added',
+            contexts: ['all'],
+            enabled: false
+          });
+        } else {
+          locs.forEach(loc => {
+            api.contextMenus.create({
+              id: 'loc-' + loc.id,
+              parentId: 'morph-agent-switch-location',
+              title: `${loc.name} (${loc.lat}, ${loc.lng})`,
+              contexts: ['all']
+            });
+          });
+        }
+      });
     });
   } catch (e) {
     console.warn('[MorphAgent 4.0] Context menu setup skipped:', e);
@@ -386,15 +457,58 @@ if (api.runtime.onInstalled) {
   setupContextMenus();
 }
 
+// Rebuild context menus dynamically when custom locations change
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.customLocations) {
+    setupContextMenus();
+  }
+});
+
 if (api.contextMenus && api.contextMenus.onClicked) {
   api.contextMenus.onClicked.addListener((info, tab) => {
-    if (info.menuItemId === 'morph-agent-mobile') {
-      const mobileUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1';
-      api.storage.local.set({ selectedUA: mobileUA, activeCategory: 'mobile', touchSpoofEnabled: true, maxTouchPoints: 5 });
-    } else if (info.menuItemId === 'morph-agent-desktop') {
-      const desktopUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
-      api.storage.local.set({ selectedUA: desktopUA, activeCategory: 'desktop', touchSpoofEnabled: false, maxTouchPoints: 0 });
-    } else if (info.menuItemId === 'morph-agent-settings') {
+    // Check if it's a Top 10 UA click
+    const uaObj = TOP_10_UAS.find(u => u.id === info.menuItemId);
+    if (uaObj) {
+      api.storage.local.set({ 
+        selectedUA: uaObj.ua, 
+        activeCategory: uaObj.category, 
+        touchSpoofEnabled: uaObj.touch || false, 
+        maxTouchPoints: uaObj.touch ? 5 : 0 
+      }).then(() => {
+        updateDeclarativeNetRequestRules(uaObj.ua);
+        if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+      });
+      return;
+    }
+
+    // Check if it's a Location click
+    if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith('loc-')) {
+      const locIdStr = info.menuItemId.replace('loc-', '');
+      
+      // Check standard locations first
+      const stdLoc = STANDARD_LOCS.find(l => l.id === locIdStr);
+      if (stdLoc) {
+        api.storage.local.set({ geoCoords: { lat: stdLoc.lat, lng: stdLoc.lng } }).then(() => {
+          if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+        });
+        return;
+      }
+
+      // Check custom locations
+      const locId = parseInt(locIdStr, 10);
+      api.storage.sync.get(['customLocations']).then(res => {
+        const locs = res.customLocations || [];
+        const loc = locs.find(l => l.id === locId);
+        if (loc) {
+          api.storage.local.set({ geoCoords: { lat: loc.lat, lng: loc.lng } }).then(() => {
+            if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+          });
+        }
+      });
+      return;
+    }
+
+    if (info.menuItemId === 'morph-agent-settings') {
       if (api.tabs && api.tabs.create) {
         api.tabs.create({ url: api.runtime.getURL('advanced-settings.html') });
       }
