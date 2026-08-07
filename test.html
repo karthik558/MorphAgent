@@ -1,0 +1,27 @@
+<script>
+const pos = {
+  coords: {
+    latitude: 1,
+    longitude: 2,
+    altitude: null,
+    accuracy: 20.0,
+    altitudeAccuracy: null,
+    heading: null,
+    speed: null
+  },
+  timestamp: Date.now()
+};
+
+try {
+  Object.setPrototypeOf(pos, GeolocationPosition.prototype);
+  Object.setPrototypeOf(pos.coords, GeolocationCoordinates.prototype);
+} catch (e) {
+  console.log("Set prototype error", e);
+}
+
+try {
+  console.log("Lat:", pos.coords.latitude);
+} catch (e) {
+  console.log("Read error:", e);
+}
+</script>

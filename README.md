@@ -49,6 +49,9 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 10. **Futuristic GitHub-Inspired Animated UI**  
     Glassmorphic interface featuring a quick search profile filter, keyboard shortcuts, and dark/light mode themes.
 
+11. **Standalone Feature Mode (Independent Feature Toggles)**  
+    Allows users to run individual features (Location Spoofing, Touch Spoofing, Block JavaScript, Detection Shield) independently without modifying or overriding the browser's real User-Agent flag.
+
 ---
 
 ## Manifest Generator Script

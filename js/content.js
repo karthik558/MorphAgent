@@ -4,24 +4,243 @@
 (function() {
   const api = typeof browser !== 'undefined' ? browser : chrome;
 
-  // Retrieve settings and initialize shields at document_start
+  // Immediate Synchronous Main-World Script Injection at document_start
+  const syncScript = document.createElement('script');
+  syncScript.textContent = `
+    (function() {
+      if (window.__MORPH_INJECTED__) return;
+      window.__MORPH_INJECTED__ = true;
+
+      try {
+        let cachedSettings = null;
+        let isSettingsLoaded = false;
+        const pendingCalls = [];
+        const pendingWatches = [];
+
+        try {
+          const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
+          if (raw) {
+            cachedSettings = JSON.parse(raw);
+            isSettingsLoaded = true;
+          }
+        } catch (e) {}
+
+        window.__MORPH_AGENT_SETTINGS__ = cachedSettings || window.__MORPH_AGENT_SETTINGS__ || {};
+
+        window.addEventListener('morph-agent-update', (evt) => {
+          let data = null;
+          if (typeof evt.detail === 'string') {
+            try { data = JSON.parse(evt.detail); } catch(e) {}
+          } else if (evt.detail && typeof evt.detail === 'object' && Object.keys(evt.detail).length > 0) {
+            data = evt.detail;
+          }
+          
+          if (!data) {
+            try {
+              const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
+              if (raw) data = JSON.parse(raw);
+            } catch(e) {}
+          }
+
+          if (data) {
+            window.__MORPH_AGENT_SETTINGS__ = data;
+            isSettingsLoaded = true;
+            try {
+              sessionStorage.setItem('morph_agent_settings', JSON.stringify(data));
+              localStorage.setItem('morph_agent_settings', JSON.stringify(data));
+            } catch (e) {}
+            
+            while (pendingCalls.length > 0) {
+              pendingCalls.shift()();
+            }
+            while (pendingWatches.length > 0) {
+              pendingWatches.shift()();
+            }
+          }
+        });
+
+        if (typeof Geolocation !== 'undefined' && Geolocation.prototype) {
+          function getMockPos() {
+            const s = window.__MORPH_AGENT_SETTINGS__ || {};
+            const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
+            const lat = parseFloat(coords.lat) || 40.7128;
+            const lng = parseFloat(coords.lng) || -74.0060;
+            
+            const pos = {
+              coords: {
+                latitude: lat,
+                longitude: lng,
+                altitude: null,
+                accuracy: 20.0,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null
+              },
+              timestamp: Date.now()
+            };
+            
+            try {
+              if (typeof GeolocationPosition !== 'undefined') {
+                Object.setPrototypeOf(pos, GeolocationPosition.prototype);
+              }
+              if (typeof GeolocationCoordinates !== 'undefined') {
+                Object.setPrototypeOf(pos.coords, GeolocationCoordinates.prototype);
+              }
+            } catch (e) {}
+            
+            return pos;
+          }
+
+          Geolocation.prototype.getCurrentPosition = new Proxy(Geolocation.prototype.getCurrentPosition, {
+            apply(target, thisArg, args) {
+              const success = args[0];
+              const error = args[1];
+              const options = args[2];
+              
+              const run = () => {
+                const s = window.__MORPH_AGENT_SETTINGS__ || {};
+                if (s.geoSpoofEnabled) {
+                  if (typeof success === 'function') {
+                    setTimeout(() => success(getMockPos()), 0);
+                  }
+                } else {
+                  Reflect.apply(target, thisArg, args);
+                }
+              };
+
+              if (isSettingsLoaded) {
+                run();
+              } else {
+                pendingCalls.push(run);
+                setTimeout(() => {
+                  const index = pendingCalls.indexOf(run);
+                  if (index > -1) {
+                    pendingCalls.splice(index, 1);
+                    Reflect.apply(target, thisArg, args);
+                  }
+                }, 1000);
+              }
+            }
+          });
+
+          const activeWatches = new Map();
+          let watchCounter = 1;
+
+          Geolocation.prototype.watchPosition = new Proxy(Geolocation.prototype.watchPosition, {
+            apply(target, thisArg, args) {
+              const success = args[0];
+              const error = args[1];
+              const options = args[2];
+              const id = watchCounter++;
+              
+              const run = () => {
+                const s = window.__MORPH_AGENT_SETTINGS__ || {};
+                if (s.geoSpoofEnabled) {
+                  if (typeof success === 'function') {
+                    setTimeout(() => success(getMockPos()), 0);
+                    const interval = setInterval(() => {
+                      success(getMockPos());
+                    }, 1000);
+                    activeWatches.set(id, interval);
+                  }
+                } else {
+                  const realId = Reflect.apply(target, thisArg, args);
+                  activeWatches.set(id, realId);
+                }
+              };
+
+              if (isSettingsLoaded) {
+                run();
+              } else {
+                pendingWatches.push(run);
+                setTimeout(() => {
+                  const index = pendingWatches.indexOf(run);
+                  if (index > -1) {
+                    pendingWatches.splice(index, 1);
+                    const realId = Reflect.apply(target, thisArg, args);
+                    activeWatches.set(id, realId);
+                  }
+                }, 1000);
+              }
+              return id;
+            }
+          });
+
+          Geolocation.prototype.clearWatch = new Proxy(Geolocation.prototype.clearWatch, {
+            apply(target, thisArg, args) {
+              const id = args[0];
+              if (activeWatches.has(id)) {
+                const val = activeWatches.get(id);
+                if (typeof val === 'number') {
+                  clearInterval(val);
+                  Reflect.apply(target, thisArg, [val]);
+                }
+                activeWatches.delete(id);
+                return;
+              }
+              return Reflect.apply(target, thisArg, args);
+            }
+          });
+        }
+
+        if (navigator.permissions && navigator.permissions.query) {
+          navigator.permissions.query = new Proxy(navigator.permissions.query, {
+            apply(target, thisArg, args) {
+              const param = args[0];
+              const run = () => {
+                const s = window.__MORPH_AGENT_SETTINGS__ || {};
+                if (s.geoSpoofEnabled && param && param.name === 'geolocation') {
+                  return Promise.resolve({
+                    state: 'granted',
+                    name: 'geolocation',
+                    onchange: null,
+                    addEventListener: function() {},
+                    removeEventListener: function() {},
+                    dispatchEvent: function() { return true; }
+                  });
+                }
+                return Reflect.apply(target, thisArg, args);
+              };
+              
+              if (isSettingsLoaded) {
+                return run();
+              } else {
+                return new Promise((resolve, reject) => {
+                  const task = () => resolve(run());
+                  pendingCalls.push(task);
+                  setTimeout(() => {
+                    const index = pendingCalls.indexOf(task);
+                    if (index > -1) {
+                      pendingCalls.splice(index, 1);
+                      resolve(Reflect.apply(target, thisArg, args));
+                    }
+                  }, 1000);
+                });
+              }
+            }
+          });
+        }
+      } catch (e) {}
+    })();
+  `;
+  (document.head || document.documentElement).appendChild(syncScript);
+  syncScript.remove();
+
+  // Retrieve settings and initialize stealth suite
   api.storage.local.get([
     'selectedUA',
+    'uaSpoofEnabled',
     'touchSpoofEnabled',
     'maxTouchPoints',
     'jsBlockEnabled',
     'jsProtectEnabled',
     'activeCategory',
-    'customScreenEnabled',
-    'customScreenSpecs',
-    'webGLProtectEnabled',
-    'audioProtectEnabled',
-    'webRTCProtectEnabled',
-    'geoProtectEnabled',
-    'geoSpecs'
+    'geoSpoofEnabled',
+    'geoCoords'
   ]).then((settings) => {
-    if (!settings.selectedUA) return;
-
+    // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
+    window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(settings) }));
+    
     injectStealthSuite(settings);
 
     if (settings.jsBlockEnabled) {
@@ -42,14 +261,18 @@
         if (rule.jsBlocked) {
           blockInlineJavaScript();
         }
-        if (rule.userAgent) {
-          injectStealthSuite({
-            selectedUA: rule.userAgent,
-            maxTouchPoints: rule.touchPoints || 0,
-            touchSpoofEnabled: (rule.touchPoints || 0) > 0,
-            jsProtectEnabled: true
-          });
-        }
+        const ruleSettings = {
+          selectedUA: rule.userAgent,
+          uaSpoofEnabled: rule.uaSpoofEnabled !== false,
+          maxTouchPoints: rule.touchPoints || 0,
+          touchSpoofEnabled: (rule.touchPoints || 0) > 0,
+          jsProtectEnabled: !!rule.jsProtected,
+          geoSpoofEnabled: !!rule.geoSpoofEnabled,
+          geoCoords: rule.geoCoords
+        };
+        // Dispatch directly from isolated world
+        window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(ruleSettings) }));
+        injectStealthSuite(ruleSettings);
         break;
       }
     }
@@ -61,88 +284,102 @@
     script.textContent = `
       (() => {
         try {
-          const ua = ${JSON.stringify(settings.selectedUA)};
-          const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-          const isTablet = /iPad|Tablet/i.test(ua);
-          const isTouch = ${JSON.stringify(!!settings.touchSpoofEnabled)};
-          const maxTouchPoints = ${settings.maxTouchPoints || (isMobile ? 5 : 0)};
+          const settings = ${JSON.stringify(settings)};
+          window.__MORPH_AGENT_SETTINGS__ = settings;
+          try {
+            sessionStorage.setItem('morph_agent_settings', JSON.stringify(settings));
+            localStorage.setItem('morph_agent_settings', JSON.stringify(settings));
+          } catch(e) {}
+          window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: settings }));
 
-          // 1. User Agent & Navigator Platform Spoofing
-          const getPlatform = (str) => {
-            if (str.includes('iPhone')) return 'iPhone';
-            if (str.includes('iPad')) return 'iPad';
-            if (str.includes('Android')) return 'Linux armv81';
-            if (str.includes('Windows')) return 'Win32';
-            if (str.includes('Macintosh') || str.includes('Mac OS X')) return 'MacIntel';
-            if (str.includes('Linux')) return 'Linux x86_64';
-            return 'Win32';
-          };
+          const uaSpoofEnabled = ${JSON.stringify(settings.uaSpoofEnabled !== false)};
+          const ua = ${JSON.stringify(settings.selectedUA || '')};
+          const isMobile = ua ? /Android|iPhone|iPad|iPod|Mobile/i.test(ua) : false;
+          const isTablet = ua ? /iPad|Tablet/i.test(ua) : false;
 
-          const getVendor = (str) => {
-            if (str.includes('Safari') && !str.includes('Chrome') && !str.includes('Edg')) return 'Apple Computer, Inc.';
-            if (str.includes('Firefox')) return '';
-            return 'Google Inc.';
-          };
+          // User Agent & Navigator Platform Spoofing
+          if (uaSpoofEnabled && ua) {
+            const getPlatform = (str) => {
+              if (str.includes('iPhone')) return 'iPhone';
+              if (str.includes('iPad')) return 'iPad';
+              if (str.includes('Android')) return 'Linux armv81';
+              if (str.includes('Windows')) return 'Win32';
+              if (str.includes('Macintosh') || str.includes('Mac OS X')) return 'MacIntel';
+              if (str.includes('Linux')) return 'Linux x86_64';
+              return 'Win32';
+            };
 
-          Object.defineProperty(Navigator.prototype, 'userAgent', { get: () => ua, configurable: true });
-          Object.defineProperty(Navigator.prototype, 'appVersion', { get: () => ua.replace(/^Mozilla\\//, ''), configurable: true });
-          Object.defineProperty(Navigator.prototype, 'platform', { get: () => getPlatform(ua), configurable: true });
-          Object.defineProperty(Navigator.prototype, 'vendor', { get: () => getVendor(ua), configurable: true });
-          Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
+            const getVendor = (str) => {
+              if (str.includes('Safari') && !str.includes('Chrome') && !str.includes('Edg')) return 'Apple Computer, Inc.';
+              if (str.includes('Firefox')) return '';
+              return 'Google Inc.';
+            };
 
-          // 2. Client Hints (Sec-CH-UA) & navigator.userAgentData
-          let brandName = 'Google Chrome';
-          let majorVer = '145';
-          let fullVer = '145.0.0.0';
-          let osName = 'Windows';
+            Object.defineProperty(Navigator.prototype, 'userAgent', { get: () => ua, configurable: true });
+            Object.defineProperty(Navigator.prototype, 'appVersion', { get: () => ua.replace(/^Mozilla\\//, ''), configurable: true });
+            Object.defineProperty(Navigator.prototype, 'platform', { get: () => getPlatform(ua), configurable: true });
+            Object.defineProperty(Navigator.prototype, 'vendor', { get: () => getVendor(ua), configurable: true });
 
-          if (ua.includes('Edg')) { brandName = 'Microsoft Edge'; const m = ua.match(/Edg\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
-          else if (ua.includes('Chrome')) { brandName = 'Google Chrome'; const m = ua.match(/Chrome\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
-          else if (ua.includes('Firefox')) { brandName = 'Mozilla Firefox'; const m = ua.match(/Firefox\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+            // Client Hints (Sec-CH-UA) & navigator.userAgentData
+            let brandName = 'Google Chrome';
+            let majorVer = '145';
+            let fullVer = '145.0.0.0';
+            let osName = 'Windows';
 
-          if (ua.includes('Windows')) osName = 'Windows';
-          else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
-          else if (ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
-          else if (ua.includes('Android')) osName = 'Android';
-          else if (ua.includes('Linux')) osName = 'Linux';
+            if (ua.includes('Edg')) { brandName = 'Microsoft Edge'; const m = ua.match(/Edg\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+            else if (ua.includes('Chrome')) { brandName = 'Google Chrome'; const m = ua.match(/Chrome\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+            else if (ua.includes('Firefox')) { brandName = 'Mozilla Firefox'; const m = ua.match(/Firefox\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
 
-          const brands = [
-            { brand: 'Not(A:Brand', version: '99' },
-            { brand: brandName, version: majorVer },
-            { brand: 'Chromium', version: majorVer }
-          ];
+            if (ua.includes('Windows')) osName = 'Windows';
+            else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
+            else if (ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
+            else if (ua.includes('Android')) osName = 'Android';
+            else if (ua.includes('Linux')) osName = 'Linux';
 
-          const fullVersionList = [
-            { brand: 'Not(A:Brand', version: '99.0.0.0' },
-            { brand: brandName, version: fullVer },
-            { brand: 'Chromium', version: fullVer }
-          ];
+            const brands = [
+              { brand: 'Not(A:Brand', version: '99' },
+              { brand: brandName, version: majorVer },
+              { brand: 'Chromium', version: majorVer }
+            ];
 
-          const userAgentDataObj = {
-            brands: brands,
-            mobile: isMobile,
-            platform: osName,
-            getHighEntropyValues: function(hints) {
-              return Promise.resolve({
-                brands: brands,
-                mobile: isMobile,
-                platform: osName,
-                platformVersion: '15.0.0',
-                architecture: osName === 'macOS' || osName === 'iOS' || osName === 'Android' ? 'arm' : 'x86',
-                bitness: '64',
-                model: isMobile ? (osName === 'iOS' ? 'iPhone' : 'Galaxy') : '',
-                fullVersionList: fullVersionList,
-                uaFullVersion: fullVer
-              });
-            },
-            toJSON: function() {
-              return { brands: brands, mobile: isMobile, platform: osName };
-            }
-          };
+            const fullVersionList = [
+              { brand: 'Not(A:Brand', version: '99.0.0.0' },
+              { brand: brandName, version: fullVer },
+              { brand: 'Chromium', version: fullVer }
+            ];
 
-          Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => userAgentDataObj, configurable: true });
+            const userAgentDataObj = {
+              brands: brands,
+              mobile: isMobile,
+              platform: osName,
+              getHighEntropyValues: function(hints) {
+                return Promise.resolve({
+                  brands: brands,
+                  mobile: isMobile,
+                  platform: osName,
+                  platformVersion: '15.0.0',
+                  architecture: osName === 'macOS' || osName === 'iOS' || osName === 'Android' ? 'arm' : 'x86',
+                  bitness: '64',
+                  model: isMobile ? (osName === 'iOS' ? 'iPhone' : 'Galaxy') : '',
+                  fullVersionList: fullVersionList,
+                  uaFullVersion: fullVer
+                });
+              },
+              toJSON: function() {
+                return { brands: brands, mobile: isMobile, platform: osName };
+              }
+            };
 
-          // 3. Canvas & WebGL Seeded Noise Matrix
+            Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => userAgentDataObj, configurable: true });
+          }
+
+          // Independent Touch Spoofing
+          if (${JSON.stringify(!!settings.touchSpoofEnabled)}) {
+            const maxTouchPoints = ${settings.maxTouchPoints || (settings.selectedUA && /Android|iPhone|iPad/i.test(settings.selectedUA) ? 5 : 0)};
+            Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
+          }
+
+          // Canvas & WebGL Seeded Noise Matrix
           const domainHash = Array.from(window.location.hostname).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
           const noiseFactor = (domainHash % 5 + 1) * 0.00001;
 
@@ -158,27 +395,7 @@
             return originalToDataURL.apply(this, args);
           };
 
-          const getWebGLVendorRenderer = () => {
-            if (osName === 'macOS' || osName === 'iOS') return { vendor: 'Apple Inc.', renderer: 'Apple M4 GPU' };
-            if (osName === 'Android') return { vendor: 'Qualcomm', renderer: 'Adreno (TM) 750' };
-            return { vendor: 'Google Inc. (NVIDIA)', renderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 Direct3D11 vs_5_0 ps_5_0)' };
-          };
-
-          const webglSpecs = getWebGLVendorRenderer();
-          const overrideWebGL = (proto) => {
-            if (!proto) return;
-            const originalGetParameter = proto.getParameter;
-            proto.getParameter = function(param) {
-              if (param === 37445) return webglSpecs.vendor; // UNMASKED_VENDOR_WEBGL
-              if (param === 37446) return webglSpecs.renderer; // UNMASKED_RENDERER_WEBGL
-              return originalGetParameter.apply(this, arguments);
-            };
-          };
-
-          if (window.WebGLRenderingContext) overrideWebGL(WebGLRenderingContext.prototype);
-          if (window.WebGL2RenderingContext) overrideWebGL(WebGL2RenderingContext.prototype);
-
-          // 4. AudioContext Fingerprint Protection
+          // AudioContext Fingerprint Protection
           if (window.AnalyserNode) {
             const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
             AnalyserNode.prototype.getFloatFrequencyData = function(array) {
@@ -189,7 +406,7 @@
             };
           }
 
-          // 5. WebRTC Local IP Leak Protection
+          // WebRTC Local IP Leak Protection
           if (window.RTCPeerConnection) {
             const origCreateOffer = RTCPeerConnection.prototype.createOffer;
             RTCPeerConnection.prototype.createOffer = function(options) {
@@ -202,76 +419,11 @@
             };
           }
 
-          // 6. Screen Dimensions & Orientation Matrix
-          const screenSpecs = isMobile
-            ? { width: 393, height: 852, colorDepth: 30, dpr: 3 }
-            : (isTablet ? { width: 1024, height: 1366, colorDepth: 24, dpr: 2 } : { width: 1920, height: 1080, colorDepth: 24, dpr: 1 });
-
-          Object.defineProperty(Screen.prototype, 'width', { get: () => screenSpecs.width, configurable: true });
-          Object.defineProperty(Screen.prototype, 'height', { get: () => screenSpecs.height, configurable: true });
-          Object.defineProperty(Screen.prototype, 'availWidth', { get: () => screenSpecs.width, configurable: true });
-          Object.defineProperty(Screen.prototype, 'availHeight', { get: () => screenSpecs.height - 40, configurable: true });
-          Object.defineProperty(Screen.prototype, 'colorDepth', { get: () => screenSpecs.colorDepth, configurable: true });
-          Object.defineProperty(Screen.prototype, 'pixelDepth', { get: () => screenSpecs.colorDepth, configurable: true });
-          Object.defineProperty(window, 'devicePixelRatio', { get: () => screenSpecs.dpr, configurable: true });
-
-          // 7. Font Metrics Micro Noise
-          const origMeasureText = CanvasRenderingContext2D.prototype.measureText;
-          CanvasRenderingContext2D.prototype.measureText = function(text) {
-            const metrics = origMeasureText.apply(this, arguments);
-            const fakeWidth = metrics.width + (text.length > 0 ? noiseFactor : 0);
-            return new Proxy(metrics, {
-              get(target, prop) {
-                if (prop === 'width') return fakeWidth;
-                return target[prop];
-              }
-            });
-          };
-
-          // 8. GPS Geolocation Spoofing Engine
-          if (navigator.geolocation && ${JSON.stringify(!!settings.geoSpoofEnabled)}) {
-            const geoLat = ${parseFloat(settings.geoCoords ? settings.geoCoords.lat : 40.7128)};
-            const geoLng = ${parseFloat(settings.geoCoords ? settings.geoCoords.lng : -74.0060)};
-            
-            const mockPosition = {
-              coords: {
-                latitude: geoLat,
-                longitude: geoLng,
-                accuracy: 10,
-                altitude: 0,
-                altitudeAccuracy: 0,
-                heading: null,
-                speed: null
-              },
-              timestamp: Date.now()
-            };
-
-            navigator.geolocation.getCurrentPosition = function(success, error, options) {
-              if (typeof success === 'function') {
-                setTimeout(() => success(mockPosition), 10);
-              }
-            };
-
-            let watchCounter = 1;
-            navigator.geolocation.watchPosition = function(success, error, options) {
-              if (typeof success === 'function') {
-                setTimeout(() => success(mockPosition), 10);
-              }
-              return watchCounter++;
-            };
-
-            navigator.geolocation.clearWatch = function(watchId) {
-              // Mock clear
-            };
-          }
-
-          // 9. Cloak Spoofed Functions to return [native code]
+          // Function Cloaking
           const nativeToString = Function.prototype.toString;
-          const spoofedFuncs = new Set([
-            HTMLCanvasElement.prototype.toDataURL,
-            Navigator.prototype.userAgentData.getHighEntropyValues,
-            navigator.geolocation.getCurrentPosition
-          ]);
+          const spoofedFuncs = new Set();
+          if (HTMLCanvasElement.prototype.toDataURL) spoofedFuncs.add(HTMLCanvasElement.prototype.toDataURL);
+          if (typeof Geolocation !== 'undefined' && Geolocation.prototype.getCurrentPosition) spoofedFuncs.add(Geolocation.prototype.getCurrentPosition);
 
           Function.prototype.toString = function() {
             if (spoofedFuncs.has(this)) {
@@ -286,7 +438,7 @@
       })();
     `;
 
-    document.documentElement.appendChild(script);
+    (document.head || document.documentElement).appendChild(script);
     script.remove();
   }
 
@@ -294,7 +446,7 @@
     const meta = document.createElement('meta');
     meta.httpEquiv = 'Content-Security-Policy';
     meta.content = "script-src 'none'";
-    document.documentElement.appendChild(meta);
+    (document.head || document.documentElement).appendChild(meta);
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {

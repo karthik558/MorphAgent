@@ -10,6 +10,7 @@ let blockList = [];
 let jsBlockEnabled = false;
 let jsBlockedSites = [];
 let jsProtectEnabled = true;
+let uaSpoofEnabled = true;
 let activeCategory = 'desktop';
 
 console.log('[MorphAgent 4.0] Background engine starting...');
@@ -54,23 +55,7 @@ function updateBadge(ua, category) {
   try {
     const actionAPI = api.action || api.browserAction;
     if (!actionAPI) return;
-
-    let badgeText = 'DES';
-    let badgeColor = '#0969da';
-
-    if (category) {
-      if (category === 'mobile') badgeText = 'MOB';
-      else if (category === 'tablet') badgeText = 'TAB';
-      else if (category === 'desktop') badgeText = 'DES';
-      else if (category === 'gaming') badgeText = 'GAM';
-    } else if (ua) {
-      if (/iPhone|Android|Mobile/i.test(ua) && !/iPad/i.test(ua)) badgeText = 'MOB';
-      else if (/iPad|Tablet/i.test(ua)) badgeText = 'TAB';
-      else badgeText = 'DES';
-    }
-
-    actionAPI.setBadgeText({ text: badgeText });
-    actionAPI.setBadgeBackgroundColor({ color: badgeColor });
+    actionAPI.setBadgeText({ text: '' });
   } catch (e) {
     // Action API optional
   }
@@ -81,6 +66,12 @@ async function updateDeclarativeNetRequestRules(targetUA) {
   if (!api.declarativeNetRequest || !api.declarativeNetRequest.updateDynamicRules) return;
 
   try {
+    if (!uaSpoofEnabled) {
+      await api.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1] });
+      console.log('[MorphAgent 4.0] UA Spoofing disabled; DNR rules cleared.');
+      return;
+    }
+
     const ch = getClientHintsHeaders(targetUA);
     const rules = [{
       id: 1,
@@ -117,12 +108,13 @@ async function updateDeclarativeNetRequestRules(targetUA) {
 async function loadSettings() {
   try {
     const syncData = await api.storage.sync.get(['websiteRules', 'blockList']);
-    const localData = await api.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'activeCategory']);
+    const localData = await api.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory']);
 
     websiteRules = syncData.websiteRules || [];
     blockList = syncData.blockList || [];
     jsBlockEnabled = !!localData.jsBlockEnabled;
     jsProtectEnabled = localData.jsProtectEnabled !== undefined ? !!localData.jsProtectEnabled : true;
+    uaSpoofEnabled = localData.uaSpoofEnabled !== undefined ? !!localData.uaSpoofEnabled : true;
     activeCategory = localData.activeCategory || 'desktop';
 
     jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
@@ -175,6 +167,11 @@ api.storage.onChanged.addListener((changes, areaName) => {
     if (changes.jsProtectEnabled !== undefined) {
       jsProtectEnabled = !!changes.jsProtectEnabled.newValue;
     }
+    if (changes.uaSpoofEnabled !== undefined) {
+      uaSpoofEnabled = !!changes.uaSpoofEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+      updateBadge(cachedUA, activeCategory);
+    }
   }
 });
 
@@ -220,6 +217,8 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
   try {
     api.webRequest.onBeforeSendHeaders.addListener(
       function(details) {
+        if (!uaSpoofEnabled) return { requestHeaders: details.requestHeaders };
+
         const targetUA = getUserAgentForUrl(details.url);
         const ch = getClientHintsHeaders(targetUA);
 
@@ -248,19 +247,33 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
 // Messaging Interface
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'get-settings') {
-    api.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled', 'jsBlockEnabled', 'jsProtectEnabled', 'activeCategory', 'uiState'])
-      .then(res => sendResponse(res))
+    api.storage.local.get([
+      'selectedUA',
+      'uaSpoofEnabled',
+      'maxTouchPoints',
+      'touchSpoofEnabled',
+      'jsBlockEnabled',
+      'jsProtectEnabled',
+      'geoSpoofEnabled',
+      'geoPresetValue',
+      'geoCoords',
+      'activeCategory',
+      'uiState'
+    ]).then(res => sendResponse(res))
       .catch(() => sendResponse({}));
     return true;
   } else if (message.type === 'set-settings') {
     api.storage.local.set(message.data).then(() => {
-      if (message.data.selectedUA) {
+      if (message.data.selectedUA !== undefined) {
         cachedUA = message.data.selectedUA;
-        updateDeclarativeNetRequestRules(cachedUA);
+      }
+      if (message.data.uaSpoofEnabled !== undefined) {
+        uaSpoofEnabled = !!message.data.uaSpoofEnabled;
       }
       if (message.data.activeCategory) {
         activeCategory = message.data.activeCategory;
       }
+      updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
       sendResponse({ success: true });
     });

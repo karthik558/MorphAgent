@@ -8,7 +8,6 @@
     "128": "icons/icon.png"
   },
   "homepage_url": "https://github.com/karthik558/MorphAgent",
-  "manifest_version": 3,
   "permissions": [
     "storage",
     "declarativeNetRequest",
@@ -39,10 +38,23 @@
         "<all_urls>"
       ],
       "js": [
+        "js/inject.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "js/content.js"
       ],
       "run_at": "document_start",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [
@@ -51,11 +63,13 @@
         "advanced-settings.html",
         "css/advanced-settings.css",
         "js/advanced-settings.js",
-        "js/profiles.js"
+        "js/profiles.js",
+        "js/inject.js"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "manifest_version": 3
 }

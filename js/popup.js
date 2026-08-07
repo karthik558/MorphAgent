@@ -15,12 +15,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsBtn = document.getElementById('settings-btn');
   const jsBlockToggle = document.getElementById('js-block-toggle');
   const jsProtectToggle = document.getElementById('js-protect-toggle');
+  const uaSpoofToggle = document.getElementById('ua-spoof-toggle');
   const geoToggle = document.getElementById('geo-toggle');
   const geoControls = document.getElementById('geo-controls');
   const geoPreset = document.getElementById('geo-preset');
   const customGeoInputs = document.getElementById('custom-geo-inputs');
   const geoLat = document.getElementById('geo-lat');
   const geoLng = document.getElementById('geo-lng');
+
+  function updateUASpoofUIState() {
+    const enabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
+    if (customUAInput) {
+      customUAInput.disabled = !enabled;
+      customUAInput.style.opacity = enabled ? '1' : '0.5';
+    }
+    if (platformSelect) platformSelect.disabled = !enabled;
+    if (browserSelect) browserSelect.disabled = !enabled;
+    if (profileSelect) profileSelect.disabled = !enabled;
+  }
+
+  if (uaSpoofToggle) {
+    uaSpoofToggle.addEventListener('change', updateUASpoofUIState);
+  }
 
   // Location Controls Event Listeners
   if (geoToggle && geoControls) {
@@ -480,6 +496,29 @@ document.addEventListener('DOMContentLoaded', () => {
     touchControls.classList.toggle('visible', touchToggle.checked);
     jsBlockToggle.checked = !!rule.jsBlocked;
     jsProtectToggle.checked = !!rule.jsProtected;
+
+    if (uaSpoofToggle) {
+      uaSpoofToggle.checked = rule.uaSpoofEnabled !== false;
+      updateUASpoofUIState();
+    }
+
+    if (geoToggle && geoControls) {
+      geoToggle.checked = !!rule.geoSpoofEnabled;
+      geoControls.classList.toggle('visible', geoToggle.checked);
+      geoControls.style.display = geoToggle.checked ? 'block' : 'none';
+      if (geoPreset && rule.geoPresetValue) {
+        geoPreset.value = rule.geoPresetValue;
+        if (customGeoInputs) {
+          const isCustom = rule.geoPresetValue === 'custom';
+          customGeoInputs.classList.toggle('visible', isCustom);
+          customGeoInputs.style.display = isCustom ? 'flex' : 'none';
+        }
+      }
+      if (rule.geoCoords) {
+        if (geoLat) geoLat.value = rule.geoCoords.lat;
+        if (geoLng) geoLng.value = rule.geoCoords.lng;
+      }
+    }
     
     // Set apply scope to current tab since this is a tab-specific rule
     const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
@@ -536,6 +575,10 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.toggle('visible', touchToggle.checked);
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
+        if (uaSpoofToggle) {
+          uaSpoofToggle.checked = settings.uaSpoofEnabled !== false;
+          updateUASpoofUIState();
+        }
 
         if (geoToggle && geoControls) {
           geoToggle.checked = !!settings.geoSpoofEnabled;
@@ -566,6 +609,10 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.remove('visible');
         jsBlockToggle.checked = false;
         jsProtectToggle.checked = false;
+        if (uaSpoofToggle) {
+          uaSpoofToggle.checked = true;
+          updateUASpoofUIState();
+        }
         if (geoToggle) {
           geoToggle.checked = false;
           if (geoControls) {
@@ -590,15 +637,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const touchSpoofEnabled = touchToggle.checked;
     const jsBlockEnabled = jsBlockToggle.checked;
     const jsProtectEnabled = jsProtectToggle.checked;
+    const uaSpoofEnabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
     const geoSpoofEnabled = geoToggle ? geoToggle.checked : false;
     const geoPresetValue = geoPreset ? geoPreset.value : '40.7128,-74.0060';
-    const geoCoords = {
-      lat: geoLat ? (parseFloat(geoLat.value) || 40.7128) : 40.7128,
-      lng: geoLng ? (parseFloat(geoLng.value) || -74.0060) : -74.0060
-    };
+    let geoCoords = { lat: 40.7128, lng: -74.0060 };
+    if (geoPresetValue && geoPresetValue !== 'custom') {
+      const parts = geoPresetValue.split(',').map(Number);
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        geoCoords = { lat: parts[0], lng: parts[1] };
+      }
+    } else {
+      geoCoords = {
+        lat: geoLat ? (parseFloat(geoLat.value) || 40.7128) : 40.7128,
+        lng: geoLng ? (parseFloat(geoLng.value) || -74.0060) : -74.0060
+      };
+    }
     const applyScope = document.querySelector('input[name="apply-scope"]:checked').value;
 
-    if (!selectedUA) {
+    if (!selectedUA && uaSpoofEnabled) {
       showStatus('Please select a profile or enter a custom user agent', 'error');
       return;
     }
@@ -642,7 +698,9 @@ document.addEventListener('DOMContentLoaded', () => {
           touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
           jsBlocked: jsBlockEnabled,
           jsProtected: jsProtectEnabled,
+          uaSpoofEnabled,
           geoSpoofEnabled,
+          geoPresetValue,
           geoCoords,
           uiState: {
             category: currentCategory,
@@ -685,6 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
         touchSpoofEnabled,
         jsBlockEnabled,
         jsProtectEnabled,
+        uaSpoofEnabled,
         geoSpoofEnabled,
         geoPresetValue,
         geoCoords,

@@ -518,27 +518,50 @@ body.dark-mode .dark-icon { display: block; }
 .btn-tertiary:hover { background: var(--bg-hover); color: var(--text-primary); }
 .advanced-actions { display: none; }
 
-/* Status message */
+/* Status message toast */
 .status-message {
   position: absolute;
-  bottom: 52px;
+  bottom: 54px;
   left: 16px;
   right: 16px;
-  padding: 8px 16px;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   text-align: center;
   opacity: 0;
-  transform: translateY(6px);
-  transition: all 0.25s var(--ease);
-  z-index: 100;
+  transform: translateY(10px) scale(0.96);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  z-index: 999;
   pointer-events: none;
-  border: 1px solid transparent;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
-.status-message.visible { opacity: 1; transform: translateY(0); }
-.status-message.success { background: var(--success-soft); color: var(--success); border-color: var(--success); }
-.status-message.error { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+.status-message.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.status-message.success {
+  background: #1f883d;
+  color: #ffffff;
+  border: 1px solid #2da44e;
+}
+body.dark-mode .status-message.success {
+  background: #238636;
+  color: #ffffff;
+  border: 1px solid #2ea043;
+}
+.status-message.error {
+  background: #cf222e;
+  color: #ffffff;
+  border: 1px solid #a40e26;
+}
+body.dark-mode .status-message.error {
+  background: #da3633;
+  color: #ffffff;
+  border: 1px solid #f85149;
+}
 
 /* Footer */
 .footer {
