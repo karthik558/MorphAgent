@@ -202,7 +202,7 @@ function getUserAgentForUrl(url) {
 
     for (const rule of websiteRules) {
       if (matchesPattern(hostname, rule.website) || matchesPattern(url, rule.website)) {
-        return rule.userAgent;
+        return rule.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA);
       }
     }
 
@@ -332,6 +332,41 @@ function setupContextMenus() {
       });
 
       api.contextMenus.create({
+        id: 'morph-agent-separator',
+        parentId: 'morph-agent-root',
+        type: 'separator',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-spoof-location',
+        parentId: 'morph-agent-root',
+        title: 'Enable Location Spoofing for this Site',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-block-js',
+        parentId: 'morph-agent-root',
+        title: 'Block JavaScript for this Site',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-block-site',
+        parentId: 'morph-agent-root',
+        title: 'Add to Block List (Disable Spoofing)',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-separator-2',
+        parentId: 'morph-agent-root',
+        type: 'separator',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
         id: 'morph-agent-settings',
         parentId: 'morph-agent-root',
         title: 'Open Advanced Settings & Builder...',
@@ -362,6 +397,53 @@ if (api.contextMenus && api.contextMenus.onClicked) {
     } else if (info.menuItemId === 'morph-agent-settings') {
       if (api.tabs && api.tabs.create) {
         api.tabs.create({ url: api.runtime.getURL('advanced-settings.html') });
+      }
+    } else if (info.menuItemId === 'morph-agent-spoof-location' || info.menuItemId === 'morph-agent-block-js' || info.menuItemId === 'morph-agent-block-site') {
+      if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('about:')) return;
+      try {
+        const hostname = new URL(tab.url).hostname;
+
+        if (info.menuItemId === 'morph-agent-block-site') {
+          api.storage.sync.get(['blockList']).then(res => {
+            const list = res.blockList || [];
+            if (!list.find(b => b.website === hostname)) {
+              list.push({ id: Date.now(), website: hostname });
+              api.storage.sync.set({ blockList: list }).then(() => {
+                if (api.tabs && api.tabs.reload) api.tabs.reload(tab.id);
+              });
+            }
+          });
+        } else {
+          api.storage.sync.get(['websiteRules']).then(res => {
+            const rules = res.websiteRules || [];
+            let rule = rules.find(r => matchesPattern(hostname, r.website) || matchesPattern(tab.url, r.website));
+            
+            if (!rule) {
+              rule = {
+                id: Date.now(),
+                website: hostname,
+                userAgent: '',
+                touchPoints: 0,
+                jsBlocked: false,
+                jsProtected: false,
+                geoSpoofEnabled: false
+              };
+              rules.push(rule);
+            }
+
+            if (info.menuItemId === 'morph-agent-spoof-location') {
+              rule.geoSpoofEnabled = true;
+            } else if (info.menuItemId === 'morph-agent-block-js') {
+              rule.jsBlocked = true;
+            }
+
+            api.storage.sync.set({ websiteRules: rules }).then(() => {
+              if (api.tabs && api.tabs.reload) api.tabs.reload(tab.id);
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('[MorphAgent] Failed to apply site rule from context menu:', e);
       }
     }
   });
