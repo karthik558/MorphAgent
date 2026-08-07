@@ -1,3 +1,8 @@
+// Detect mobile Firefox (popup opens as full tab, not constrained popup)
+if (window.innerWidth !== 400 || window.innerHeight > 600) {
+  document.documentElement.classList.add('mobile');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const themeToggle = document.getElementById('theme-toggle');

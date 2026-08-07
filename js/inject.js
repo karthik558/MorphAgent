@@ -8,6 +8,7 @@
     const pendingCalls = [];
     const pendingWatches = [];
 
+    // Attempt to load synchronous settings
     try {
       const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
       if (raw) {
@@ -17,6 +18,141 @@
     } catch (e) {}
 
     window.__MORPH_AGENT_SETTINGS__ = cachedSettings || window.__MORPH_AGENT_SETTINGS__ || {};
+
+    function applyStealthSettings(s) {
+      if (!s) return;
+      const uaSpoofEnabled = s.uaSpoofEnabled !== false;
+      const ua = s.selectedUA || '';
+      const isMobile = ua ? /Android|iPhone|iPad|iPod|Mobile/i.test(ua) : false;
+
+      // User Agent & Navigator Platform Spoofing
+      if (uaSpoofEnabled && ua) {
+        const getPlatform = (str) => {
+          if (str.includes('iPhone')) return 'iPhone';
+          if (str.includes('iPad')) return 'iPad';
+          if (str.includes('Android')) return 'Linux armv81';
+          if (str.includes('Windows')) return 'Win32';
+          if (str.includes('Macintosh') || str.includes('Mac OS X')) return 'MacIntel';
+          if (str.includes('Linux')) return 'Linux x86_64';
+          return 'Win32';
+        };
+
+        const getVendor = (str) => {
+          if (str.includes('Safari') && !str.includes('Chrome') && !str.includes('Edg')) return 'Apple Computer, Inc.';
+          if (str.includes('Firefox')) return '';
+          return 'Google Inc.';
+        };
+
+        Object.defineProperty(Navigator.prototype, 'userAgent', { get: () => ua, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'appVersion', { get: () => ua.replace(/^Mozilla\//, ''), configurable: true });
+        Object.defineProperty(Navigator.prototype, 'platform', { get: () => getPlatform(ua), configurable: true });
+        Object.defineProperty(Navigator.prototype, 'vendor', { get: () => getVendor(ua), configurable: true });
+
+        let brandName = 'Google Chrome';
+        let majorVer = '145';
+        let fullVer = '145.0.0.0';
+        let osName = 'Windows';
+
+        if (ua.includes('Edg')) { brandName = 'Microsoft Edge'; const m = ua.match(/Edg\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+        else if (ua.includes('Chrome')) { brandName = 'Google Chrome'; const m = ua.match(/Chrome\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+        else if (ua.includes('Firefox')) { brandName = 'Mozilla Firefox'; const m = ua.match(/Firefox\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+
+        if (ua.includes('Windows')) osName = 'Windows';
+        else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
+        else if (ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
+        else if (ua.includes('Android')) osName = 'Android';
+        else if (ua.includes('Linux')) osName = 'Linux';
+
+        const brands = [
+          { brand: 'Not(A:Brand', version: '99' },
+          { brand: brandName, version: majorVer },
+          { brand: 'Chromium', version: majorVer }
+        ];
+
+        const fullVersionList = [
+          { brand: 'Not(A:Brand', version: '99.0.0.0' },
+          { brand: brandName, version: fullVer },
+          { brand: 'Chromium', version: fullVer }
+        ];
+
+        const userAgentDataObj = {
+          brands: brands,
+          mobile: isMobile,
+          platform: osName,
+          getHighEntropyValues: function(hints) {
+            return Promise.resolve({
+              brands: brands,
+              mobile: isMobile,
+              platform: osName,
+              platformVersion: '15.0.0',
+              architecture: osName === 'macOS' || osName === 'iOS' || osName === 'Android' ? 'arm' : 'x86',
+              bitness: '64',
+              model: isMobile ? (osName === 'iOS' ? 'iPhone' : 'Galaxy') : '',
+              fullVersionList: fullVersionList,
+              uaFullVersion: fullVer
+            });
+          },
+          toJSON: function() {
+            return { brands: brands, mobile: isMobile, platform: osName };
+          }
+        };
+
+        Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => userAgentDataObj, configurable: true });
+      }
+
+      // Touch Spoofing
+      if (s.touchSpoofEnabled) {
+        const maxTouchPoints = s.maxTouchPoints || (s.selectedUA && /Android|iPhone|iPad/i.test(s.selectedUA) ? 5 : 0);
+        Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
+      }
+
+      // Hardware Stealth Protections
+      if (s.jsProtectEnabled) {
+        const domainHash = Array.from(window.location.hostname).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+
+        if (!window.__MORPH_CANVAS_PROTECTED) {
+          window.__MORPH_CANVAS_PROTECTED = true;
+          const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+          HTMLCanvasElement.prototype.toDataURL = function(...args) {
+            const ctx = this.getContext('2d');
+            if (ctx) {
+              try {
+                const imgData = ctx.getImageData(0, 0, Math.min(this.width || 10, 10), Math.min(this.height || 10, 10));
+                if (imgData.data.length > 0) imgData.data[0] = (imgData.data[0] + 1) % 255;
+              } catch (e) {}
+            }
+            return originalToDataURL.apply(this, args);
+          };
+        }
+
+        if (!window.__MORPH_AUDIO_PROTECTED && window.AnalyserNode) {
+          window.__MORPH_AUDIO_PROTECTED = true;
+          const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
+          AnalyserNode.prototype.getFloatFrequencyData = function(array) {
+            origGetFloatFreq.apply(this, arguments);
+            for (let i = 0; i < array.length; i += 100) {
+              array[i] += (domainHash % 10 - 5) * 0.001;
+            }
+          };
+        }
+
+        if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection) {
+          window.__MORPH_RTC_PROTECTED = true;
+          const origCreateOffer = RTCPeerConnection.prototype.createOffer;
+          RTCPeerConnection.prototype.createOffer = function(options) {
+            return origCreateOffer.apply(this, arguments).then(offer => {
+              if (offer && offer.sdp) {
+                offer.sdp = offer.sdp.replace(/\b(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)\b/g, '0.0.0.0');
+              }
+              return offer;
+            });
+          };
+        }
+      }
+    }
+
+    // Apply cached settings synchronously before any page scripts run
+    applyStealthSettings(cachedSettings);
 
     window.addEventListener('morph-agent-update', (evt) => {
       let data = null;
@@ -40,6 +176,8 @@
           sessionStorage.setItem('morph_agent_settings', JSON.stringify(data));
           localStorage.setItem('morph_agent_settings', JSON.stringify(data));
         } catch (e) {}
+        
+        applyStealthSettings(data);
         
         while (pendingCalls.length > 0) pendingCalls.shift()();
         while (pendingWatches.length > 0) pendingWatches.shift()();
@@ -79,7 +217,6 @@
         return pos;
       }
 
-      // Stealth Proxy for getCurrentPosition
       Geolocation.prototype.getCurrentPosition = new Proxy(Geolocation.prototype.getCurrentPosition, {
         apply(target, thisArg, args) {
           const success = args[0];
@@ -115,7 +252,6 @@
       const activeWatches = new Map();
       let watchCounter = 1;
 
-      // Stealth Proxy for watchPosition
       Geolocation.prototype.watchPosition = new Proxy(Geolocation.prototype.watchPosition, {
         apply(target, thisArg, args) {
           const success = args[0];
@@ -156,7 +292,6 @@
         }
       });
 
-      // Stealth Proxy for clearWatch
       Geolocation.prototype.clearWatch = new Proxy(Geolocation.prototype.clearWatch, {
         apply(target, thisArg, args) {
           const id = args[0];
@@ -211,5 +346,18 @@
         }
       });
     }
+    
+    // Function Cloaking
+    const nativeToString = Function.prototype.toString;
+    const spoofedFuncs = new Set();
+    if (HTMLCanvasElement.prototype.toDataURL) spoofedFuncs.add(HTMLCanvasElement.prototype.toDataURL);
+    if (typeof Geolocation !== 'undefined' && Geolocation.prototype.getCurrentPosition) spoofedFuncs.add(Geolocation.prototype.getCurrentPosition);
+
+    Function.prototype.toString = function() {
+      if (spoofedFuncs.has(this)) {
+        return 'function ' + (this.name || '') + '() { [native code] }';
+      }
+      return nativeToString.apply(this, arguments);
+    };
   } catch (e) {}
 })();
