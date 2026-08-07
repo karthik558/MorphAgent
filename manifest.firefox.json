@@ -8,23 +8,23 @@
     "128": "icons/icon.png"
   },
   "homepage_url": "https://github.com/karthik558/MorphAgent",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "permissions": [
     "storage",
-    "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
+    "webRequest",
+    "webRequestBlocking",
     "tabs",
-    "scripting",
-    "contextMenus"
-  ],
-  "host_permissions": [
+    "windows",
+    "contextMenus",
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "js/background.js",
-    "type": "module"
+    "scripts": [
+      "js/background.js"
+    ],
+    "persistent": true
   },
-  "action": {
+  "browser_action": {
     "default_popup": "popup.html",
     "default_title": "MorphAgent 4.0",
     "default_icon": {
@@ -46,16 +46,18 @@
     }
   ],
   "web_accessible_resources": [
-    {
-      "resources": [
-        "advanced-settings.html",
-        "css/advanced-settings.css",
-        "js/advanced-settings.js",
-        "js/profiles.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+    "advanced-settings.html",
+    "css/advanced-settings.css",
+    "js/advanced-settings.js",
+    "js/profiles.js"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "morph-agent@karthiklal.in",
+      "strict_min_version": "68.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "113.0"
     }
-  ]
+  }
 }

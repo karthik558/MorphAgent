@@ -23,25 +23,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedProfile = null;
   let isInitialized = false;
 
+  // Browser compatibility
+  const browser = window.browser || window.chrome;
+
   // Set version from manifest
-  const manifest = chrome.runtime.getManifest();
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.0.0' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
   }
 
-  // Browser compatibility
-  const browser = window.browser || window.chrome;
-
   // Initialize browser types from profiles.js
   const availableBrowserTypes = window.browserTypes || {
-    all: { name: 'All Browsers', pattern: '' },
-    chrome: { name: 'Google Chrome', pattern: 'Chrome' },
-    firefox: { name: 'Mozilla Firefox', pattern: 'Firefox' },
-    safari: { name: 'Safari', pattern: 'Safari' },
-    edge: { name: 'Microsoft Edge', pattern: 'Edg' },
-    opera: { name: 'Opera', pattern: 'OPR' },
-    samsung: { name: 'Samsung Internet', pattern: 'SamsungBrowser' }
+    all: { name: 'All Browsers', pattern: '', platforms: ['all'] },
+    chrome: { name: 'Google Chrome', pattern: 'Chrome', patterns: ['Chrome', 'CriOS'], platforms: ['all'] },
+    firefox: { name: 'Mozilla Firefox', pattern: 'Firefox', patterns: ['Firefox', 'FxiOS'], platforms: ['all'] },
+    safari: { name: 'Safari', pattern: 'Safari', patterns: ['Safari'], platforms: ['ios', 'ipad', 'macos'] },
+    edge: { name: 'Microsoft Edge', pattern: 'Edg', patterns: ['Edg', 'EdgiOS'], platforms: ['all'] },
+    opera: { name: 'Opera', pattern: 'OPR', patterns: ['OPR', 'Opera'], platforms: ['all'] },
+    samsung: { name: 'Samsung Internet', pattern: 'SamsungBrowser', patterns: ['SamsungBrowser'], platforms: ['android'] }
   };
 
   // Use new profiles structure or fall back to legacy
@@ -95,20 +95,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Filter profiles by browser type
-  function filterProfilesByBrowser(profiles, browserType) {
+  // Filter profiles by browser type with multi-pattern support and smart fallback
+  function filterProfilesByBrowser(profilesList, browserType) {
     if (!browserType || browserType === 'all') {
-      return profiles;
+      return profilesList;
     }
     
-    const browserPattern = availableBrowserTypes[browserType].pattern;
-    if (!browserPattern) {
-      return profiles;
-    }
+    const bObj = availableBrowserTypes[browserType];
+    if (!bObj) return profilesList;
+
+    const patterns = bObj.patterns || (bObj.pattern ? [bObj.pattern] : []);
     
-    return profiles.filter(profile => 
-      profile.ua && profile.ua.includes(browserPattern)
-    );
+    const filtered = profilesList.filter(profile => {
+      if (!profile.ua) return false;
+      if (browserType === 'safari') {
+        return profile.ua.includes('Safari') && 
+               !profile.ua.includes('Chrome') && 
+               !profile.ua.includes('Edg') && 
+               !profile.ua.includes('OPR') && 
+               !profile.ua.includes('CriOS');
+      }
+      return patterns.some(pat => pat && profile.ua.includes(pat));
+    });
+
+    if (filtered.length > 0) {
+      return filtered;
+    }
+
+    // Dynamic adaptation fallback so no dropdown is ever blank!
+    return profilesList.map(profile => {
+      let newUA = profile.ua;
+      if (browserType === 'chrome') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1');
+        } else {
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36');
+        }
+      } else if (browserType === 'firefox') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'FxiOS/142.0 Mobile/15E148 Safari/604.1');
+        } else {
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Firefox/142.0');
+        }
+      } else if (browserType === 'edge') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1');
+        } else {
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36 Edg/145.0.3211.55');
+        }
+      }
+      return {
+        ...profile,
+        name: profile.name.includes('(') ? profile.name : `${profile.name} (${bObj.name || browserType})`,
+        ua: newUA
+      };
+    });
   }
 
   // Device Category Selection
@@ -210,43 +251,30 @@ document.addEventListener('DOMContentLoaded', () => {
       variants = filterProfilesByBrowser(variants, browserType);
     }
     
-    // Create a mapping for original indices
-    const originalIndices = [];
-    let filteredIndex = 0;
-    
-    variants.forEach((profile, originalIndex) => {
-      // Find the original index in the unfiltered array
-      const originalVariants = profilesData[category].platforms[platform].variants;
-      const realIndex = originalVariants.findIndex(p => p.name === profile.name && p.ua === profile.ua);
-      
+    // Cache active variants list for selectProfile lookup
+    profileSelect.activeVariants = variants;
+
+    variants.forEach((profile, index) => {
       const option = document.createElement('option');
-      option.value = filteredIndex;
+      option.value = index;
       option.textContent = profile.name;
-      option.dataset.originalIndex = realIndex;
       profileSelect.appendChild(option);
-      
-      originalIndices[filteredIndex] = realIndex;
-      filteredIndex++;
     });
-    
-    // Store the mapping for later use
-    profileSelect.dataset.originalIndices = JSON.stringify(originalIndices);
   }
 
   function selectProfile(category, platform, index, browserType = null) {
-    if (!profilesData[category] || !profilesData[category].platforms[platform]) {
-      console.warn('Invalid category/platform:', category, platform);
-      return;
+    let variants = profileSelect.activeVariants;
+
+    if (!variants || !variants[index]) {
+      if (profilesData[category] && profilesData[category].platforms[platform]) {
+        variants = profilesData[category].platforms[platform].variants;
+        if (browserType && browserType !== 'all') {
+          variants = filterProfilesByBrowser(variants, browserType);
+        }
+      }
     }
     
-    let variants = profilesData[category].platforms[platform].variants;
-    
-    // Filter by browser type if selected
-    if (browserType && browserType !== 'all') {
-      variants = filterProfilesByBrowser(variants, browserType);
-    }
-    
-    const profile = variants[index];
+    const profile = variants ? variants[index] : null;
     if (!profile) {
       console.warn('Profile not found at index:', index);
       return;

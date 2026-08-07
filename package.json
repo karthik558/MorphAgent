@@ -1,0 +1,24 @@
+{
+  "name": "morph-agent",
+  "version": "4.0.0",
+  "description": "Modern User Agent & Anti-Fingerprinting Extension for Firefox and Chromium Browsers",
+  "main": "js/background.js",
+  "scripts": {
+    "build:manifest": "node scripts/generate-manifest.js all",
+    "build:chrome": "node scripts/generate-manifest.js chrome",
+    "build:firefox": "node scripts/generate-manifest.js firefox",
+    "build": "node scripts/generate-manifest.js all"
+  },
+  "keywords": [
+    "user-agent",
+    "chrome-extension",
+    "firefox-addon",
+    "manifest-v3",
+    "anti-fingerprinting",
+    "stealth",
+    "declarativeNetRequest"
+  ],
+  "author": "Karthik Lal",
+  "license": "MIT",
+  "homepage": "https://github.com/karthik558/MorphAgent"
+}

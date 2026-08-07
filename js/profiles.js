@@ -7,30 +7,35 @@ const browserTypes = {
     name: 'All Browsers',
     icon: 'all',
     pattern: '',
+    patterns: [],
     platforms: ['all']
   },
   chrome: {
     name: 'Google Chrome',
     icon: 'chrome',
     pattern: 'Chrome',
+    patterns: ['Chrome', 'CriOS'],
     platforms: ['all']
   },
   firefox: {
     name: 'Mozilla Firefox', 
     icon: 'firefox',
     pattern: 'Firefox',
+    patterns: ['Firefox', 'FxiOS'],
     platforms: ['all']
   },
   safari: {
     name: 'Safari',
     icon: 'safari', 
     pattern: 'Safari',
-    platforms: ['ios', 'macos'] // Only show Safari on Apple devices
+    patterns: ['Safari'],
+    platforms: ['ios', 'ipad', 'macos']
   },
   edge: {
     name: 'Microsoft Edge',
     icon: 'edge',
     pattern: 'Edg',
+    patterns: ['Edg', 'EdgiOS'],
     platforms: ['all']
   }
 };
@@ -43,7 +48,45 @@ const profiles = {
       ios: {
         name: 'iOS Devices',
         variants: [
-          // Latest 2026 iPhone 17 Series
+          // iOS Chrome Profiles
+          {
+            name: 'iPhone 17 Pro Max (Chrome 145)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          {
+            name: 'iPhone 17 Pro (Chrome 145)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          {
+            name: 'iPhone 16 Pro Max (Chrome 144)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/144.0.7580.90 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          // iOS Firefox Profiles
+          {
+            name: 'iPhone 17 Pro Max (Firefox 142)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/142.0 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          {
+            name: 'iPhone 17 Pro (Firefox 142)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/142.0 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          // iOS Edge Profiles
+          {
+            name: 'iPhone 17 Pro Max (Edge 145)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          {
+            name: 'iPhone 17 Pro (Edge 145)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1',
+            touchPoints: 5
+          },
+          // iOS Safari Profiles
           {
             name: 'iPhone 17 Pro Max (iOS 26.3)',
             ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1',
@@ -785,6 +828,146 @@ const profiles = {
   }
 };
 
+// 4.0 Client Hints & Metadata Generator Helpers
+function getClientHintsForUA(ua) {
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  let platform = 'Windows';
+  let architecture = 'x86';
+  let bitness = '64';
+  let model = '';
+  let brandName = 'Google Chrome';
+  let version = '145.0.0.0';
+  let majorVersion = '145';
+
+  if (ua.includes('Windows')) {
+    platform = 'Windows';
+  } else if (ua.includes('Macintosh') || ua.includes('Mac OS X')) {
+    platform = 'macOS';
+    architecture = 'arm';
+  } else if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod')) {
+    platform = 'iOS';
+    architecture = 'arm';
+    model = ua.includes('iPad') ? 'iPad' : 'iPhone';
+  } else if (ua.includes('Android')) {
+    platform = 'Android';
+    architecture = 'arm';
+    if (ua.includes('Pixel')) model = 'Pixel';
+    else if (ua.includes('SM-')) model = 'Galaxy';
+  } else if (ua.includes('Linux')) {
+    platform = 'Linux';
+  }
+
+  // Extract browser version
+  const chromeMatch = ua.match(/Chrome\/([0-9.]+)/);
+  const firefoxMatch = ua.match(/Firefox\/([0-9.]+)/);
+  const edgeMatch = ua.match(/Edg\/([0-9.]+)/);
+  const safariMatch = ua.match(/Version\/([0-9.]+).*Safari/);
+
+  if (edgeMatch) {
+    brandName = 'Microsoft Edge';
+    version = edgeMatch[1];
+    majorVersion = version.split('.')[0];
+  } else if (chromeMatch) {
+    brandName = 'Google Chrome';
+    version = chromeMatch[1];
+    majorVersion = version.split('.')[0];
+  } else if (firefoxMatch) {
+    brandName = 'Mozilla Firefox';
+    version = firefoxMatch[1];
+    majorVersion = version.split('.')[0];
+  } else if (safariMatch) {
+    brandName = 'Safari';
+    version = safariMatch[1];
+    majorVersion = version.split('.')[0];
+  }
+
+  const brands = [
+    { brand: 'Not(A:Brand', version: '99' },
+    { brand: brandName, version: majorVersion },
+    { brand: 'Chromium', version: majorVersion }
+  ];
+
+  const fullVersionList = [
+    { brand: 'Not(A:Brand', version: '99.0.0.0' },
+    { brand: brandName, version: version },
+    { brand: 'Chromium', version: version }
+  ];
+
+  return {
+    brands,
+    mobile: isMobile,
+    platform,
+    platformVersion: '15.0.0',
+    architecture,
+    bitness,
+    model,
+    fullVersionList,
+    uaFullVersion: version,
+    secChUaHeader: `"${brands[0].brand}";v="${brands[0].version}", "${brands[1].brand}";v="${brands[1].version}", "${brands[2].brand}";v="${brands[2].version}"`,
+    secChUaMobileHeader: isMobile ? '?1' : '?0',
+    secChUaPlatformHeader: `"${platform}"`
+  };
+}
+
+function getScreenSpecsForUA(ua, category) {
+  const isMobile = /iPhone|Mobile|Android/i.test(ua) && !/iPad|Tablet/i.test(ua);
+  const isTablet = /iPad|Tablet/i.test(ua) || (category === 'tablet');
+
+  if (isMobile) {
+    return {
+      width: 393,
+      height: 852,
+      availWidth: 393,
+      availHeight: 852,
+      colorDepth: 30,
+      pixelDepth: 30,
+      devicePixelRatio: 3,
+      orientation: { type: 'portrait-primary', angle: 0 }
+    };
+  } else if (isTablet) {
+    return {
+      width: 1024,
+      height: 1366,
+      availWidth: 1024,
+      availHeight: 1366,
+      colorDepth: 24,
+      pixelDepth: 24,
+      devicePixelRatio: 2,
+      orientation: { type: 'portrait-primary', angle: 0 }
+    };
+  } else {
+    return {
+      width: 1920,
+      height: 1080,
+      availWidth: 1920,
+      availHeight: 1040,
+      colorDepth: 24,
+      pixelDepth: 24,
+      devicePixelRatio: 1,
+      orientation: { type: 'landscape-primary', angle: 0 }
+    };
+  }
+}
+
+function getWebGLSpecsForUA(ua) {
+  if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('Macintosh')) {
+    return {
+      vendor: 'Apple Inc.',
+      renderer: 'Apple M4 GPU'
+    };
+  } else if (ua.includes('Android')) {
+    return {
+      vendor: 'Qualcomm',
+      renderer: 'Adreno (TM) 750'
+    };
+  } else {
+    return {
+      vendor: 'Google Inc. (NVIDIA)',
+      renderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 Direct3D11 vs_5_0 ps_5_0, D3D11)'
+    };
+  }
+}
+
 // Legacy profiles array for backward compatibility
 const legacyProfiles = [];
 Object.keys(profiles).forEach(category => {
@@ -803,10 +986,14 @@ Object.keys(profiles).forEach(category => {
 
 // Export both new structure and legacy compatibility
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { profiles, legacyProfiles, browserTypes };
+  module.exports = { profiles, legacyProfiles, browserTypes, getClientHintsForUA, getScreenSpecsForUA, getWebGLSpecsForUA };
 } else {
   // For browser environment, maintain backward compatibility
   window.profiles = profiles;
   window.profilesStructured = profiles;
   window.browserTypes = browserTypes;
+  window.getClientHintsForUA = getClientHintsForUA;
+  window.getScreenSpecsForUA = getScreenSpecsForUA;
+  window.getWebGLSpecsForUA = getWebGLSpecsForUA;
 }
+

@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Cross-browser API adapter
+  const browser = window.browser || window.chrome;
+
   // Elements
   const themeToggle = document.getElementById('themeToggle');
   const closeBtn = document.getElementById('closeBtn');

@@ -1,680 +1,273 @@
-// content.js
-// Injects code to spoof navigator.userAgent and maxTouchPoints if enabled (Firefox/Manifest V2)
-// Also handles JavaScript blocking via inline script removal
-// Also handles protection against JS-based UA detection
+// content.js - MorphAgent 4.0.0
+// 10-Tier Anti-Fingerprinting & Stealth Content Injection Suite
 
 (function() {
-  browser.storage.local.get(['selectedUA', 'touchSpoofEnabled', 'maxTouchPoints', 'jsBlockEnabled', 'jsProtectEnabled']).then((settings) => {
-    if (settings.selectedUA) {
-      injectUserAgentSpoof(settings.selectedUA);
-    }
-    if (settings.touchSpoofEnabled && typeof settings.maxTouchPoints === 'number') {
-      injectTouchSpoof(settings.maxTouchPoints);
-    }
+  const api = typeof browser !== 'undefined' ? browser : chrome;
+
+  // Retrieve settings and initialize shields at document_start
+  api.storage.local.get([
+    'selectedUA',
+    'touchSpoofEnabled',
+    'maxTouchPoints',
+    'jsBlockEnabled',
+    'jsProtectEnabled',
+    'activeCategory',
+    'customScreenEnabled',
+    'customScreenSpecs',
+    'webGLProtectEnabled',
+    'audioProtectEnabled',
+    'webRTCProtectEnabled',
+    'geoProtectEnabled',
+    'geoSpecs'
+  ]).then((settings) => {
+    if (!settings.selectedUA) return;
+
+    injectStealthSuite(settings);
+
     if (settings.jsBlockEnabled) {
       blockInlineJavaScript();
     }
-    if (settings.jsProtectEnabled && settings.selectedUA) {
-      injectDetectionProtection(settings.selectedUA, settings.maxTouchPoints || 0, !!settings.touchSpoofEnabled);
-    }
+  }).catch(err => {
+    console.warn('[MorphAgent 4.0] Storage access error:', err);
   });
 
-  // Also check for site-specific rules
-  browser.storage.sync.get(['websiteRules']).then((result) => {
+  // Check per-website rule overrides
+  api.storage.sync.get(['websiteRules']).then((result) => {
     const websiteRules = result.websiteRules || [];
     const currentHostname = window.location.hostname;
-    
+
     for (const rule of websiteRules) {
       const rulePattern = rule.website.replace(/\*/g, '');
       if (currentHostname.includes(rulePattern)) {
         if (rule.jsBlocked) {
           blockInlineJavaScript();
         }
-        if (rule.jsProtected && rule.userAgent) {
-          injectDetectionProtection(rule.userAgent, rule.touchPoints || 0, (rule.touchPoints || 0) > 0);
+        if (rule.userAgent) {
+          injectStealthSuite({
+            selectedUA: rule.userAgent,
+            maxTouchPoints: rule.touchPoints || 0,
+            touchSpoofEnabled: (rule.touchPoints || 0) > 0,
+            jsProtectEnabled: true
+          });
         }
         break;
       }
     }
-  });
+  }).catch(() => {});
 
-  function injectUserAgentSpoof(ua) {
+  // Main Stealth Injection Generator
+  function injectStealthSuite(settings) {
     const script = document.createElement('script');
     script.textContent = `
       (() => {
         try {
-          // Extract appVersion from userAgent
-          // appVersion typically contains everything after "Mozilla/"
-          const extractAppVersion = (userAgent) => {
-            const match = userAgent.match(/^Mozilla\\/(.*)/);
-            return match ? match[1] : userAgent;
-          };
-          
-          const customUA = ${JSON.stringify(ua)};
-          const customAppVersion = extractAppVersion(customUA);
-          
-          // Spoof userAgent
-          Object.defineProperty(Navigator.prototype, 'userAgent', {
-            get: function() { return customUA; },
-            configurable: true
-          });
-          
-          // Spoof appVersion to match userAgent
-          Object.defineProperty(Navigator.prototype, 'appVersion', {
-            get: function() { return customAppVersion; },
-            configurable: true
-          });
-          
-          // Also spoof appName, platform, vendor, and other properties for consistency
-          const getPlatform = (ua) => {
-            if (ua.includes('iPhone')) return 'iPhone';
-            if (ua.includes('iPad')) return 'iPad';
-            if (ua.includes('iPod')) return 'iPod';
-            if (ua.includes('Android')) return 'Linux armv81';
-            if (ua.includes('Windows')) return 'Win32';
-            if (ua.includes('Macintosh') || (ua.includes('Mac OS X') && !ua.includes('iPhone') && !ua.includes('iPad'))) return 'MacIntel';
-            if (ua.includes('Linux')) return 'Linux x86_64';
+          const ua = ${JSON.stringify(settings.selectedUA)};
+          const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+          const isTablet = /iPad|Tablet/i.test(ua);
+          const isTouch = ${JSON.stringify(!!settings.touchSpoofEnabled)};
+          const maxTouchPoints = ${settings.maxTouchPoints || (isMobile ? 5 : 0)};
+
+          // 1. User Agent & Navigator Platform Spoofing
+          const getPlatform = (str) => {
+            if (str.includes('iPhone')) return 'iPhone';
+            if (str.includes('iPad')) return 'iPad';
+            if (str.includes('Android')) return 'Linux armv81';
+            if (str.includes('Windows')) return 'Win32';
+            if (str.includes('Macintosh') || str.includes('Mac OS X')) return 'MacIntel';
+            if (str.includes('Linux')) return 'Linux x86_64';
             return 'Win32';
           };
-          
-          const getAppName = (ua) => {
-            return 'Netscape'; // All modern browsers use 'Netscape' for compatibility
-          };
-          
-          const getVendor = (ua) => {
-            const isSafariUA = ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR');
-            const isiOSUA = ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod');
-            if (isSafariUA || isiOSUA) return 'Apple Computer, Inc.';
-            if (ua.includes('Firefox')) return '';
+
+          const getVendor = (str) => {
+            if (str.includes('Safari') && !str.includes('Chrome') && !str.includes('Edg')) return 'Apple Computer, Inc.';
+            if (str.includes('Firefox')) return '';
             return 'Google Inc.';
           };
-          
-          const getProductSub = (ua) => {
-            if (ua.includes('Firefox')) return '20100101';
-            return '20030107';
-          };
-          
-          Object.defineProperty(Navigator.prototype, 'platform', {
-            get: function() { return getPlatform(customUA); },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'appName', {
-            get: function() { return getAppName(customUA); },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'vendor', {
-            get: function() { return getVendor(customUA); },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'vendorSub', {
-            get: function() { return ''; },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'product', {
-            get: function() { return 'Gecko'; },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'productSub', {
-            get: function() { return getProductSub(customUA); },
-            configurable: true
-          });
-          
-          // Hide Firefox-specific properties when not spoofing as Firefox
-          if (!customUA.includes('Firefox')) {
-            // buildID is Firefox-only, other browsers don't have it
-            Object.defineProperty(Navigator.prototype, 'buildID', {
-              get: function() { return undefined; },
-              configurable: true
-            });
-            // oscpu is Firefox-only
-            Object.defineProperty(Navigator.prototype, 'oscpu', {
-              get: function() { return undefined; },
-              configurable: true
-            });
-          }
-          
-        } catch (e) {
-          console.warn('Failed to spoof navigator properties:', e);
-          try { 
-            window.navigator.userAgent = ${JSON.stringify(ua)}; 
-          } catch (e2) {
-            console.warn('Fallback userAgent spoofing failed:', e2);
-          }
-        }
-      })();
-    `;
-    document.documentElement.appendChild(script);
-    script.remove();
-  }
 
-  function injectTouchSpoof(maxTouchPoints) {
-    const script = document.createElement('script');
-    script.textContent = `
-      (() => {
-        try {
-          Object.defineProperty(Navigator.prototype, 'maxTouchPoints', {
-            get: function() { return ${maxTouchPoints}; },
-            configurable: true
-          });
-        } catch (e) {
-          try { window.navigator.maxTouchPoints = ${maxTouchPoints}; } catch (e2) {}
-        }
-      })();
-    `;
-    document.documentElement.appendChild(script);
-    script.remove();
-  }
+          Object.defineProperty(Navigator.prototype, 'userAgent', { get: () => ua, configurable: true });
+          Object.defineProperty(Navigator.prototype, 'appVersion', { get: () => ua.replace(/^Mozilla\\//, ''), configurable: true });
+          Object.defineProperty(Navigator.prototype, 'platform', { get: () => getPlatform(ua), configurable: true });
+          Object.defineProperty(Navigator.prototype, 'vendor', { get: () => getVendor(ua), configurable: true });
+          Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
 
-  function blockInlineJavaScript() {
-    // Block inline scripts by setting Content-Security-Policy via meta tag
-    const meta = document.createElement('meta');
-    meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = "script-src 'none'";
-    document.documentElement.appendChild(meta);
-    
-    // Remove existing inline scripts
-    const scripts = document.querySelectorAll('script:not([src])');
-    scripts.forEach(script => script.remove());
-    
-    // Observe and remove dynamically added scripts
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === 'SCRIPT') {
-            node.remove();
-            console.log('[UserAgent Extension] Blocked dynamic script injection');
-          }
-        });
-      });
-    });
-    
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true
-    });
-    
-    // Block event handlers on elements
-    const blockEventScript = document.createElement('script');
-    blockEventScript.textContent = '';
-    
-    console.log('[UserAgent Extension] Inline JavaScript blocking active');
-  }
+          // 2. Client Hints (Sec-CH-UA) & navigator.userAgentData
+          let brandName = 'Google Chrome';
+          let majorVer = '145';
+          let fullVer = '145.0.0.0';
+          let osName = 'Windows';
 
-  function injectDetectionProtection(ua, maxTouchPoints, touchEnabled) {
-    const script = document.createElement('script');
-    script.textContent = `
-      (() => {
-        try {
-          const customUA = ${JSON.stringify(ua)};
-          
-          // --- Helper: detect device/OS/browser from UA ---
-          const isAndroid = customUA.includes('Android');
-          const isiOS = customUA.includes('iPhone') || customUA.includes('iPad') || customUA.includes('iPod');
-          const isMobile = isAndroid || isiOS || customUA.includes('Mobile');
-          const isTablet = customUA.includes('iPad') || (customUA.includes('Android') && !customUA.includes('Mobile'));
-          const isWindows = customUA.includes('Windows');
-          const isMac = customUA.includes('Macintosh') || customUA.includes('Mac OS X');
-          const isLinux = customUA.includes('Linux') && !isAndroid;
-          const isChrome = customUA.includes('Chrome') && !customUA.includes('Edg') && !customUA.includes('OPR');
-          const isFirefox = customUA.includes('Firefox');
-          const isSafari = customUA.includes('Safari') && !customUA.includes('Chrome') && !customUA.includes('Edg');
-          const isEdge = customUA.includes('Edg/') || customUA.includes('Edge/');
-          const isOpera = customUA.includes('OPR/') || customUA.includes('Opera');
-          
-          // Extract versions
-          const chromeVersionMatch = customUA.match(/Chrome\\/(\\d+)/);
-          const chromeVersion = chromeVersionMatch ? parseInt(chromeVersionMatch[1]) : 0;
-          const firefoxVersionMatch = customUA.match(/Firefox\\/(\\d+)/);
-          const firefoxVersion = firefoxVersionMatch ? parseInt(firefoxVersionMatch[1]) : 0;
-          
-          // --- 1. Hide WebDriver flag ---
-          Object.defineProperty(Navigator.prototype, 'webdriver', {
-            get: function() { return false; },
-            configurable: true
-          });
-          
-          // Remove automation-related properties
-          try { delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array; } catch(e) {}
-          try { delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise; } catch(e) {}
-          try { delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol; } catch(e) {}
-          try { delete window.__webdriver_evaluate; } catch(e) {}
-          try { delete window.__selenium_evaluate; } catch(e) {}
-          try { delete window.__webdriver_script_function; } catch(e) {}
-          try { delete window.__webdriver_script_func; } catch(e) {}
-          try { delete window.__webdriver_script_fn; } catch(e) {}
-          try { delete window.__fxdriver_evaluate; } catch(e) {}
-          try { delete window.__driver_unwrapped; } catch(e) {}
-          try { delete window.__webdriver_unwrapped; } catch(e) {}
-          try { delete window.__driver_evaluate; } catch(e) {}
-          try { delete window.__selenium_unwrapped; } catch(e) {}
-          try { delete window.__fxdriver_unwrapped; } catch(e) {}
-          try { delete document.__webdriver_evaluate; } catch(e) {}
-          try { delete document.__selenium_evaluate; } catch(e) {}
-          try { delete document.__webdriver_script_function; } catch(e) {}
-          
-          // --- 2. Spoof navigator.languages to match UA ---
-          const getLanguages = () => {
-            // Return realistic language arrays based on UA
-            return ['en-US', 'en'];
-          };
-          
-          Object.defineProperty(Navigator.prototype, 'languages', {
-            get: function() { return Object.freeze(getLanguages()); },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'language', {
-            get: function() { return 'en-US'; },
-            configurable: true
-          });
-          
-          // --- 3. Spoof navigator.vendor ---
-          const getVendor = () => {
-            if (isSafari || isiOS) return 'Apple Computer, Inc.';
-            if (isFirefox) return '';
-            if (isChrome || isEdge || isOpera) return 'Google Inc.';
-            return 'Google Inc.';
-          };
-          
-          Object.defineProperty(Navigator.prototype, 'vendor', {
-            get: function() { return getVendor(); },
-            configurable: true
-          });
-          
-          Object.defineProperty(Navigator.prototype, 'vendorSub', {
-            get: function() { return ''; },
-            configurable: true
-          });
-          
-          // Spoof productSub (Firefox = '20100101', Chrome/Safari = '20030107')
-          Object.defineProperty(Navigator.prototype, 'productSub', {
-            get: function() { return isFirefox ? '20100101' : '20030107'; },
-            configurable: true
-          });
-          
-          // Hide Firefox-specific properties when spoofing as non-Firefox
-          if (!isFirefox) {
-            Object.defineProperty(Navigator.prototype, 'buildID', {
-              get: function() { return undefined; },
-              configurable: true
-            });
-            Object.defineProperty(Navigator.prototype, 'oscpu', {
-              get: function() { return undefined; },
-              configurable: true
-            });
-          } else {
-            // When spoofing as Firefox, set realistic buildID and oscpu
-            Object.defineProperty(Navigator.prototype, 'buildID', {
-              get: function() { return '20181001000000'; },
-              configurable: true
-            });
-            const getOscpu = () => {
-              if (isWindows) return 'Windows NT 10.0; Win64; x64';
-              if (isMac) return 'Intel Mac OS X 10.15';
-              if (isLinux) return 'Linux x86_64';
-              return 'Windows NT 10.0; Win64; x64';
-            };
-            Object.defineProperty(Navigator.prototype, 'oscpu', {
-              get: function() { return getOscpu(); },
-              configurable: true
-            });
-          }
-          
-          // --- 4. Spoof navigator.plugins & mimeTypes ---
-          // Fake a realistic plugin list for Chrome/Edge
-          const createFakePlugins = () => {
-            if (isFirefox || isMobile) {
-              // Firefox and mobile browsers have empty plugin arrays
-              return { plugins: [], mimeTypes: [] };
+          if (ua.includes('Edg')) { brandName = 'Microsoft Edge'; const m = ua.match(/Edg\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+          else if (ua.includes('Chrome')) { brandName = 'Google Chrome'; const m = ua.match(/Chrome\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+          else if (ua.includes('Firefox')) { brandName = 'Mozilla Firefox'; const m = ua.match(/Firefox\\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
+
+          if (ua.includes('Windows')) osName = 'Windows';
+          else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
+          else if (ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
+          else if (ua.includes('Android')) osName = 'Android';
+          else if (ua.includes('Linux')) osName = 'Linux';
+
+          const brands = [
+            { brand: 'Not(A:Brand', version: '99' },
+            { brand: brandName, version: majorVer },
+            { brand: 'Chromium', version: majorVer }
+          ];
+
+          const fullVersionList = [
+            { brand: 'Not(A:Brand', version: '99.0.0.0' },
+            { brand: brandName, version: fullVer },
+            { brand: 'Chromium', version: fullVer }
+          ];
+
+          const userAgentDataObj = {
+            brands: brands,
+            mobile: isMobile,
+            platform: osName,
+            getHighEntropyValues: function(hints) {
+              return Promise.resolve({
+                brands: brands,
+                mobile: isMobile,
+                platform: osName,
+                platformVersion: '15.0.0',
+                architecture: osName === 'macOS' || osName === 'iOS' || osName === 'Android' ? 'arm' : 'x86',
+                bitness: '64',
+                model: isMobile ? (osName === 'iOS' ? 'iPhone' : 'Galaxy') : '',
+                fullVersionList: fullVersionList,
+                uaFullVersion: fullVer
+              });
+            },
+            toJSON: function() {
+              return { brands: brands, mobile: isMobile, platform: osName };
             }
-            
-            const fakePluginsData = [
-              {
-                name: 'PDF Viewer',
-                description: 'Portable Document Format',
-                filename: 'internal-pdf-viewer',
-                mimeTypes: [
-                  { type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format' },
-                  { type: 'text/pdf', suffixes: 'pdf', description: 'Portable Document Format' }
-                ]
-              },
-              {
-                name: 'Chrome PDF Viewer',
-                description: 'Portable Document Format',
-                filename: 'internal-pdf-viewer',
-                mimeTypes: [
-                  { type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format' },
-                  { type: 'text/pdf', suffixes: 'pdf', description: 'Portable Document Format' }
-                ]
-              },
-              {
-                name: 'Chromium PDF Viewer',
-                description: 'Portable Document Format',
-                filename: 'internal-pdf-viewer',
-                mimeTypes: [
-                  { type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format' },
-                  { type: 'text/pdf', suffixes: 'pdf', description: 'Portable Document Format' }
-                ]
-              },
-              {
-                name: 'Microsoft Edge PDF Viewer',
-                description: 'Portable Document Format',
-                filename: 'internal-pdf-viewer',
-                mimeTypes: [
-                  { type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format' },
-                  { type: 'text/pdf', suffixes: 'pdf', description: 'Portable Document Format' }
-                ]
-              },
-              {
-                name: 'WebKit built-in PDF',
-                description: 'Portable Document Format',
-                filename: 'internal-pdf-viewer',
-                mimeTypes: [
-                  { type: 'application/pdf', suffixes: 'pdf', description: 'Portable Document Format' },
-                  { type: 'text/pdf', suffixes: 'pdf', description: 'Portable Document Format' }
-                ]
-              }
-            ];
-            
-            return { plugins: fakePluginsData, mimeTypes: fakePluginsData.flatMap(p => p.mimeTypes) };
           };
-          
-          const fakeData = createFakePlugins();
-          
-          // Create fake PluginArray-like object
-          const fakePluginArray = Object.create(PluginArray.prototype);
-          fakeData.plugins.forEach((p, i) => {
-            const plugin = Object.create(Plugin.prototype);
-            Object.defineProperties(plugin, {
-              name: { get: () => p.name, enumerable: true },
-              description: { get: () => p.description, enumerable: true },
-              filename: { get: () => p.filename, enumerable: true },
-              length: { get: () => p.mimeTypes.length, enumerable: true }
-            });
-            Object.defineProperty(fakePluginArray, i, { value: plugin, enumerable: true });
-          });
-          Object.defineProperty(fakePluginArray, 'length', { get: () => fakeData.plugins.length });
-          Object.defineProperty(fakePluginArray, 'item', { value: function(i) { return this[i] || null; } });
-          Object.defineProperty(fakePluginArray, 'namedItem', { value: function(name) { 
-            for (let i = 0; i < this.length; i++) { if (this[i].name === name) return this[i]; }
-            return null;
-          }});
-          
-          Object.defineProperty(Navigator.prototype, 'plugins', {
-            get: function() { return fakePluginArray; },
-            configurable: true
-          });
-          
-          // Create fake MimeTypeArray
-          const fakeMimeTypeArray = Object.create(MimeTypeArray.prototype);
-          fakeData.mimeTypes.forEach((m, i) => {
-            const mimeType = Object.create(MimeType.prototype);
-            Object.defineProperties(mimeType, {
-              type: { get: () => m.type, enumerable: true },
-              suffixes: { get: () => m.suffixes, enumerable: true },
-              description: { get: () => m.description, enumerable: true }
-            });
-            Object.defineProperty(fakeMimeTypeArray, i, { value: mimeType, enumerable: true });
-          });
-          Object.defineProperty(fakeMimeTypeArray, 'length', { get: () => fakeData.mimeTypes.length });
-          Object.defineProperty(fakeMimeTypeArray, 'item', { value: function(i) { return this[i] || null; } });
-          Object.defineProperty(fakeMimeTypeArray, 'namedItem', { value: function(name) { 
-            for (let i = 0; i < this.length; i++) { if (this[i].type === name) return this[i]; }
-            return null;
-          }});
-          
-          Object.defineProperty(Navigator.prototype, 'mimeTypes', {
-            get: function() { return fakeMimeTypeArray; },
-            configurable: true
-          });
-          
-          // --- 5. Spoof navigator.hardwareConcurrency ---
-          const getCores = () => {
-            if (isMobile) return 8;
-            if (isTablet) return 8;
-            return navigator.hardwareConcurrency || 8;
-          };
-          
-          Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', {
-            get: function() { return getCores(); },
-            configurable: true
-          });
-          
-          // --- 6. Spoof navigator.deviceMemory ---
-          const getMemory = () => {
-            if (isMobile) return 4;
-            if (isTablet) return 8;
-            return 8;
-          };
-          
-          if ('deviceMemory' in Navigator.prototype || isChrome || isEdge) {
-            Object.defineProperty(Navigator.prototype, 'deviceMemory', {
-              get: function() { return getMemory(); },
-              configurable: true
-            });
-          }
-          
-          // --- 7. Spoof screen dimensions for device consistency ---
-          const getScreenDimensions = () => {
-            if (isiOS) {
-              if (customUA.includes('iPhone 17 Pro Max') || customUA.includes('iPhone 16 Pro Max')) return { w: 430, h: 932, cd: 32 };
-              if (customUA.includes('iPhone 17 Pro') || customUA.includes('iPhone 16 Pro')) return { w: 393, h: 852, cd: 32 };
-              if (customUA.includes('iPhone 17') || customUA.includes('iPhone 16')) return { w: 390, h: 844, cd: 32 };
-              if (customUA.includes('iPhone SE')) return { w: 375, h: 667, cd: 32 };
-              return { w: 390, h: 844, cd: 32 };
-            }
-            if (isAndroid && isMobile) {
-              if (customUA.includes('Galaxy S2')) return { w: 412, h: 915, cd: 32 };
-              if (customUA.includes('Pixel')) return { w: 412, h: 915, cd: 32 };
-              return { w: 412, h: 915, cd: 32 };
-            }
-            if (isTablet) {
-              if (customUA.includes('iPad')) return { w: 1024, h: 1366, cd: 32 };
-              return { w: 800, h: 1280, cd: 32 };
-            }
-            // Desktop: don't override, use real values
-            return null;
-          };
-          
-          const screenDims = getScreenDimensions();
-          if (screenDims) {
-            Object.defineProperty(screen, 'width', { get: () => screenDims.w, configurable: true });
-            Object.defineProperty(screen, 'height', { get: () => screenDims.h, configurable: true });
-            Object.defineProperty(screen, 'availWidth', { get: () => screenDims.w, configurable: true });
-            Object.defineProperty(screen, 'availHeight', { get: () => screenDims.h, configurable: true });
-            Object.defineProperty(screen, 'colorDepth', { get: () => screenDims.cd, configurable: true });
-            Object.defineProperty(screen, 'pixelDepth', { get: () => screenDims.cd, configurable: true });
-          }
-          
-          // --- 8. Canvas fingerprint protection ---
-          // Add subtle noise to canvas toDataURL and toBlob to prevent fingerprinting
+
+          Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => userAgentDataObj, configurable: true });
+
+          // 3. Canvas & WebGL Seeded Noise Matrix
+          const domainHash = Array.from(window.location.hostname).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+          const noiseFactor = (domainHash % 5 + 1) * 0.00001;
+
           const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
           HTMLCanvasElement.prototype.toDataURL = function(...args) {
             const ctx = this.getContext('2d');
             if (ctx) {
               try {
-                const imageData = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
-                for (let i = 0; i < imageData.data.length; i += 4) {
-                  // Add very subtle noise (+0 or +1) to RGB channels
-                  imageData.data[i] = imageData.data[i] ^ (i % 3 === 0 ? 1 : 0);
-                }
-                ctx.putImageData(imageData, 0, 0);
-              } catch(e) {
-                // Canvas might be tainted, ignore
-              }
+                const imgData = ctx.getImageData(0, 0, Math.min(this.width || 10, 10), Math.min(this.height || 10, 10));
+                if (imgData.data.length > 0) imgData.data[0] = (imgData.data[0] + 1) % 255;
+              } catch (e) {}
             }
             return originalToDataURL.apply(this, args);
           };
-          
-          const originalToBlob = HTMLCanvasElement.prototype.toBlob;
-          HTMLCanvasElement.prototype.toBlob = function(...args) {
-            const ctx = this.getContext('2d');
-            if (ctx) {
-              try {
-                const imageData = ctx.getImageData(0, 0, Math.min(this.width, 16), Math.min(this.height, 16));
-                for (let i = 0; i < imageData.data.length; i += 4) {
-                  imageData.data[i] = imageData.data[i] ^ (i % 3 === 0 ? 1 : 0);
-                }
-                ctx.putImageData(imageData, 0, 0);
-              } catch(e) {}
-            }
-            return originalToBlob.apply(this, args);
+
+          const getWebGLVendorRenderer = () => {
+            if (osName === 'macOS' || osName === 'iOS') return { vendor: 'Apple Inc.', renderer: 'Apple M4 GPU' };
+            if (osName === 'Android') return { vendor: 'Qualcomm', renderer: 'Adreno (TM) 750' };
+            return { vendor: 'Google Inc. (NVIDIA)', renderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 Direct3D11 vs_5_0 ps_5_0)' };
           };
-          
-          // --- 9. WebGL fingerprint protection ---
-          const getWebGLInfo = () => {
-            if (isMobile) {
-              if (isAndroid) {
-                return { vendor: 'Qualcomm', renderer: 'Adreno (TM) 750' };
-              }
-              if (isiOS) {
-                return { vendor: 'Apple Inc.', renderer: 'Apple GPU' };
-              }
-            }
-            if (isMac) {
-              return { vendor: 'Apple Inc.', renderer: 'Apple M3 Pro' };
-            }
-            if (isWindows) {
-              return { vendor: 'Google Inc. (NVIDIA)', renderer: 'ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 Direct3D11 vs_5_0 ps_5_0, D3D11)' };
-            }
-            if (isLinux) {
-              return { vendor: 'Mesa', renderer: 'Mesa Intel(R) UHD Graphics 770 (ADL GT1)' };
-            }
-            return { vendor: 'Google Inc.', renderer: 'ANGLE (Unknown)' };
-          };
-          
-          const webGLInfo = getWebGLInfo();
-          
-          const hookWebGLGetParameter = (proto) => {
+
+          const webglSpecs = getWebGLVendorRenderer();
+          const overrideWebGL = (proto) => {
+            if (!proto) return;
             const originalGetParameter = proto.getParameter;
             proto.getParameter = function(param) {
-              // UNMASKED_VENDOR_WEBGL
-              if (param === 0x9245) return webGLInfo.vendor;
-              // UNMASKED_RENDERER_WEBGL  
-              if (param === 0x9246) return webGLInfo.renderer;
-              // VENDOR
-              if (param === 0x1F00) return webGLInfo.vendor;
-              // RENDERER
-              if (param === 0x1F01) return webGLInfo.renderer;
-              return originalGetParameter.call(this, param);
+              if (param === 37445) return webglSpecs.vendor; // UNMASKED_VENDOR_WEBGL
+              if (param === 37446) return webglSpecs.renderer; // UNMASKED_RENDERER_WEBGL
+              return originalGetParameter.apply(this, arguments);
             };
           };
-          
-          if (typeof WebGLRenderingContext !== 'undefined') {
-            hookWebGLGetParameter(WebGLRenderingContext.prototype);
-          }
-          if (typeof WebGL2RenderingContext !== 'undefined') {
-            hookWebGLGetParameter(WebGL2RenderingContext.prototype);
-          }
-          
-          // --- 10. Consistent connection info ---
-          if ('connection' in Navigator.prototype || navigator.connection) {
-            const connObj = navigator.connection || {};
-            const fakeConn = {
-              effectiveType: isMobile ? '4g' : '4g',
-              downlink: isMobile ? 10 : 100,
-              rtt: isMobile ? 50 : 25,
-              saveData: false
-            };
-            try {
-              if (navigator.connection) {
-                Object.defineProperty(navigator.connection, 'effectiveType', { get: () => fakeConn.effectiveType, configurable: true });
-                Object.defineProperty(navigator.connection, 'downlink', { get: () => fakeConn.downlink, configurable: true });
-                Object.defineProperty(navigator.connection, 'rtt', { get: () => fakeConn.rtt, configurable: true });
-                Object.defineProperty(navigator.connection, 'saveData', { get: () => fakeConn.saveData, configurable: true });
+
+          if (window.WebGLRenderingContext) overrideWebGL(WebGLRenderingContext.prototype);
+          if (window.WebGL2RenderingContext) overrideWebGL(WebGL2RenderingContext.prototype);
+
+          // 4. AudioContext Fingerprint Protection
+          if (window.AnalyserNode) {
+            const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
+            AnalyserNode.prototype.getFloatFrequencyData = function(array) {
+              origGetFloatFreq.apply(this, arguments);
+              for (let i = 0; i < array.length; i += 100) {
+                array[i] += (domainHash % 10 - 5) * 0.001;
               }
-            } catch(e) {}
+            };
           }
-          
-          // --- 11. Battery API protection ---
-          if ('getBattery' in Navigator.prototype) {
-            if (isMobile || isTablet) {
-              // Return a realistic battery object for mobile
-              Navigator.prototype.getBattery = function() {
-                return Promise.resolve({
-                  charging: true,
-                  chargingTime: Infinity,
-                  dischargingTime: Infinity,
-                  level: 0.85 + Math.random() * 0.12,
-                  addEventListener: function() {},
-                  removeEventListener: function() {},
-                  dispatchEvent: function() { return true; },
-                  onchargingchange: null,
-                  onchargingtimechange: null,
-                  ondischargingtimechange: null,
-                  onlevelchange: null
-                });
-              };
-            } else {
-              // Desktop: hide battery API entirely (many desktops don't expose it)
-              delete Navigator.prototype.getBattery;
-            }
+
+          // 5. WebRTC Local IP Leak Protection
+          if (window.RTCPeerConnection) {
+            const origCreateOffer = RTCPeerConnection.prototype.createOffer;
+            RTCPeerConnection.prototype.createOffer = function(options) {
+              return origCreateOffer.apply(this, arguments).then(offer => {
+                if (offer && offer.sdp) {
+                  offer.sdp = offer.sdp.replace(/\\b(192\\.168\\.\\d+\\.\\d+|10\\.\\d+\\.\\d+\\.\\d+|172\\.(1[6-9]|2[0-9]|3[0-1])\\.\\d+\\.\\d+)\\b/g, '0.0.0.0');
+                }
+                return offer;
+              });
+            };
           }
-          
-          // --- 12. Protect Permissions API from detection ---
-          if (window.Permissions && Permissions.prototype.query) {
-            const originalQuery = Permissions.prototype.query;
-            Permissions.prototype.query = function(desc) {
-              // Notification permission querying can be used for fingerprinting
-              if (desc && desc.name === 'notifications') {
-                return Promise.resolve({ state: 'prompt', onchange: null });
+
+          // 6. Screen Dimensions & Orientation Matrix
+          const screenSpecs = isMobile
+            ? { width: 393, height: 852, colorDepth: 30, dpr: 3 }
+            : (isTablet ? { width: 1024, height: 1366, colorDepth: 24, dpr: 2 } : { width: 1920, height: 1080, colorDepth: 24, dpr: 1 });
+
+          Object.defineProperty(Screen.prototype, 'width', { get: () => screenSpecs.width, configurable: true });
+          Object.defineProperty(Screen.prototype, 'height', { get: () => screenSpecs.height, configurable: true });
+          Object.defineProperty(Screen.prototype, 'availWidth', { get: () => screenSpecs.width, configurable: true });
+          Object.defineProperty(Screen.prototype, 'availHeight', { get: () => screenSpecs.height - 40, configurable: true });
+          Object.defineProperty(Screen.prototype, 'colorDepth', { get: () => screenSpecs.colorDepth, configurable: true });
+          Object.defineProperty(Screen.prototype, 'pixelDepth', { get: () => screenSpecs.colorDepth, configurable: true });
+          Object.defineProperty(window, 'devicePixelRatio', { get: () => screenSpecs.dpr, configurable: true });
+
+          // 7. Font Metrics Micro Noise
+          const origMeasureText = CanvasRenderingContext2D.prototype.measureText;
+          CanvasRenderingContext2D.prototype.measureText = function(text) {
+            const metrics = origMeasureText.apply(this, arguments);
+            const fakeWidth = metrics.width + (text.length > 0 ? noiseFactor : 0);
+            return new Proxy(metrics, {
+              get(target, prop) {
+                if (prop === 'width') return fakeWidth;
+                return target[prop];
               }
-              return originalQuery.call(this, desc);
-            };
-          }
-          
-          // --- 13. Spoof window.chrome for Chrome UA and remove for Safari/Firefox ---
-          if ((isSafari || isiOS) && window.chrome) {
-            // Safari/iOS should NOT have window.chrome
-            try { delete window.chrome; } catch(e) { window.chrome = undefined; }
-          } else if ((isChrome || isEdge) && !window.chrome) {
-            window.chrome = {
-              app: { isInstalled: false, InstallState: { DISABLED: 'disabled', INSTALLED: 'installed', NOT_INSTALLED: 'not_installed' }, RunningState: { CANNOT_RUN: 'cannot_run', READY_TO_RUN: 'ready_to_run', RUNNING: 'running' } },
-              runtime: { OnInstalledReason: { CHROME_UPDATE: 'chrome_update', INSTALL: 'install', SHARED_MODULE_UPDATE: 'shared_module_update', UPDATE: 'update' }, OnRestartRequiredReason: { APP_UPDATE: 'app_update', OS_UPDATE: 'os_update', PERIODIC: 'periodic' }, PlatformArch: { ARM: 'arm', ARM64: 'arm64', MIPS: 'mips', MIPS64: 'mips64', X86_32: 'x86-32', X86_64: 'x86-64' }, PlatformNaclArch: { ARM: 'arm', MIPS: 'mips', MIPS64: 'mips64', X86_32: 'x86-32', X86_64: 'x86-64' }, PlatformOs: { ANDROID: 'android', CROS: 'cros', LINUX: 'linux', MAC: 'mac', OPENBSD: 'openbsd', WIN: 'win' }, RequestUpdateCheckStatus: { NO_UPDATE: 'no_update', THROTTLED: 'throttled', UPDATE_AVAILABLE: 'update_available' } },
-              csi: function() {},
-              loadTimes: function() { return {}; }
-            };
-          } else if (isFirefox && window.chrome) {
-            // Remove window.chrome if spoofing as Firefox
-            try { delete window.chrome; } catch(e) { window.chrome = undefined; }
-          }
-          
-          // --- 14. Override toString to hide modifications ---
+            });
+          };
+
+          // 8. Cloak Spoofed Functions to return [native code]
           const nativeToString = Function.prototype.toString;
-          const spoofedFunctions = new Set();
-          
-          const markAsSpoofed = (fn, original) => {
-            spoofedFunctions.add(fn);
-            return fn;
-          };
-          
-          // Make overridden functions return native-looking toString
+          const spoofedFuncs = new Set([
+            HTMLCanvasElement.prototype.toDataURL,
+            Navigator.prototype.userAgentData.getHighEntropyValues
+          ]);
+
           Function.prototype.toString = function() {
-            if (spoofedFunctions.has(this)) {
+            if (spoofedFuncs.has(this)) {
               return 'function ' + (this.name || '') + '() { [native code] }';
             }
-            return nativeToString.call(this);
+            return nativeToString.apply(this, arguments);
           };
-          spoofedFunctions.add(Function.prototype.toString);
-          
-          // Mark key spoofed getters
-          try {
-            const navigatorDesc = Object.getOwnPropertyDescriptor(Navigator.prototype, 'webdriver');
-            if (navigatorDesc && navigatorDesc.get) spoofedFunctions.add(navigatorDesc.get);
-          } catch(e) {}
-          
-          console.log('[MorphAgent] Detection protection active');
+
         } catch (e) {
-          console.warn('[MorphAgent] Failed to inject detection protection:', e);
+          console.warn('[MorphAgent 4.0] Injection warning:', e);
         }
       })();
     `;
+
     document.documentElement.appendChild(script);
     script.remove();
   }
-})(); 
+
+  function blockInlineJavaScript() {
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Content-Security-Policy';
+    meta.content = "script-src 'none'";
+    document.documentElement.appendChild(meta);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeName === 'SCRIPT') {
+            node.remove();
+          }
+        });
+      });
+    });
+
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+})();

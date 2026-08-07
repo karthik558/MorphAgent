@@ -1,275 +1,113 @@
-
-
-<div align="center">
-
-<img src="icons/icon.png" alt="Icon" width="96" height="96" />
-
 # MorphAgent
 
-> **Modern User Agent & Anti-Fingerprinting Extension**  
-> Professional-grade browser spoofing & detection shield for Firefox
+> **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
+> 100% Chromium (Manifest V3) & Firefox Dual Engine with 10 Ultimate Stealth Protections
 
-![Version](https://img.shields.io/badge/version-3.1.0-black.svg?style=flat-square)
-![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2-black.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.0.0-blue.svg?style=flat-square)
+![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
+![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
 
 ---
 
-## **Official Firefox Extension**
+## Overview
 
-MorphAgent is now available on the official Mozilla Firefox Add-ons store.
-
-</div>
-
-## **Screenshots**
-
-<div align="center">
-
-<table>
-   <tr>
-      <th colspan="2" style="text-align:center; font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
-   </tr>
-   <tr>
-      <td>
-         <img src="src/home_light.png" alt="Light Mode Interface" width="300" />
-         <div>Light Mode</div>
-      </td>
-      <td>
-         <img src="src/home_dark.png" alt="Dark Mode Interface" width="300" />
-         <div>Dark Mode</div>
-      </td>
-   </tr>
-   <tr>
-      <th colspan="2" style="text-align:center; font-size:1.1em;">Features Overview</th>
-   </tr>
-   <tr>
-      <td>
-         <img src="src/features_light.png" alt="Features Light" width="300" />
-         <div>Features (Light)</div>
-      </td>
-      <td>
-         <img src="src/features_dark.png" alt="Features Dark" width="300" />
-         <div>Features (Dark)</div>
-      </td>
-   </tr>
-</table>
-
-</div>
+MorphAgent is a professional-grade browser spoofing and anti-fingerprinting extension engineered for Chromium (Chrome, Edge, Brave, Opera, Vivaldi) and Firefox. It provides zero-latency request header interception via Manifest V3 DeclarativeNetRequest dynamic rules, alongside 10 advanced JavaScript stealth matrix protections.
 
 ---
 
-## **Key Features**
+## What's New in Version 4.0
 
-### Modern Interface
-- Dark/light themes with smooth transitions
-- Responsive device grid with intuitive category selection (Mobile, Tablet, Desktop, Gaming)
-- Three-tier cascading selection: Platform → Browser → Profile
-- Browser-type filtering (Chrome, Firefox, Safari, Edge) with platform-aware visibility
-- Apply scope selector: **Current Tab** or **All Tabs**
-- UI state persistence — popup remembers your last selection
-- Advanced settings page for power users
+1. **Dual Engine Manifest V3 & Manifest Generator (`scripts/generate-manifest.js`)**  
+   Automatically builds Manifest V3 for Chromium browsers and Manifest V2/V3 for Firefox with dynamic header spoofing.
 
-### Advanced Spoofing
-- User Agent switching with **130+ modern profiles**
-- HTTP header interception & JavaScript `navigator` property spoofing
-- Touch point spoofing with customizable `maxTouchPoints` (0–20)
-- Per-website rules with wildcard pattern matching for automatic profile switching
-- Block list support to disable spoofing on sensitive sites
-- JavaScript blocking (global & per-site) via HTTP-level + content-level enforcement
-- Custom UA string input for any arbitrary user agent
+2. **Client Hints (`Sec-CH-UA`) & `navigator.userAgentData` Synchronous Engine**  
+   Full spoofing of `Sec-CH-UA`, `Sec-CH-UA-Mobile`, and `Sec-CH-UA-Platform` headers paired with synchronous `navigator.userAgentData.getHighEntropyValues()` injection.
 
-### Detection Shield (14 Anti-Fingerprinting Protections)
-- **Canvas fingerprint protection** — noise injection into `toDataURL()` and `toBlob()`
-- **WebGL fingerprint protection** — spoofs GPU vendor/renderer strings
-- **Screen dimension spoofing** — device-accurate width, height, colorDepth, pixelDepth
-- **Hardware concurrency & device memory spoofing**
-- **Plugin & MimeType array spoofing** — realistic plugin lists per browser
-- **Network connection spoofing** — effectiveType, downlink, rtt, saveData
-- **Battery API protection** — fake battery for mobile, removed for desktop
-- **Permissions API interception** — notifications return `'prompt'`
-- **WebDriver & automation marker removal** — cleans 14+ fingerprint properties
-- **Language spoofing** — consistent `navigator.languages` and `navigator.language`
-- **`window.chrome` object management** — present for Chrome/Edge, absent for Firefox/Safari
-- **`Function.prototype.toString` cloaking** — all spoofed functions return `[native code]`
+3. **Deterministic Canvas & WebGL Stealth Matrix**  
+   Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 without triggering CreepJS or FingerprintJS heuristic detection.
 
-### Comprehensive Profiles
-- Latest devices: iPhone 17 Pro Max, Galaxy S26 Ultra, Pixel 10 Pro XL, iPad Pro M5
-- Modern browsers: Chrome 145+, Firefox 142+, Safari 26.3+, Edge 145+
-- Current OS versions: iOS 19, Android 16, Windows 11, macOS Tahoe
-- Gaming devices: PS5 Pro, Nintendo Switch 2, Steam Deck OLED 2, ROG Ally 2
+4. **AudioContext Fingerprint Shield & WebRTC IP Leak Defense**  
+   Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and local ICE candidate IP sanitization for WebRTC.
+
+5. **GPS Geolocation, Timezone & Locale Sync Engine**  
+   GPS coordinate mocking, system timezone alignment via `Intl.DateTimeFormat().resolvedOptions().timeZone`, and system locale synchronization.
+
+6. **Screen Resolution, Orientation & Font Metrics Matrix**  
+   Device-accurate `screen.width`, `screen.height`, `screen.colorDepth`, `window.devicePixelRatio`, orientation, and canvas `TextMetrics` micro-variation.
+
+7. **Custom Profile Builder Studio**  
+   GUI in Advanced Settings to create, edit, save, and delete custom device profiles with custom Client Hints, touch points, screen size, and OS parameters.
+
+8. **Real-Time Live Fingerprint Leak Inspector**  
+   Embedded live testing inspector that evaluates active User-Agent, Client Hints, Canvas noise, Audio noise, WebGL GPU string, and WebRTC status in real time.
+
+9. **Context Menu Fast Switcher & Toolbar Action Badges**  
+   Right-click context menu options for instant profile switching (`iPhone 17`, `Chrome 145`) and live action badge indicators (`MOB`, `TAB`, `DES`, `GAM`).
+
+10. **Futuristic GitHub-Inspired Animated UI**  
+    Glassmorphic interface featuring a quick search profile filter, keyboard shortcuts, and dark/light mode themes.
 
 ---
 
-## **Installation**
+## Manifest Generator Script
 
-### **Official Firefox Extension**
+MorphAgent includes a Node.js build script to generate manifest files for specific browser targets:
 
-Get MorphAgent directly from the Mozilla Firefox Add-ons store:
+```bash
+# Generate both Chrome Manifest V3 and Firefox Manifest V2/V3
+npm run build:manifest
 
-<a href="https://addons.mozilla.org/en-US/firefox/addon/morphagent/" target="_blank">
-  <img src="https://img.shields.io/badge/Install_from_Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white&labelColor=2D3748" alt="Install from Firefox Add-ons" />
-</a>
-
-**Installation:**
-1. Visit the [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/morphagent/)
-2. Click "Add to Firefox"
-3. Confirm permissions
-4. Start using MorphAgent from your toolbar
+# Generate individually:
+npm run build:chrome
+npm run build:firefox
+```
 
 ---
 
-### **Manual Installation**
+## Installation
 
-For development and testing:
+### Chromium Browsers (Chrome, Edge, Brave, Opera, Vivaldi)
 
-1. **Download**: Clone or download this repository
+1. Clone or download this repository:
    ```bash
    git clone https://github.com/karthik558/MorphAgent.git
+   cd MorphAgent
    ```
-2. **Load Extension**: Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-3. **Install**: Click **"Load Temporary Add-on..."**
-4. **Select**: Choose the `manifest.json` file from the downloaded folder
-5. **Verify**: The MorphAgent icon should appear in your Firefox toolbar
+2. Generate the Chrome Manifest V3 configuration:
+   ```bash
+   node scripts/generate-manifest.js chrome
+   ```
+3. Open the extension management page in your browser:
+   - Chrome: `chrome://extensions/`
+   - Edge: `edge://extensions/`
+   - Brave: `brave://extensions/`
+4. Enable **Developer mode** in the top right corner.
+5. Click **Load unpacked** and select the `MorphAgent` project directory.
 
 ---
 
-## **Quick Start**
+### Mozilla Firefox
 
-1. Click the MorphAgent icon in your Firefox toolbar
-2. Select device category: Mobile, Tablet, Desktop, or Gaming  
-3. Choose specific profile from the device grid
-4. Toggle touch spoofing (automatically sets appropriate touch points)
-5. Apply changes - refresh pages to see the new user agent
-
-### Advanced Configuration
-Click **"Advanced Settings"** for power-user features:
-- **Website Rules**: Set automatic profiles for specific domains with wildcard support
-- **Block List**: Disable spoofing on banking/sensitive sites
-- **Tab-Specific Settings**: View, copy, and manage per-tab UA overrides
-- **Import/Export**: Backup and share your configuration as JSON
-- **Custom User Agents**: Enter any UA string manually
-- **Open Firefox Debug**: Quick shortcut to `about:debugging`
-- **Reset All Settings**: Factory reset with confirmation
+1. Generate the Firefox Manifest configuration:
+   ```bash
+   node scripts/generate-manifest.js firefox
+   ```
+2. Navigate to `about:debugging#/runtime/this-firefox` in Firefox.
+3. Click **Load Temporary Add-on...**
+4. Select `manifest.json` (or `manifest.firefox.json`) from the project directory.
 
 ---
 
-## **Device Database (130+ Profiles)**
+## Privacy & Stealth
 
-### Mobile Devices (50+ profiles)
-- **iPhone**: 17 Pro Max, 17 Pro, 17 Air, 17 Plus, 17, SE 4th Gen (iOS 19)
-- **Samsung**: Galaxy S26 Ultra/Plus/S26, Z Fold 7, Z Flip 7 (Android 16)
-- **Google**: Pixel 10 Pro XL, Pixel 10 Pro, Pixel 10 (Android 16)
-- **OnePlus 14**, **Xiaomi 16 Ultra**, **Nothing Phone (3)**
-
-### Tablets (20+ profiles)
-- **iPad**: Pro 13"/11" M5, Air 13"/11" M3 (iPadOS 19)
-- **Samsung**: Galaxy Tab S11 Ultra/Plus (Android 16)
-- **Microsoft**: Surface Pro 12 (Windows 11)
-
-### Desktop (40+ profiles)
-- Chrome 145+ (Windows 11, macOS, Linux)
-- Firefox 142+ (All platforms)
-- Safari 26.3+ (macOS Tahoe)
-- Edge 145+ (Windows, macOS)
-- Opera 117+, Brave 1.78+
-
-### Gaming Devices (16 profiles)
-- **Console**: PS5 Pro (System 9.00), Xbox Series X/S, Nintendo Switch 2
-- **Handheld**: Steam Deck OLED 2, ROG Ally 2, Lenovo Legion Go S, MSI Claw 8 AI+
-
----
-
-## **Privacy & Security**
-
-- **Local Storage Only** — No data collection, analytics, or tracking
-- **Detection Shield** — 14 anti-fingerprinting protections to reduce your digital footprint
-- **Block List Protection** — Safeguard banking and sensitive sites from spoofing
-- **JS Blocking** — Global and per-site JavaScript execution control
-- **Open Source** — Full transparency and community auditing
-- **Minimal Permissions** — Only requests necessary browser APIs
-
----
-
-## **What's New in v3.1.0**
-
-- **130+ device profiles** — up from 70+, now including 2026 flagships
-- **Detection Shield** — 14 anti-fingerprinting protections (canvas, WebGL, screen, battery, plugins, and more)
-- **Browser-type filtering** — filter profiles by Chrome, Firefox, Safari, or Edge
-- **Tab-specific settings viewer** — view, copy, and manage per-tab overrides
-- **Apply scope selector** — choose between Current Tab and All Tabs
-- **Canvas & WebGL fingerprint protection** — noise injection and GPU spoofing
-- **Screen dimension spoofing** — device-accurate resolution overrides
-- **Network & hardware spoofing** — connection type, CPU cores, device memory
-- **UI state persistence** — popup remembers your selections across reopens
-- **Dynamic version badge** — auto-reads version from manifest
-
----
-
-## **Known Limitations**
-
-- **Firefox Only**: Designed exclusively for Firefox with Manifest V2
-- **Content Security Policy**: Some sites with strict CSP may limit content script injection
-- **Touch API Scope**: Only affects `navigator.maxTouchPoints`
-- **Banking Sites**: Recommended to use block list for financial websites
-
----
-
-## **Development**
-
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Test on Firefox
-4. Submit a pull request
-
-### Project Structure
-```
-MorphAgent/
-├── manifest.json              # Extension manifest (v3.1.0)
-├── popup.html                 # Main popup interface
-├── popup.css                  # Popup styles
-├── advanced-settings.html     # Advanced settings page
-├── css/
-│   ├── popup.css              # Popup stylesheet
-│   └── advanced-settings.css  # Settings stylesheet
-├── js/
-│   ├── popup.js               # Popup logic & UI
-│   ├── background.js          # Core spoofing & header interception
-│   ├── content.js             # Navigator/fingerprint spoofing (14 protections)
-│   ├── profiles.js            # Device database (130+ profiles)
-│   └── advanced-settings.js   # Settings page logic
-├── icons/                     # Extension icons
-└── src/                       # Screenshots & assets
-```
+- **Local Storage Only** — Zero telemetry, zero analytics, zero external dependencies.
+- **100% Native Cloaking** — All spoofed JavaScript methods pass `Function.prototype.toString()` native code checks.
+- **Block List & Per-Site Rules** — Exclude sensitive domains (e.g., banking portals) with wildcard matching.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-**MIT License** - Free to use, modify, and distribute
-
----
-
-## Author
-
-**Developed by KARTHIK LAL**
-- GitHub: [@karthik558](https://github.com/karthik558)
-- Design: Modern interface with dark/light themes
-- Features: Advanced per-site spoofing with Detection Shield (14 protections)
-- Database: Comprehensive device profile collection (130+ profiles)
-- UX: Enhanced user experience and professional polish
-
----
-
-<div align="center">
-
-**Built with ❤️ for developers who value browser privacy and testing**
-
-*MorphAgent - Transform your browser identity with professional-grade spoofing & anti-fingerprinting*
-
-**⭐ Star this repo if MorphAgent helps your development workflow!**
-
-</div>
+Licensed under the [MIT License](LICENSE). Developed by [Karthik Lal](https://github.com/karthik558).
