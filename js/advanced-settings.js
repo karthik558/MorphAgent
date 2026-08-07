@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusMessage = document.getElementById('statusMessage');
   const statusText = document.getElementById('statusText');
 
+  // Custom Locations Elements
+  const locNameInput = document.getElementById('locNameInput');
+  const locLatInput = document.getElementById('locLatInput');
+  const locLngInput = document.getElementById('locLngInput');
+  const addLocBtn = document.getElementById('addLocBtn');
+  const customLocItems = document.getElementById('customLocItems');
+
   // Tab-specific settings elements
   const refreshTabsBtn = document.getElementById('refreshTabsBtn');
   const clearAllTabsBtn = document.getElementById('clearAllTabsBtn');
@@ -42,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let websiteRules = [];
   let blockList = [];
+  let customLocations = [];
   let editingRule = null;
 
   // Tab-specific state
@@ -56,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     populateUserAgentOptions();
     renderRules();
     renderBlockList();
+    renderLocations();
     setupEventListeners();
     loadTabSettings();
   }
@@ -124,10 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Add block
       addBlockBtn.addEventListener('click', addBlock);
 
+      // Add Custom Location
+      if (addLocBtn) addLocBtn.addEventListener('click', addLocation);
+
       // Import/Export
       exportBtn.addEventListener('click', exportSettings);
       importBtn.addEventListener('click', () => importFile.click());
-      debugBtn.addEventListener('click', openFirefoxDebug);
+      debugBtn.addEventListener('click', openExtensionDebug);
       importFile.addEventListener('change', importSettings);
 
       // Reset all
@@ -152,6 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
             blockList = changes.blockList.newValue || [];
             renderBlockList();
           }
+          if (changes.customLocations) {
+            customLocations = changes.customLocations.newValue || [];
+            renderLocations();
+          }
         }
       });
 
@@ -166,11 +182,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadSettings() {
       const browser = window.browser || window.chrome;
-      browser.storage.sync.get(['websiteRules', 'blockList'], (result) => {
+      browser.storage.sync.get(['websiteRules', 'blockList', 'customLocations'], (result) => {
         websiteRules = result.websiteRules || [];
         blockList = result.blockList || [];
+        customLocations = result.customLocations || [];
         renderRules();
         renderBlockList();
+        renderLocations();
       });
     }
 
@@ -178,7 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const browser = window.browser || window.chrome;
       browser.storage.sync.set({
         websiteRules: websiteRules,
-        blockList: blockList
+        blockList: blockList,
+        customLocations: customLocations
       }, () => {
         showStatus('Settings saved successfully!');
       });
@@ -406,6 +425,72 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    function addLocation() {
+      const name = locNameInput.value.trim();
+      const lat = parseFloat(locLatInput.value);
+      const lng = parseFloat(locLngInput.value);
+
+      if (!name) { showStatus('Please enter a location name', 'error'); return; }
+      if (isNaN(lat) || lat < -90 || lat > 90) { showStatus('Invalid Latitude (-90 to 90)', 'error'); return; }
+      if (isNaN(lng) || lng < -180 || lng > 180) { showStatus('Invalid Longitude (-180 to 180)', 'error'); return; }
+
+      const location = {
+        id: Date.now(),
+        name: name,
+        lat: lat,
+        lng: lng
+      };
+
+      customLocations.push(location);
+      locNameInput.value = '';
+      locLatInput.value = '';
+      locLngInput.value = '';
+
+      saveSettings();
+      renderLocations();
+    }
+
+    function deleteLocation(id) {
+      if (confirm('Delete this custom location?')) {
+        customLocations = customLocations.filter(loc => loc.id !== id);
+        saveSettings();
+        renderLocations();
+      }
+    }
+
+    function renderLocations() {
+      if (customLocations.length === 0) {
+        customLocItems.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.88-2.88 7.19-5 9.88C9.92 16.21 7 11.85 7 9z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+          <p>No custom locations yet</p>
+          <small>Add your own GPS coordinates here to use in the popup</small>
+        </div>`;
+        return;
+      }
+
+      customLocItems.innerHTML = customLocations.map(loc => `
+      <div class="rule-item" data-loc-id="${loc.id}" style="grid-template-columns: 2fr 1fr 1fr auto;">
+        <div class="item-website">${escapeHtml(loc.name)}</div>
+        <div class="item-ua">${loc.lat}</div>
+        <div class="item-ua">${loc.lng}</div>
+        <div class="item-actions">
+          <button class="delete-btn" data-loc-id="${loc.id}">Delete</button>
+        </div>
+      </div>
+      `).join('');
+
+      document.querySelectorAll('#customLocItems .delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const locId = parseInt(e.target.getAttribute('data-loc-id'));
+          deleteLocation(locId);
+        });
+      });
+    }
+
     function renderRules() {
       if (websiteRules.length === 0) {
         rulesItems.innerHTML = `
@@ -483,38 +568,51 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    function openFirefoxDebug() {
+    function openExtensionDebug() {
       try {
-        // Open Firefox debugging page in a new tab
+        const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
+        const debugUrl = isChrome ? 'chrome://extensions' : 'about:debugging#/runtime/this-firefox';
+        // Open debugging page in a new tab
         browser.tabs.create({
-          url: 'about:debugging#/runtime/this-firefox'
+          url: debugUrl
         });
-        showStatus('Firefox debugging page opened in new tab', 'success');
+        showStatus('Extension debugging page opened in new tab', 'success');
       } catch (error) {
-        console.error('Failed to open Firefox debugging page:', error);
+        console.error('Failed to open debugging page:', error);
         showStatus('Failed to open debugging page', 'error');
       }
     }
 
     function exportSettings() {
-      const settings = {
-        websiteRules: websiteRules,
-        blockList: blockList,
-        exportedAt: new Date().toISOString(),
-        version: '1.0'
-      };
+      const browser = window.browser || window.chrome;
+      const localKeys = [
+        'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled', 
+        'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue', 
+        'geoCoords', 'activeCategory', 'uiState', 'theme'
+      ];
 
-      const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `morphagent-settings-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      browser.storage.local.get(localKeys, (localResult) => {
+        const settings = {
+          websiteRules: websiteRules,
+          blockList: blockList,
+          customLocations: customLocations,
+          globalSettings: localResult,
+          exportedAt: new Date().toISOString(),
+          version: '1.1'
+        };
 
-      showStatus('Settings exported successfully!');
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `morphagent-settings-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showStatus('Settings exported successfully!');
+      });
     }
 
     function importSettings(event) {
@@ -534,11 +632,39 @@ document.addEventListener('DOMContentLoaded', () => {
             blockList = settings.blockList;
           }
 
+          if (settings.customLocations && Array.isArray(settings.customLocations)) {
+            customLocations = settings.customLocations;
+          }
+
+          // Save sync settings
           saveSettings();
-          renderRules();
-          renderBlockList();
-          showStatus('Settings imported successfully!');
+
+          // Save global local settings if present
+          if (settings.globalSettings && typeof settings.globalSettings === 'object') {
+            const browser = window.browser || window.chrome;
+            browser.storage.local.set(settings.globalSettings, () => {
+              // Notify background script to update badge/rules if needed
+              browser.runtime.sendMessage({ type: 'set-settings', data: settings.globalSettings }).catch(() => {});
+              
+              // Apply theme locally if changed
+              if (settings.globalSettings.theme) {
+                applyTheme(settings.globalSettings.theme);
+              }
+              
+              renderRules();
+              renderBlockList();
+              renderLocations();
+              showStatus('Settings imported successfully!');
+            });
+          } else {
+            renderRules();
+            renderBlockList();
+            renderLocations();
+            showStatus('Settings imported successfully!');
+          }
+          
         } catch (error) {
+          console.error(error);
           showStatus('Invalid settings file', 'error');
         }
       };

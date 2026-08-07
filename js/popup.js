@@ -34,9 +34,27 @@ document.addEventListener('DOMContentLoaded', () => {
       customUAInput.disabled = !enabled;
       customUAInput.style.opacity = enabled ? '1' : '0.5';
     }
-    if (platformSelect) platformSelect.disabled = !enabled;
-    if (browserSelect) browserSelect.disabled = !enabled;
-    if (profileSelect) profileSelect.disabled = !enabled;
+    if (platformSelect) {
+      platformSelect.disabled = !enabled;
+      platformSelect.style.opacity = enabled ? '1' : '0.5';
+    }
+    if (browserSelect) {
+      browserSelect.disabled = !enabled;
+      browserSelect.style.opacity = enabled ? '1' : '0.5';
+    }
+    if (profileSelect) {
+      profileSelect.disabled = !enabled;
+      profileSelect.style.opacity = enabled ? '1' : '0.5';
+    }
+    deviceCards.forEach(card => {
+      card.disabled = !enabled;
+      card.style.opacity = enabled ? '1' : '0.5';
+      if (!enabled) {
+        card.classList.remove('active');
+      } else if (currentCategory && card.dataset.category === currentCategory) {
+        card.classList.add('active');
+      }
+    });
   }
 
   if (uaSpoofToggle) {
@@ -115,11 +133,27 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.storage.local.get(['theme']).then((data) => {
       const theme = data.theme || 'light';
       applyTheme(theme);
+      loadCustomLocations();
       isInitialized = true;
     }).catch(() => {
       applyTheme('light');
+      loadCustomLocations();
       isInitialized = true;
     });
+  }
+
+  function loadCustomLocations() {
+    if (!geoPreset) return;
+    browser.storage.sync.get(['customLocations']).then((data) => {
+      const customLocs = data.customLocations || [];
+      customLocs.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = `${loc.lat},${loc.lng}`;
+        option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
+        // Insert before the 'custom' option (which is the last one)
+        geoPreset.insertBefore(option, geoPreset.lastElementChild);
+      });
+    }).catch(console.error);
   }
 
   function applyTheme(theme) {
