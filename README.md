@@ -1,5 +1,3 @@
-<div align="center">
-
 <img src="icons/icon.png" alt="Icon" width="96" height="96" />
 
 # MorphAgent
@@ -23,15 +21,11 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
   <img src="https://img.shields.io/badge/Install_from_Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white&labelColor=2D3748" alt="Install from Firefox Add-ons" />
 </a>
 
-</div>
-
 ## **Screenshots**
-
-<div align="center">
 
 <table>
    <tr>
-      <th colspan="2" style="text-align:center; font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
+      <th colspan="2" style="font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
    </tr>
    <tr>
       <td>
@@ -44,7 +38,7 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
       </td>
    </tr>
    <tr>
-      <th colspan="2" style="text-align:center; font-size:1.1em;">Features Overview</th>
+      <th colspan="2" style="font-size:1.1em;">Features Overview</th>
    </tr>
    <tr>
       <td>
@@ -57,8 +51,6 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
       </td>
    </tr>
 </table>
-
-</div>
 
 ---
 
@@ -209,12 +201,8 @@ Licensed under the [MIT License](LICENSE).
 - Database: Comprehensive device profile collection (130+ profiles)
 - UX: Enhanced user experience and professional polish
 
-<div align="center">
-
 **Built with ❤️ for developers who value browser privacy and testing**
 
 *MorphAgent - Transform your browser identity with professional-grade spoofing & anti-fingerprinting*
 
 **⭐ Star this repo if MorphAgent helps your development workflow!**
-
-</div>
