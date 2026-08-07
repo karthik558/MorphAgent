@@ -213,6 +213,37 @@
                 <div class="input-hint">Spoofs navigator, plugins, canvas & WebGL fingerprints to prevent detection.</div>
               </div>
             </div>
+
+            <!-- Location Spoofing -->
+            <div class="toggle-card">
+              <div class="toggle-card-row">
+                <div class="toggle-card-info">
+                  <span class="toggle-card-label">Location Spoofing</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="geo-toggle" class="checkbox">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="geo-controls" id="geo-controls">
+                <div class="select-wrapper geo-select-wrapper">
+                  <select id="geo-preset" class="custom-select geo-select">
+                    <option value="40.7128,-74.0060">New York, USA (40.7128, -74.0060)</option>
+                    <option value="51.5074,-0.1278">London, UK (51.5074, -0.1278)</option>
+                    <option value="35.6762,139.6503">Tokyo, Japan (35.6762, 139.6503)</option>
+                    <option value="48.8566,2.3522">Paris, France (48.8566, 2.3522)</option>
+                    <option value="37.7749,-122.4194">San Francisco, USA (37.7749, -122.4194)</option>
+                    <option value="-33.8688,151.2093">Sydney, Australia (-33.8688, 151.2093)</option>
+                    <option value="custom">Custom Coordinates...</option>
+                  </select>
+                  <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div id="custom-geo-inputs" class="custom-geo-inputs">
+                  <input type="number" step="any" id="geo-lat" class="geo-coordinate-input" placeholder="Latitude" value="40.7128">
+                  <input type="number" step="any" id="geo-lng" class="geo-coordinate-input" placeholder="Longitude" value="-74.0060">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

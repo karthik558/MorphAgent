@@ -31,8 +31,8 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 4. **AudioContext Fingerprint Shield & WebRTC IP Leak Defense**  
    Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and local ICE candidate IP sanitization for WebRTC.
 
-5. **GPS Geolocation, Timezone & Locale Sync Engine**  
-   GPS coordinate mocking, system timezone alignment via `Intl.DateTimeFormat().resolvedOptions().timeZone`, and system locale synchronization.
+5. **GPS Geolocation & Location Spoofing Engine**  
+   GPS coordinate mocking (`navigator.geolocation.getCurrentPosition` & `watchPosition`), city presets (New York, London, Tokyo, Paris, Sydney, San Francisco) and custom latitude/longitude inputs.
 
 6. **Screen Resolution, Orientation & Font Metrics Matrix**  
    Device-accurate `screen.width`, `screen.height`, `screen.colorDepth`, `window.devicePixelRatio`, orientation, and canvas `TextMetrics` micro-variation.

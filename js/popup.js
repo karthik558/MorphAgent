@@ -15,6 +15,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsBtn = document.getElementById('settings-btn');
   const jsBlockToggle = document.getElementById('js-block-toggle');
   const jsProtectToggle = document.getElementById('js-protect-toggle');
+  const geoToggle = document.getElementById('geo-toggle');
+  const geoControls = document.getElementById('geo-controls');
+  const geoPreset = document.getElementById('geo-preset');
+  const customGeoInputs = document.getElementById('custom-geo-inputs');
+  const geoLat = document.getElementById('geo-lat');
+  const geoLng = document.getElementById('geo-lng');
+
+  // Location Controls Event Listeners
+  if (geoToggle && geoControls) {
+    geoToggle.addEventListener('change', () => {
+      geoControls.classList.toggle('visible', geoToggle.checked);
+      geoControls.style.display = geoToggle.checked ? 'block' : 'none';
+    });
+  }
+
+  if (geoPreset && customGeoInputs && geoLat && geoLng) {
+    geoPreset.addEventListener('change', () => {
+      const val = geoPreset.value;
+      if (val === 'custom') {
+        customGeoInputs.classList.add('visible');
+        customGeoInputs.style.display = 'flex';
+      } else {
+        customGeoInputs.classList.remove('visible');
+        customGeoInputs.style.display = 'none';
+        const parts = val.split(',').map(Number);
+        if (parts.length === 2) {
+          geoLat.value = parts[0];
+          geoLng.value = parts[1];
+        }
+      }
+    });
+  }
 
   // State
   let currentCategory = null;
@@ -504,6 +536,24 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.toggle('visible', touchToggle.checked);
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
+
+        if (geoToggle && geoControls) {
+          geoToggle.checked = !!settings.geoSpoofEnabled;
+          geoControls.classList.toggle('visible', geoToggle.checked);
+          geoControls.style.display = geoToggle.checked ? 'block' : 'none';
+          if (geoPreset && settings.geoPresetValue) {
+            geoPreset.value = settings.geoPresetValue;
+            if (customGeoInputs) {
+              const isCustom = settings.geoPresetValue === 'custom';
+              customGeoInputs.classList.toggle('visible', isCustom);
+              customGeoInputs.style.display = isCustom ? 'flex' : 'none';
+            }
+          }
+          if (settings.geoCoords) {
+            if (geoLat) geoLat.value = settings.geoCoords.lat;
+            if (geoLng) geoLng.value = settings.geoCoords.lng;
+          }
+        }
         
         // Set apply scope to all tabs for global settings
         const allRadio = document.querySelector('input[name="apply-scope"][value="all"]');
@@ -516,6 +566,13 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.remove('visible');
         jsBlockToggle.checked = false;
         jsProtectToggle.checked = false;
+        if (geoToggle) {
+          geoToggle.checked = false;
+          if (geoControls) {
+            geoControls.classList.remove('visible');
+            geoControls.style.display = 'none';
+          }
+        }
         
         // Default to current tab
         const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
@@ -533,6 +590,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const touchSpoofEnabled = touchToggle.checked;
     const jsBlockEnabled = jsBlockToggle.checked;
     const jsProtectEnabled = jsProtectToggle.checked;
+    const geoSpoofEnabled = geoToggle ? geoToggle.checked : false;
+    const geoPresetValue = geoPreset ? geoPreset.value : '40.7128,-74.0060';
+    const geoCoords = {
+      lat: geoLat ? (parseFloat(geoLat.value) || 40.7128) : 40.7128,
+      lng: geoLng ? (parseFloat(geoLng.value) || -74.0060) : -74.0060
+    };
     const applyScope = document.querySelector('input[name="apply-scope"]:checked').value;
 
     if (!selectedUA) {
@@ -579,6 +642,8 @@ document.addEventListener('DOMContentLoaded', () => {
           touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
           jsBlocked: jsBlockEnabled,
           jsProtected: jsProtectEnabled,
+          geoSpoofEnabled,
+          geoCoords,
           uiState: {
             category: currentCategory,
             platform: currentPlatform,
@@ -620,6 +685,9 @@ document.addEventListener('DOMContentLoaded', () => {
         touchSpoofEnabled,
         jsBlockEnabled,
         jsProtectEnabled,
+        geoSpoofEnabled,
+        geoPresetValue,
+        geoCoords,
         applyScope,
         uiState: {
           category: currentCategory,

@@ -396,6 +396,58 @@ body.dark-mode .dark-icon { display: block; }
   transition: all 0.2s var(--ease);
 }
 
+/* Location Spoofing controls */
+.geo-controls {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.2s var(--ease);
+  margin-top: 0;
+}
+.geo-controls.visible {
+  max-height: 120px;
+  opacity: 1;
+  margin-top: 8px;
+}
+.geo-select-wrapper {
+  width: 100%;
+  margin-bottom: 6px;
+}
+.geo-select {
+  width: 100%;
+  padding: 6px 28px 6px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  outline: none;
+}
+.custom-geo-inputs {
+  display: none;
+  gap: 6px;
+  margin-top: 6px;
+}
+.custom-geo-inputs.visible {
+  display: flex;
+}
+.geo-coordinate-input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  outline: none;
+  transition: all 0.15s var(--ease);
+}
+.geo-coordinate-input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow);
+}
+
 /* Scope selector */
 .scope-selector {
   display: flex;

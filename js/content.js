@@ -228,11 +228,49 @@
             });
           };
 
-          // 8. Cloak Spoofed Functions to return [native code]
+          // 8. GPS Geolocation Spoofing Engine
+          if (navigator.geolocation && ${JSON.stringify(!!settings.geoSpoofEnabled)}) {
+            const geoLat = ${parseFloat(settings.geoCoords ? settings.geoCoords.lat : 40.7128)};
+            const geoLng = ${parseFloat(settings.geoCoords ? settings.geoCoords.lng : -74.0060)};
+            
+            const mockPosition = {
+              coords: {
+                latitude: geoLat,
+                longitude: geoLng,
+                accuracy: 10,
+                altitude: 0,
+                altitudeAccuracy: 0,
+                heading: null,
+                speed: null
+              },
+              timestamp: Date.now()
+            };
+
+            navigator.geolocation.getCurrentPosition = function(success, error, options) {
+              if (typeof success === 'function') {
+                setTimeout(() => success(mockPosition), 10);
+              }
+            };
+
+            let watchCounter = 1;
+            navigator.geolocation.watchPosition = function(success, error, options) {
+              if (typeof success === 'function') {
+                setTimeout(() => success(mockPosition), 10);
+              }
+              return watchCounter++;
+            };
+
+            navigator.geolocation.clearWatch = function(watchId) {
+              // Mock clear
+            };
+          }
+
+          // 9. Cloak Spoofed Functions to return [native code]
           const nativeToString = Function.prototype.toString;
           const spoofedFuncs = new Set([
             HTMLCanvasElement.prototype.toDataURL,
-            Navigator.prototype.userAgentData.getHighEntropyValues
+            Navigator.prototype.userAgentData.getHighEntropyValues,
+            navigator.geolocation.getCurrentPosition
           ]);
 
           Function.prototype.toString = function() {
