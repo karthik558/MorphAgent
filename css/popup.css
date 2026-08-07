@@ -545,7 +545,7 @@ body.dark-mode .dark-icon { display: block; }
 }
 
 /* Action buttons */
-.form-actions { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-top: 8px; }
+.form-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
 .btn {
   display: flex;
   align-items: center;
@@ -682,7 +682,7 @@ html.mobile .toggle-switch .checkbox:checked + .toggle-slider::before { transfor
 html.mobile .number-input { width: 72px; padding: 6px 8px; min-height: 40px; font-size: 16px; }
 html.mobile .scope-pill { padding: 10px 12px; font-size: 13px; min-height: 44px; }
 html.mobile .btn { padding: 12px 16px; font-size: 15px; min-height: 48px; }
-html.mobile .form-actions { grid-template-columns: auto 1fr; gap: 8px; }
+html.mobile .form-actions { grid-template-columns: 1fr; gap: 8px; }
 html.mobile .icon-btn { width: 40px; height: 40px; }
 html.mobile .footer { padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 html.mobile .status-message { bottom: 60px; left: 12px; right: 12px; }

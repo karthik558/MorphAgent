@@ -862,9 +862,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Event Listeners
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    saveSettings();
+  form.addEventListener('change', (e) => {
+    if (isInitialized) {
+      saveSettings();
+    }
   });
 
   resetBtn.addEventListener('click', (e) => {
