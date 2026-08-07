@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const jsBlockRuleCheckbox = document.getElementById('jsBlockRule');
   const jsProtectRuleCheckbox = document.getElementById('jsProtectRule');
   const blockUrlInput = document.getElementById('blockUrl');
+  const geoSpoofRuleCheckbox = document.getElementById('geoSpoofRule');
+  const geoCoordsPresetSelect = document.getElementById('geoCoordsPreset');
+  const geoCustomCoordsDiv = document.getElementById('geoCustomCoords');
+  const geoLatRuleInput = document.getElementById('geoLatRule');
+  const geoLngRuleInput = document.getElementById('geoLngRule');
+  const geoCoordsGroupDiv = document.getElementById('geoCoordsGroup');
 
   const rulesItems = document.getElementById('rulesItems');
   const blockItems = document.getElementById('blockItems');
@@ -106,6 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Add rule
       addRuleBtn.addEventListener('click', addOrUpdateRule);
+
+      // Geo Spoof logic
+      geoSpoofRuleCheckbox.addEventListener('change', (e) => {
+        geoCoordsGroupDiv.style.display = e.target.checked ? 'block' : 'none';
+      });
+      geoCoordsPresetSelect.addEventListener('change', (e) => {
+        geoCustomCoordsDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
+      });
 
       // Add block
       addBlockBtn.addEventListener('click', addBlock);
@@ -250,6 +264,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      let geoCoords = null;
+      if (geoSpoofRuleCheckbox.checked) {
+        if (geoCoordsPresetSelect.value === 'custom') {
+          geoCoords = {
+            lat: parseFloat(geoLatRuleInput.value) || 40.7128,
+            lng: parseFloat(geoLngRuleInput.value) || -74.0060
+          };
+        } else {
+          const [lat, lng] = geoCoordsPresetSelect.value.split(',');
+          geoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+        }
+      }
+
       const rule = {
         id: editingRule ? editingRule.id : Date.now(),
         website: website,
@@ -257,6 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
         touchPoints: touchPoints,
         jsBlocked: jsBlockRuleCheckbox.checked,
         jsProtected: jsProtectRuleCheckbox.checked,
+        geoSpoofEnabled: geoSpoofRuleCheckbox.checked,
+        geoCoords: geoCoords,
         created: editingRule ? editingRule.created : new Date().toISOString()
       };
 
@@ -274,13 +303,18 @@ document.addEventListener('DOMContentLoaded', () => {
         websiteRules.push(rule);
       }
 
-      // Clear form
       websiteUrlInput.value = '';
       customUserAgentSelect.value = '';
       customUaText.value = '';
       touchPointsInput.value = '0';
       jsBlockRuleCheckbox.checked = false;
       jsProtectRuleCheckbox.checked = false;
+      geoSpoofRuleCheckbox.checked = false;
+      geoCoordsPresetSelect.value = '40.7128,-74.0060';
+      geoLatRuleInput.value = '';
+      geoLngRuleInput.value = '';
+      geoCoordsGroupDiv.style.display = 'none';
+      geoCustomCoordsDiv.style.display = 'none';
       customUaInput.style.display = 'none';
 
       saveSettings();
@@ -294,6 +328,23 @@ document.addEventListener('DOMContentLoaded', () => {
       touchPointsInput.value = rule.touchPoints || 0;
       jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
       jsProtectRuleCheckbox.checked = !!rule.jsProtected;
+      
+      geoSpoofRuleCheckbox.checked = !!rule.geoSpoofEnabled;
+      geoCoordsGroupDiv.style.display = rule.geoSpoofEnabled ? 'block' : 'none';
+      
+      if (rule.geoSpoofEnabled && rule.geoCoords) {
+        const presetVal = `${rule.geoCoords.lat},${rule.geoCoords.lng}`;
+        const option = Array.from(geoCoordsPresetSelect.options).find(opt => opt.value === presetVal);
+        if (option) {
+          geoCoordsPresetSelect.value = presetVal;
+          geoCustomCoordsDiv.style.display = 'none';
+        } else {
+          geoCoordsPresetSelect.value = 'custom';
+          geoLatRuleInput.value = rule.geoCoords.lat;
+          geoLngRuleInput.value = rule.geoCoords.lng;
+          geoCustomCoordsDiv.style.display = 'block';
+        }
+      }
 
       // Try to find the UA in the select options
       const option = Array.from(customUserAgentSelect.options).find(opt => opt.value === rule.userAgent);
@@ -370,12 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       rulesItems.innerHTML = websiteRules.map(rule => `
-      <div class="rule-item" data-rule-id="${rule.id}">
+      <div class="rule-item" data-rule-id="${rule.id}" style="grid-template-columns: 2fr 3fr 1fr 1fr 1fr 1fr 1fr;">
         <div class="item-website">${escapeHtml(rule.website)}</div>
         <div class="item-ua">${escapeHtml(truncateUA(rule.userAgent))}</div>
         <div class="item-touch">${rule.touchPoints || 0}</div>
         <div class="item-js-blocked">${rule.jsBlocked ? '&#10003; Yes' : 'No'}</div>
         <div class="item-js-protected">${rule.jsProtected ? '&#10003; Yes' : 'No'}</div>
+        <div class="item-geo-spoofed">${rule.geoSpoofEnabled ? '&#10003; Yes' : 'No'}</div>
         <div class="item-actions">
           <button class="edit-btn" data-rule='${JSON.stringify(rule)}'>Edit</button>
           <button class="delete-btn" data-rule-id="${rule.id}">Delete</button>

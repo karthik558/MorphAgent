@@ -70,6 +70,28 @@
                   <span>Protect JS</span>
                 </label>
               </div>
+              <div class="input-group input-group-checkbox">
+                <label class="checkbox-label-inline">
+                  <input type="checkbox" id="geoSpoofRule" class="checkbox-inline">
+                  <span>Geo Spoof</span>
+                </label>
+              </div>
+              <div class="input-group" id="geoCoordsGroup" style="display: none;">
+                <label for="geoCoordsPreset">Location</label>
+                <select id="geoCoordsPreset">
+                  <option value="40.7128,-74.0060">New York</option>
+                  <option value="51.5074,-0.1278">London</option>
+                  <option value="35.6762,139.6503">Tokyo</option>
+                  <option value="48.8566,2.3522">Paris</option>
+                  <option value="37.7749,-122.4194">San Francisco</option>
+                  <option value="-33.8688,151.2093">Sydney</option>
+                  <option value="custom">Custom...</option>
+                </select>
+                <div id="geoCustomCoords" style="display: none; margin-top: 5px;">
+                  <input type="number" id="geoLatRule" placeholder="Lat" step="any" style="width: 45%; display: inline-block;">
+                  <input type="number" id="geoLngRule" placeholder="Lng" step="any" style="width: 45%; display: inline-block;">
+                </div>
+              </div>
               <button class="add-rule-btn" id="addRuleBtn">
                 <span class="icon">+</span>
                 Add Rule
@@ -83,12 +105,13 @@
           </div>
 
           <div class="rules-list">
-            <div class="list-header">
+            <div class="list-header" style="grid-template-columns: 2fr 3fr 1fr 1fr 1fr 1fr 1fr;">
               <span>Website</span>
               <span>User Agent</span>
-              <span>Touch Points</span>
+              <span>Touch</span>
               <span>JS Blocked</span>
               <span>JS Protected</span>
+              <span>Geo Spoof</span>
               <span>Actions</span>
             </div>
             <div class="rules-items" id="rulesItems">
