@@ -106,9 +106,46 @@
         Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
       }
 
-      // Hardware Stealth Protections
+      // Hardware & Screen Stealth Protections
       if (s.jsProtectEnabled) {
         const domainHash = Array.from(window.location.hostname).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+
+        // Spoof Hardware Details
+        Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => 8, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => 8, configurable: true });
+
+        // Spoof Screen Metrics
+        if (window.Screen) {
+          Object.defineProperty(Screen.prototype, 'width', { get: () => 1920, configurable: true });
+          Object.defineProperty(Screen.prototype, 'height', { get: () => 1080, configurable: true });
+          Object.defineProperty(Screen.prototype, 'colorDepth', { get: () => 24, configurable: true });
+          Object.defineProperty(Screen.prototype, 'pixelDepth', { get: () => 24, configurable: true });
+        }
+        Object.defineProperty(window, 'innerWidth', { get: () => 1920, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { get: () => 1080, configurable: true });
+
+        // Spoof Media Devices (Webcams/Mics)
+        if (window.MediaDevices && MediaDevices.prototype.enumerateDevices) {
+          MediaDevices.prototype.enumerateDevices = function() {
+            return Promise.resolve([
+              { deviceId: 'default', kind: 'audioinput', label: 'Default Microphone', groupId: 'default' },
+              { deviceId: 'default', kind: 'videoinput', label: 'Default Webcam', groupId: 'default' },
+              { deviceId: 'default', kind: 'audiooutput', label: 'Default Speaker', groupId: 'default' }
+            ]);
+          };
+        }
+
+        // DRM (Encrypted Media Extensions) Spoofing
+        if (window.Navigator && Navigator.prototype.requestMediaKeySystemAccess) {
+          const originalRequestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
+          Navigator.prototype.requestMediaKeySystemAccess = function(keySystem, supportedConfigurations) {
+            // Block proprietary DRMs to prevent OS identification, allow Widevine
+            if (keySystem === 'com.microsoft.playready' || keySystem === 'com.apple.fps.1_0') {
+              return Promise.reject(new DOMException('Unsupported keySystem', 'NotSupportedError'));
+            }
+            return originalRequestMediaKeySystemAccess.call(this, keySystem, supportedConfigurations);
+          };
+        }
 
         if (!window.__MORPH_CANVAS_PROTECTED) {
           window.__MORPH_CANVAS_PROTECTED = true;
@@ -118,11 +155,23 @@
             if (ctx) {
               try {
                 const imgData = ctx.getImageData(0, 0, Math.min(this.width || 10, 10), Math.min(this.height || 10, 10));
-                if (imgData.data.length > 0) imgData.data[0] = (imgData.data[0] + 1) % 255;
+                if (imgData.data.length > 0) imgData.data[0] = (imgData.data[0] + (domainHash % 3) + 1) % 255;
               } catch (e) {}
             }
             return originalToDataURL.apply(this, args);
           };
+
+          if (window.CanvasRenderingContext2D) {
+            const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+            CanvasRenderingContext2D.prototype.getImageData = function(...args) {
+              const imageData = originalGetImageData.apply(this, args);
+              // Inject microscopic, domain-specific noise (e.g. modify every 17th pixel slightly)
+              for (let i = 0; i < imageData.data.length; i += (17 * 4)) {
+                imageData.data[i] = (imageData.data[i] + (domainHash % 3)) % 255;
+              }
+              return imageData;
+            };
+          }
         }
 
         if (!window.__MORPH_AUDIO_PROTECTED && window.AnalyserNode) {
@@ -146,6 +195,49 @@
               }
               return offer;
             });
+          };
+        }
+
+        // Offline AudioContext Spoofing
+        if (window.OfflineAudioContext) {
+          const originalGetChannelData = AudioBuffer.prototype.getChannelData;
+          AudioBuffer.prototype.getChannelData = function() {
+            const results = originalGetChannelData.apply(this, arguments);
+            for (let i = 0; i < results.length; i += 100) {
+              results[i] = results[i] + ((domainHash % 10 - 5) * 0.0000001);
+            }
+            return results;
+          };
+        }
+
+        // WebGL Spoofing
+        if (!window.__MORPH_WEBGL_PROTECTED && window.WebGLRenderingContext) {
+          window.__MORPH_WEBGL_PROTECTED = true;
+          const spoofWebGL = (ctxProto) => {
+            if (!ctxProto) return;
+            const originalGetParameter = ctxProto.getParameter;
+            ctxProto.getParameter = function(parameter) {
+              // UNMASKED_VENDOR_WEBGL = 37445, UNMASKED_RENDERER_WEBGL = 37446
+              if (parameter === 37445) return 'Google Inc. (Intel)';
+              if (parameter === 37446) return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+              return originalGetParameter.apply(this, arguments);
+            };
+          };
+          spoofWebGL(window.WebGLRenderingContext.prototype);
+          spoofWebGL(window.WebGL2RenderingContext ? window.WebGL2RenderingContext.prototype : null);
+        }
+      }
+
+      // Timezone Spoofing (tied to Location Spoofing)
+      if (s.geoSpoofEnabled && !window.__MORPH_TZ_PROTECTED) {
+        window.__MORPH_TZ_PROTECTED = true;
+        Date.prototype.getTimezoneOffset = function() { return 0; };
+        if (window.Intl && Intl.DateTimeFormat) {
+          const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+          Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+            const options = originalResolvedOptions.apply(this, arguments);
+            options.timeZone = 'UTC';
+            return options;
           };
         }
       }

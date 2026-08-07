@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MorphAgent Ultimate Spoof Test</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #0f172a;
+            --border-primary: rgba(15, 23, 42, 0.1);
+            --accent: #ff0000;
+            --radius: 12px;
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0f0f0f;
+                --bg-secondary: #212121;
+                --text-primary: #f8fafc;
+                --border-primary: rgba(255, 255, 255, 0.1);
+                --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            }
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 40px 20px; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        h2 { font-weight: 600; margin-bottom: 24px; color: var(--text-primary); }
+        .card { 
+            background: var(--bg-secondary); 
+            padding: 24px; 
+            border-radius: var(--radius); 
+            margin-bottom: 24px; 
+            border: 1px solid var(--border-primary);
+            box-shadow: var(--shadow-md);
+        }
+        h3 { margin-top: 0; font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--border-primary); padding-bottom: 12px; margin-bottom: 16px; color: var(--accent); }
+        pre { 
+            background: var(--bg-primary); 
+            padding: 16px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid var(--border-primary);
+            font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>MorphAgent Ultimate Privacy Test</h2>
+    <p>Enable <strong>Detection Shield</strong> and <strong>Location Spoofing</strong> in the extension, reload this page, and check the values below.</p>
+
+    <div class="card">
+        <h3>1. Hardware Info</h3>
+        <div id="hw"></div>
+    </div>
+
+    <div class="card">
+        <h3>2. Timezone Info</h3>
+        <div id="tz"></div>
+    </div>
+
+    <div class="card">
+        <h3>3. WebGL Info</h3>
+        <div id="webgl"></div>
+    </div>
+
+    <div class="card">
+        <h3>4. Canvas Hash</h3>
+        <div id="canvas"></div>
+    </div>
+
+    <div class="card">
+        <h3>5. Screen Info</h3>
+        <div id="screen-info"></div>
+    </div>
+
+    <div class="card">
+        <h3>6. Media Devices</h3>
+        <div id="media-info"><pre id="media-out">Checking...</pre></div>
+    </div>
+
+    <div class="card">
+        <h3>7. DRM Probing</h3>
+        <div id="drm-info"><pre id="drm-out">Checking DRM support...</pre></div>
+    </div>
+
+    <script>
+        // 1. Hardware
+        const hwStr = `Hardware Concurrency: ${navigator.hardwareConcurrency} cores\nDevice Memory: ${navigator.deviceMemory} GB`;
+        document.getElementById('hw').innerHTML = `<pre>${hwStr}</pre>`;
+
+        // 2. Timezone
+        const offset = new Date().getTimezoneOffset();
+        let tzStr = `Timezone Offset: ${offset} minutes\n`;
+        if (window.Intl) {
+            tzStr += `Intl Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+        }
+        document.getElementById('tz').innerHTML = `<pre>${tzStr}</pre>`;
+
+        // 3. WebGL
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            document.getElementById('webgl').innerHTML = `<pre>Vendor: ${vendor}\nRenderer: ${renderer}</pre>`;
+        } catch (e) {
+            document.getElementById('webgl').innerText = "WebGL Error or Blocked";
+        }
+
+        // 4. Canvas Hash
+        function getCanvasHash() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = "#069";
+            ctx.fillText("MorphAgent", 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+            ctx.fillText("MorphAgent", 4, 17);
+            const data = canvas.toDataURL();
+            let hash = 0;
+            for (let i = 0; i < data.length; i++) {
+                hash = ((hash << 5) - hash) + data.charCodeAt(i);
+                hash |= 0; 
+            }
+            return hash;
+        }
+        document.getElementById('canvas').innerHTML = `<pre>Canvas Hash: ${getCanvasHash()}</pre>`;
+
+        // 5. Screen Metrics
+        const screenStr = `Screen: ${screen.width}x${screen.height}\nColor Depth: ${screen.colorDepth}-bit\nWindow: ${window.innerWidth}x${window.innerHeight}`;
+        document.getElementById('screen-info').innerHTML = `<pre>${screenStr}</pre>`;
+
+        // 6. Media Devices
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                let out = '';
+                devices.forEach(d => { out += `${d.kind}: ${d.label} (ID: ${d.deviceId})\n`; });
+                document.getElementById('media-out').innerText = out;
+            }).catch(e => {
+                document.getElementById('media-out').innerText = `Error: ${e.message}`;
+            });
+        }
+
+        // 7. DRM / EME
+        async function checkDRM() {
+            const config = [{ initDataTypes: ['cenc'], videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }] }];
+            let out = '';
+            
+            try {
+                await navigator.requestMediaKeySystemAccess('com.widevine.alpha', config);
+                out += '✅ Widevine Supported\n';
+            } catch (e) { out += '❌ Widevine Blocked/Unsupported\n'; }
+            
+            try {
+                await navigator.requestMediaKeySystemAccess('com.microsoft.playready', config);
+                out += '✅ PlayReady Supported\n';
+            } catch (e) { out += '❌ PlayReady Blocked/Unsupported\n'; }
+            
+            try {
+                await navigator.requestMediaKeySystemAccess('com.apple.fps.1_0', config);
+                out += '✅ FairPlay Supported\n';
+            } catch (e) { out += '❌ FairPlay Blocked/Unsupported\n'; }
+            
+            document.getElementById('drm-out').innerText = out;
+        }
+        checkDRM();
+    </script>
+</body>
+</html>
