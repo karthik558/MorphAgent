@@ -10,6 +10,7 @@
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
+[![Release Chrome Extension](https://github.com/karthik558/MorphAgent/actions/workflows/release-chrome.yml/badge.svg)](https://github.com/karthik558/MorphAgent/actions/workflows/release-chrome.yml)
 
 ---
 
