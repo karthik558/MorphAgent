@@ -30,11 +30,11 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
    </tr>
    <tr>
       <td>
-         <img src="src/home_light.png" alt="Light Mode Interface" width="300" />
+         <img src="https://files.catbox.moe/zfvhw8.png" alt="Light Mode Interface" width="300" />
          <div>Light Mode</div>
       </td>
       <td>
-         <img src="src/home_dark.png" alt="Dark Mode Interface" width="300" />
+         <img src="https://files.catbox.moe/6o72h6.png" alt="Dark Mode Interface" width="300" />
          <div>Dark Mode</div>
       </td>
    </tr>
@@ -43,11 +43,11 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
    </tr>
    <tr>
       <td>
-         <img src="src/features_light.png" alt="Features Light" width="300" />
+         <img src="https://files.catbox.moe/7i2z0e.png" alt="Features Light" width="300" />
          <div>Features (Light)</div>
       </td>
       <td>
-         <img src="src/features_dark.png" alt="Features Dark" width="300" />
+         <img src="https://files.catbox.moe/6zghjh.png" alt="Features Dark" width="300" />
          <div>Features (Dark)</div>
       </td>
    </tr>
