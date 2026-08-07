@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let blockList = [];
   let customLocations = [];
   let editingRule = null;
+  let editingBlock = null;
+  let editingLocation = null;
 
   // Tab-specific state
   let tabSettings = [];
@@ -397,27 +399,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Check for duplicates
-      if (blockList.some(item => item.website === website)) {
-        showStatus('Website already in block list', 'error');
-        return;
+      if (editingBlock) {
+        const index = blockList.findIndex(b => b.id === editingBlock.id);
+        if (index !== -1) {
+          blockList[index].website = website;
+        }
+        editingBlock = null;
+        if (addBlockBtn) addBlockBtn.innerHTML = '<span class="icon">+</span> Add to Block List';
+      } else {
+        // Check for duplicates
+        if (blockList.some(item => item.website === website)) {
+          showStatus('Website already in block list', 'error');
+          return;
+        }
+
+        const blockItem = {
+          id: Date.now(),
+          website: website,
+          created: new Date().toISOString()
+        };
+
+        blockList.push(blockItem);
       }
-
-      const blockItem = {
-        id: Date.now(),
-        website: website,
-        created: new Date().toISOString()
-      };
-
-      blockList.push(blockItem);
+      
       blockUrlInput.value = '';
 
       saveSettings();
       renderBlockList();
     }
 
+    function editBlock(block) {
+      editingBlock = block;
+      blockUrlInput.value = block.website;
+      if (addBlockBtn) addBlockBtn.innerHTML = '<span class="icon">✓</span> Update Block List';
+      blockUrlInput.focus();
+    }
+
     function deleteBlock(id) {
-      console.log('Deleting block with id:', id);
       if (confirm('Are you sure you want to remove this website from the block list?')) {
         blockList = blockList.filter(item => item.id !== id);
         saveSettings();
@@ -435,19 +453,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isNaN(lng) || lng < -180 || lng > 180) { showStatus('Invalid Longitude (-180 to 180)', 'error'); return; }
 
       const location = {
-        id: Date.now(),
+        id: editingLocation ? editingLocation.id : Date.now(),
         name: name,
         lat: lat,
         lng: lng
       };
 
-      customLocations.push(location);
+      if (editingLocation) {
+        const index = customLocations.findIndex(l => l.id === editingLocation.id);
+        if (index !== -1) {
+          customLocations[index] = location;
+        }
+        editingLocation = null;
+        if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">+</span> Add Location';
+      } else {
+        customLocations.push(location);
+      }
+      
       locNameInput.value = '';
       locLatInput.value = '';
       locLngInput.value = '';
 
       saveSettings();
       renderLocations();
+    }
+
+    function editLocation(loc) {
+      editingLocation = loc;
+      locNameInput.value = loc.name;
+      locLatInput.value = loc.lat;
+      locLngInput.value = loc.lng;
+      if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">✓</span> Update Location';
+      locNameInput.focus();
     }
 
     function deleteLocation(id) {
@@ -478,10 +515,18 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="item-ua">${loc.lat}</div>
         <div class="item-ua">${loc.lng}</div>
         <div class="item-actions">
+          <button class="edit-btn" data-loc='${JSON.stringify(loc)}'>Edit</button>
           <button class="delete-btn" data-loc-id="${loc.id}">Delete</button>
         </div>
       </div>
       `).join('');
+
+      document.querySelectorAll('#customLocItems .edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const loc = JSON.parse(e.target.getAttribute('data-loc'));
+          editLocation(loc);
+        });
+      });
 
       document.querySelectorAll('#customLocItems .delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -554,10 +599,18 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="block-item" data-block-id="${item.id}">
         <div class="item-website">${escapeHtml(item.website)}</div>
         <div class="item-actions">
+          <button class="edit-btn" data-block='${JSON.stringify(item)}'>Edit</button>
           <button class="delete-btn" data-block-id="${item.id}">Remove</button>
         </div>
       </div>
     `).join('');
+
+      document.querySelectorAll('.block-item .edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const block = JSON.parse(e.target.getAttribute('data-block'));
+          editBlock(block);
+        });
+      });
 
       // Add event listeners to block delete buttons
       document.querySelectorAll('.block-item .delete-btn').forEach(btn => {
