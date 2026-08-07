@@ -58,25 +58,27 @@
                 <label for="touchPoints">Touch Points</label>
                 <input type="number" id="touchPoints" min="0" max="20" value="0" placeholder="0-20">
               </div>
-              <div class="input-group input-group-checkbox">
-                <label class="checkbox-label-inline">
-                  <input type="checkbox" id="jsBlockRule" class="checkbox-inline">
-                  <span>Block JS</span>
-                </label>
+            </div>
+            
+            <div class="form-row">
+              <div class="input-group" style="flex: 2; min-width: 200px;">
+                <label>Security & Spoofing</label>
+                <div style="display: flex; gap: 16px; align-items: center; padding: 10px 14px; background: var(--bg-glass); border-radius: var(--radius); border: 1px solid var(--border-primary); flex-wrap: wrap; min-height: 42px;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+                    <input type="checkbox" id="jsBlockRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
+                    <span style="white-space: nowrap; margin-bottom: 0;">Block JS</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+                    <input type="checkbox" id="jsProtectRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
+                    <span style="white-space: nowrap; margin-bottom: 0;">Protect JS</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+                    <input type="checkbox" id="geoSpoofRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
+                    <span style="white-space: nowrap; margin-bottom: 0;">Geo Spoof</span>
+                  </label>
+                </div>
               </div>
-              <div class="input-group input-group-checkbox">
-                <label class="checkbox-label-inline">
-                  <input type="checkbox" id="jsProtectRule" class="checkbox-inline">
-                  <span>Protect JS</span>
-                </label>
-              </div>
-              <div class="input-group input-group-checkbox">
-                <label class="checkbox-label-inline">
-                  <input type="checkbox" id="geoSpoofRule" class="checkbox-inline">
-                  <span>Geo Spoof</span>
-                </label>
-              </div>
-              <div class="input-group" id="geoCoordsGroup" style="display: none;">
+              <div class="input-group" id="geoCoordsGroup" style="display: none; flex: 1;">
                 <label for="geoCoordsPreset">Location</label>
                 <select id="geoCoordsPreset">
                   <option value="40.7128,-74.0060">New York</option>
@@ -92,10 +94,12 @@
                   <input type="number" id="geoLngRule" placeholder="Lng" step="any" style="width: 45%; display: inline-block;">
                 </div>
               </div>
-              <button class="add-rule-btn" id="addRuleBtn">
-                <span class="icon">+</span>
-                Add Rule
-              </button>
+              <div style="flex: 0 0 auto; display: flex; align-items: flex-end;">
+                <button class="add-rule-btn" id="addRuleBtn" style="height: 42px;">
+                  <span class="icon">+</span>
+                  Add Rule
+                </button>
+              </div>
             </div>
             
             <div class="custom-ua-input" id="customUaInput" style="display: none;">
@@ -105,12 +109,12 @@
           </div>
 
           <div class="rules-list">
-            <div class="list-header" style="grid-template-columns: 2fr 3fr 1fr 1fr 1fr 1fr 1fr;">
+            <div class="list-header" style="grid-template-columns: 2fr 2fr 0.5fr 1fr 1fr 1fr 1fr;">
               <span>Website</span>
               <span>User Agent</span>
               <span>Touch</span>
-              <span>JS Blocked</span>
-              <span>JS Protected</span>
+              <span>Block JS</span>
+              <span>Protect JS</span>
               <span>Geo Spoof</span>
               <span>Actions</span>
             </div>

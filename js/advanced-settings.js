@@ -506,9 +506,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       rulesItems.innerHTML = websiteRules.map(rule => `
-      <div class="rule-item" data-rule-id="${rule.id}" style="grid-template-columns: 2fr 3fr 1fr 1fr 1fr 1fr 1fr;">
+      <div class="rule-item" data-rule-id="${rule.id}" style="grid-template-columns: 2fr 2fr 0.5fr 1fr 1fr 1fr 1fr;">
         <div class="item-website">${escapeHtml(rule.website)}</div>
-        <div class="item-ua">${escapeHtml(truncateUA(rule.userAgent))}</div>
+        <div class="item-ua" style="font-size: 11px;">${escapeHtml(truncateUA(rule.userAgent))}</div>
         <div class="item-touch">${rule.touchPoints || 0}</div>
         <div class="item-js-blocked">${rule.jsBlocked ? '&#10003; Yes' : 'No'}</div>
         <div class="item-js-protected">${rule.jsProtected ? '&#10003; Yes' : 'No'}</div>
