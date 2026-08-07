@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="icons/icon.png" alt="Icon" width="96" height="96" />
+
 # MorphAgent
 
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
@@ -8,6 +12,53 @@
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
+
+---
+
+## **Official Firefox Extension**
+
+MorphAgent is available on the official Mozilla Firefox Add-ons store.
+
+<a href="https://addons.mozilla.org/en-US/firefox/addon/morphagent/" target="_blank">
+  <img src="https://img.shields.io/badge/Install_from_Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white&labelColor=2D3748" alt="Install from Firefox Add-ons" />
+</a>
+
+</div>
+
+## **Screenshots**
+
+<div align="center">
+
+<table>
+   <tr>
+      <th colspan="2" style="text-align:center; font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
+   </tr>
+   <tr>
+      <td>
+         <img src="src/home_light.png" alt="Light Mode Interface" width="300" />
+         <div>Light Mode</div>
+      </td>
+      <td>
+         <img src="src/home_dark.png" alt="Dark Mode Interface" width="300" />
+         <div>Dark Mode</div>
+      </td>
+   </tr>
+   <tr>
+      <th colspan="2" style="text-align:center; font-size:1.1em;">Features Overview</th>
+   </tr>
+   <tr>
+      <td>
+         <img src="src/features_light.png" alt="Features Light" width="300" />
+         <div>Features (Light)</div>
+      </td>
+      <td>
+         <img src="src/features_dark.png" alt="Features Dark" width="300" />
+         <div>Features (Dark)</div>
+      </td>
+   </tr>
+</table>
+
+</div>
 
 ---
 
@@ -46,11 +97,31 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 9. **Context Menu Fast Switcher & Toolbar Action Badges**  
    Right-click context menu options for instant profile switching (`iPhone 17`, `Chrome 145`) and live action badge indicators (`MOB`, `TAB`, `DES`, `GAM`).
 
-10. **Futuristic GitHub-Inspired Animated UI**  
-    Glassmorphic interface featuring a quick search profile filter, keyboard shortcuts, and dark/light mode themes.
+10. **Futuristic Animated UI**  
+    Glassmorphic interface featuring a sleek red accent theme, quick search profile filter, keyboard shortcuts, and dark/light modes.
 
 11. **Standalone Feature Mode (Independent Feature Toggles)**  
     Allows users to run individual features (Location Spoofing, Touch Spoofing, Block JavaScript, Detection Shield) independently without modifying or overriding the browser's real User-Agent flag.
+
+---
+
+## **Quick Start**
+
+1. Click the MorphAgent icon in your browser toolbar
+2. Select device category: Mobile, Tablet, Desktop, or Gaming  
+3. Choose specific profile from the device grid
+4. Toggle touch spoofing (automatically sets appropriate touch points)
+5. Apply changes - refresh pages to see the new user agent
+
+### Advanced Configuration
+Click **"Advanced Settings"** for power-user features:
+- **Website Rules**: Set automatic profiles for specific domains with wildcard support
+- **Block List**: Disable spoofing on sensitive sites
+- **Tab-Specific Settings**: View, copy, and manage per-tab UA overrides
+- **Import/Export**: Backup and share your configuration as JSON
+- **Custom User Agents**: Enter any UA string manually
+- **Open Extension Debugging**: Quick shortcut to debugging pages
+- **Reset All Settings**: Factory reset with confirmation
 
 ---
 
@@ -62,9 +133,11 @@ MorphAgent includes a Node.js build script to generate manifest files for specif
 # Generate both Chrome Manifest V3 and Firefox Manifest V2/V3
 npm run build:manifest
 
+# Build and package for Firefox (creates morph-agent-firefox.zip)
+npm run build:firefox
+
 # Generate individually:
 npm run build:chrome
-npm run build:firefox
 ```
 
 ---
@@ -80,7 +153,7 @@ npm run build:firefox
    ```
 2. Generate the Chrome Manifest V3 configuration:
    ```bash
-   node scripts/generate-manifest.js chrome
+   npm run build:chrome
    ```
 3. Open the extension management page in your browser:
    - Chrome: `chrome://extensions/`
@@ -93,13 +166,17 @@ npm run build:firefox
 
 ### Mozilla Firefox
 
-1. Generate the Firefox Manifest configuration:
+**Option 1: Official Store**
+Install it directly from the [Firefox Add-ons Store](https://addons.mozilla.org/en-US/firefox/addon/morphagent/).
+
+**Option 2: Manual Installation**
+1. Generate the Firefox Manifest configuration and package it:
    ```bash
-   node scripts/generate-manifest.js firefox
+   npm run build:firefox
    ```
 2. Navigate to `about:debugging#/runtime/this-firefox` in Firefox.
 3. Click **Load Temporary Add-on...**
-4. Select `manifest.json` (or `manifest.firefox.json`) from the project directory.
+4. Select `manifest.json` (or `morph-agent-firefox.zip`) from the project directory.
 
 ---
 
@@ -111,6 +188,33 @@ npm run build:firefox
 
 ---
 
+## **Known Limitations**
+
+- **Content Security Policy**: Some sites with strict CSP may limit content script injection
+- **Touch API Scope**: Only affects `navigator.maxTouchPoints`
+- **Banking Sites**: Recommended to use block list for financial websites
+
+---
+
 ## License
 
-Licensed under the [MIT License](LICENSE). Developed by [Karthik Lal](https://github.com/karthik558).
+Licensed under the [MIT License](LICENSE). 
+
+## Author
+
+**Developed by KARTHIK LAL**
+- GitHub: [@karthik558](https://github.com/karthik558)
+- Design: Modern interface with dark/light themes
+- Features: Advanced per-site spoofing with Detection Shield
+- Database: Comprehensive device profile collection (130+ profiles)
+- UX: Enhanced user experience and professional polish
+
+<div align="center">
+
+**Built with ❤️ for developers who value browser privacy and testing**
+
+*MorphAgent - Transform your browser identity with professional-grade spoofing & anti-fingerprinting*
+
+**⭐ Star this repo if MorphAgent helps your development workflow!**
+
+</div>

@@ -89,7 +89,15 @@ const v2Manifest = {
     "js/advanced-settings.js",
     "js/profiles.js",
     "js/inject.js"
-  ]
+  ],
+  browser_specific_settings: {
+    gecko: {
+      id: "morph-agent@karthiklal.in",
+      data_collection_permissions: {
+        required: ["none"]
+      }
+    }
+  }
 };
 delete v2Manifest.action;
 delete v2Manifest.host_permissions;

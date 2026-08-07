@@ -62,5 +62,15 @@
       "48": "icons/icon.png",
       "128": "icons/icon.png"
     }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "morph-agent@karthiklal.in",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
   }
 }

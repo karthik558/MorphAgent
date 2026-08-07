@@ -5,8 +5,8 @@
   "main": "js/background.js",
   "scripts": {
     "build:manifest": "node scripts/generate-manifest.js all",
-    "build:chrome": "node scripts/generate-manifest.js chrome",
-    "build:firefox": "node scripts/generate-manifest.js firefox",
+    "build:chrome": "node scripts/generate-manifest.js chrome && node scripts/zip-chrome.js",
+    "build:firefox": "node scripts/generate-manifest.js firefox && node scripts/zip-firefox.js",
     "build": "node scripts/generate-manifest.js all"
   },
   "keywords": [
