@@ -15,9 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const importFile = document.getElementById('importFile');
 
   const websiteUrlInput = document.getElementById('websiteUrl');
-  const customUserAgentSelect = document.getElementById('customUserAgent');
   const customUaInput = document.getElementById('customUaInput');
   const customUaText = document.getElementById('customUaText');
+  const categorySelect = document.getElementById('categorySelect');
+  const platformSelect = document.getElementById('platformSelect');
+  const browserSelect = document.getElementById('browserSelect');
+  const profileSelect = document.getElementById('profileSelect');
   const touchPointsInput = document.getElementById('touchPoints');
   const jsBlockRuleCheckbox = document.getElementById('jsBlockRule');
   const jsProtectRuleCheckbox = document.getElementById('jsProtectRule');
@@ -58,6 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Tab-specific state
   let tabSettings = [];
+
+  let allPlatforms = {};
+  if (typeof profilesStructured !== 'undefined') {
+    Object.entries(profilesStructured).forEach(([catKey, cat]) => {
+      Object.entries(cat.platforms).forEach(([platKey, plat]) => {
+        allPlatforms[platKey] = { ...plat, category: catKey };
+      });
+    });
+  }
 
   // Initialize
   init();
@@ -178,6 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+    function populateUserAgentOptions() {
+      categorySelect.innerHTML = '<option value="">Category...</option>';
+      if (typeof profilesStructured !== 'undefined') {
+        Object.entries(profilesStructured).forEach(([catKey, cat]) => {
+          const option = document.createElement('option');
+          option.value = catKey;
+          option.textContent = cat.name;
+          categorySelect.appendChild(option);
+        });
+      }
+    }
 
     function setupEventListeners() {
       // Theme toggle
@@ -205,16 +228,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       });
-
-      // Custom UA select change
-      customUserAgentSelect.addEventListener('change', (e) => {
-        if (e.target.value === 'custom') {
-          customUaInput.style.display = 'block';
-        } else {
-          customUaInput.style.display = 'none';
-        }
-      });
-
       // Add rule
       addRuleBtn.addEventListener('click', addOrUpdateRule);
 
@@ -333,30 +346,161 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    function populateUserAgentOptions() {
-      // Clear existing options except first two
-      while (customUserAgentSelect.children.length > 2) {
-        customUserAgentSelect.removeChild(customUserAgentSelect.lastChild);
-      }
 
-      // Add profiles from profiles.js
-      if (typeof profilesStructured !== 'undefined') {
-        Object.entries(profilesStructured).forEach(([categoryKey, category]) => {
-          Object.entries(category.platforms).forEach(([platformKey, platform]) => {
-            platform.variants.forEach((variant) => {
-              const option = document.createElement('option');
-              option.value = variant.ua;
-              option.textContent = `${category.name} - ${variant.name}`;
-              customUserAgentSelect.appendChild(option);
-            });
-          });
+
+
+
+    categorySelect.addEventListener('change', (e) => {
+      const catKey = e.target.value;
+      platformSelect.innerHTML = '<option value="">Platform...</option>';
+      browserSelect.innerHTML = '<option value="">Browser...</option>';
+      profileSelect.innerHTML = '<option value="">Device...</option>';
+      platformSelect.disabled = true;
+      browserSelect.disabled = true;
+      profileSelect.disabled = true;
+      
+      if (!catKey || typeof profilesStructured === 'undefined') return;
+      
+      const cat = profilesStructured[catKey];
+      if (cat && cat.platforms) {
+        platformSelect.disabled = false;
+        Object.entries(cat.platforms).forEach(([platKey, plat]) => {
+          const option = document.createElement('option');
+          option.value = platKey;
+          option.textContent = plat.name;
+          platformSelect.appendChild(option);
         });
       }
+    });
+
+    platformSelect.addEventListener('change', (e) => {
+      const platKey = e.target.value;
+      browserSelect.innerHTML = '<option value="">Browser...</option>';
+      profileSelect.innerHTML = '<option value="">Device...</option>';
+      profileSelect.disabled = true;
+      
+      if (!platKey) {
+        browserSelect.disabled = true;
+        return;
+      }
+      
+      browserSelect.disabled = false;
+      const option = document.createElement('option');
+      option.value = 'all';
+      option.textContent = 'Default / All';
+      browserSelect.appendChild(option);
+      // For simplicity, we just use "Default / All" in advanced settings unless we copy browserTypes
+      if (typeof browserTypes !== 'undefined') {
+        Object.entries(browserTypes).forEach(([bKey, bVal]) => {
+          if (bKey !== 'all' && (bVal.platforms.includes('all') || bVal.platforms.includes(platKey))) {
+            const opt = document.createElement('option');
+            opt.value = bKey;
+            opt.textContent = bVal.name;
+            browserSelect.appendChild(opt);
+          }
+        });
+      }
+    });
+
+    function filterProfilesByBrowser(profilesList, browserType) {
+      if (typeof browserTypes === 'undefined') return profilesList;
+      const bObj = browserTypes[browserType];
+      if (!bObj) return profilesList;
+
+      const patterns = bObj.patterns || (bObj.pattern ? [bObj.pattern] : []);
+      
+      const filtered = profilesList.filter(profile => {
+        if (!profile.ua) return false;
+        if (browserType === 'safari') {
+          return profile.ua.includes('Safari') && 
+                 !profile.ua.includes('Chrome') && 
+                 !profile.ua.includes('Edg') && 
+                 !profile.ua.includes('OPR') && 
+                 !profile.ua.includes('CriOS');
+        }
+        return patterns.some(pat => pat && profile.ua.includes(pat));
+      });
+
+      if (filtered.length > 0) return filtered;
+
+      return profilesList.map(profile => {
+        let newUA = profile.ua;
+        if (browserType === 'chrome') {
+          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1');
+          } else {
+            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36');
+          }
+        } else if (browserType === 'firefox') {
+          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'FxiOS/142.0 Mobile/15E148 Safari/604.1');
+          } else {
+            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Firefox/142.0');
+          }
+        } else if (browserType === 'edge') {
+          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1');
+          } else {
+            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36 Edg/145.0.3211.55');
+          }
+        }
+        return {
+          ...profile,
+          name: profile.name.includes('(') ? profile.name : `${profile.name} (${bObj.name || browserType})`,
+          ua: newUA
+        };
+      });
     }
+
+    browserSelect.addEventListener('change', (e) => {
+      const catKey = categorySelect.value;
+      const platKey = platformSelect.value;
+      const bKey = e.target.value;
+      profileSelect.innerHTML = '<option value="">Device...</option><option value="custom">Custom String...</option>';
+      
+      if (!bKey) {
+        profileSelect.disabled = true;
+        return;
+      }
+      
+      profileSelect.disabled = false;
+      const cat = typeof profilesStructured !== 'undefined' ? profilesStructured[catKey] : null;
+      if (cat && cat.platforms && cat.platforms[platKey]) {
+        let variants = cat.platforms[platKey].variants;
+        if (bKey !== 'all') {
+          variants = filterProfilesByBrowser(variants, bKey);
+        }
+        profileSelect.activeVariants = variants;
+        variants.forEach((v, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx.toString();
+          opt.textContent = v.name;
+          profileSelect.appendChild(opt);
+        });
+      }
+    });
+
+    profileSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'custom') {
+        customUaInput.style.display = 'block';
+        customUaText.value = '';
+        touchPointsInput.value = 0;
+      } else if (val !== '') {
+        customUaInput.style.display = 'none';
+        const variants = profileSelect.activeVariants;
+        if (variants && variants[parseInt(val)]) {
+          const variant = variants[parseInt(val)];
+          customUaText.value = variant.ua;
+          touchPointsInput.value = variant.touchPoints || 0;
+        }
+      } else {
+        customUaInput.style.display = 'none';
+      }
+    });
 
     function addOrUpdateRule() {
       const website = websiteUrlInput.value.trim();
-      const selectedUA = customUserAgentSelect.value;
       const customUA = customUaText.value.trim();
       const touchPoints = parseInt(touchPointsInput.value) || 0;
 
@@ -365,17 +509,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      let userAgent = '';
-      if (selectedUA === 'custom') {
-        if (!customUA) {
-          showStatus('Please enter a custom user agent', 'error');
-          return;
-        }
-        userAgent = customUA;
-      } else if (selectedUA) {
-        userAgent = selectedUA;
-      } else {
-        showStatus('Please select a user agent', 'error');
+      const userAgent = customUA;
+      if (!userAgent) {
+        showStatus('Please select a user agent or enter a custom one', 'error');
         return;
       }
 
@@ -421,7 +557,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       websiteUrlInput.value = '';
-      customUserAgentSelect.value = '';
+      categorySelect.value = '';
+      platformSelect.innerHTML = '<option value="">Platform...</option>';
+      platformSelect.disabled = true;
+      browserSelect.innerHTML = '<option value="">Browser...</option>';
+      profileSelect.innerHTML = '<option value="">Device...</option>';
+      browserSelect.disabled = true;
+      profileSelect.disabled = true;
       customUaText.value = '';
       touchPointsInput.value = '0';
       jsBlockRuleCheckbox.checked = false;
@@ -467,16 +609,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Try to find the UA in the select options
-      const option = Array.from(customUserAgentSelect.options).find(opt => opt.value === rule.userAgent);
-      if (option) {
-        customUserAgentSelect.value = rule.userAgent;
-        customUaInput.style.display = 'none';
-      } else {
-        customUserAgentSelect.value = 'custom';
-        customUaText.value = rule.userAgent;
-        customUaInput.style.display = 'block';
-      }
+      categorySelect.value = '';
+      platformSelect.innerHTML = '<option value="">Platform...</option>';
+      platformSelect.disabled = true;
+      browserSelect.innerHTML = '<option value="">Browser...</option>';
+      profileSelect.innerHTML = '<option value="">Device...</option>';
+      browserSelect.disabled = true;
+      profileSelect.disabled = true;
+      
+      customUaText.value = rule.userAgent;
+      customUaInput.style.display = 'block';
 
       addRuleBtn.innerHTML = '<span class="icon">✓</span> Update Rule';
       websiteUrlInput.focus();
@@ -875,7 +1017,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear forms
         websiteUrlInput.value = '';
         blockUrlInput.value = '';
-        customUserAgentSelect.value = '';
+        categorySelect.value = '';
+        platformSelect.innerHTML = '<option value="">Platform...</option>';
+        platformSelect.disabled = true;
+        browserSelect.innerHTML = '<option value="">Browser...</option>';
+        profileSelect.innerHTML = '<option value="">Device...</option>';
+        browserSelect.disabled = true;
+        profileSelect.disabled = true;
         customUaText.value = '';
         jsBlockRuleCheckbox.checked = false;
         jsProtectRuleCheckbox.checked = false;
