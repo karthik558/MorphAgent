@@ -5,13 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const themeToggle = document.getElementById('themeToggle');
   const closeBtn = document.getElementById('closeBtn');
+  const backBtn = document.getElementById('backBtn');
   const addRuleBtn = document.getElementById('addRuleBtn');
   // Elements
   const addBlockBtn = document.getElementById('addBlockBtn');
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
   const debugBtn = document.getElementById('debugBtn');
-  const resetAllBtn = document.getElementById('resetAllBtn');
+  const resetAllBtn = document.getElementById('factoryResetBtn');
   const importFile = document.getElementById('importFile');
 
   const websiteUrlInput = document.getElementById('websiteUrl');
@@ -37,15 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusText = document.getElementById('statusText');
 
   // Custom Locations Elements
-  const locNameInput = document.getElementById('locNameInput');
-  const locLatInput = document.getElementById('locLatInput');
-  const locLngInput = document.getElementById('locLngInput');
-  const addLocBtn = document.getElementById('addLocBtn');
-  const customLocItems = document.getElementById('customLocItems');
+  const locNameInput = document.getElementById('newLocName');
+  const locLatInput = document.getElementById('newLocLat');
+  const locLngInput = document.getElementById('newLocLng');
+  const addLocBtn = document.getElementById('addLocationBtn');
+  const customLocItems = document.getElementById('customLocationsList');
 
   // Tab-specific settings elements
   const refreshTabsBtn = document.getElementById('refreshTabsBtn');
-  const clearAllTabsBtn = document.getElementById('clearAllTabsBtn');
+  const clearAllTabsBtn = document.getElementById('clearTabSettingsBtn');
   const tabSettingsItems = document.getElementById('tabSettingsItems');
 
   // State
@@ -143,24 +144,31 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderBlockList() {
     if (blockList.length === 0) {
       blockItems.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
-          </svg>
-          <p>No blocked websites yet</p>
-          <small>Add websites where user agent spoofing should be disabled</small>
-        </div>
+        <tr>
+          <td colspan="2">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <p>No blocked websites yet</p>
+                <span>Add websites where user agent spoofing should be disabled</span>
+              </div>
+            </div>
+          </td>
+        </tr>
       `;
       return;
     }
 
     blockItems.innerHTML = blockList.map(item => `
-      <div class="block-item" data-block-id="${item.id}">
-        <div class="item-website">${escapeHtml(item.website)}</div>
-        <div class="item-actions">
-          <button class="delete-btn" data-block-id="${item.id}">Remove</button>
-        </div>
-      </div>
+      <tr>
+        <td>${escapeHtml(item.website)}</td>
+        <td>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block='${JSON.stringify(item)}'>Edit</button>
+            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block-id="${item.id}">Remove</button>
+          </div>
+        </td>
+      </tr>
     `).join('');
 
     // Add event listeners to block delete buttons
@@ -180,6 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
       closeBtn.addEventListener('click', () => {
         window.close();
       });
+
+      // Back button
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          window.close();
+        });
+      }
 
       // Custom UA select change
       customUserAgentSelect.addEventListener('change', (e) => {
@@ -573,37 +588,42 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderLocations() {
       if (customLocations.length === 0) {
         customLocItems.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zM7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.88-2.88 7.19-5 9.88C9.92 16.21 7 11.85 7 9z"/>
-            <circle cx="12" cy="9" r="2.5"/>
-          </svg>
-          <p>No custom locations yet</p>
-          <small>Add your own GPS coordinates here to use in the popup</small>
-        </div>`;
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <p>No custom locations yet</p>
+                <span>Add your own GPS coordinates here to use in the popup</span>
+              </div>
+            </div>
+          </td>
+        </tr>`;
         return;
       }
 
       customLocItems.innerHTML = customLocations.map(loc => `
-      <div class="rule-item" data-loc-id="${loc.id}" style="grid-template-columns: 2fr 1fr 1fr auto;">
-        <div class="item-website">${escapeHtml(loc.name)}</div>
-        <div class="item-ua">${loc.lat}</div>
-        <div class="item-ua">${loc.lng}</div>
-        <div class="item-actions">
-          <button class="edit-btn" data-loc='${JSON.stringify(loc)}'>Edit</button>
-          <button class="delete-btn" data-loc-id="${loc.id}">Delete</button>
-        </div>
-      </div>
+      <tr>
+        <td>${escapeHtml(loc.name)}</td>
+        <td>${loc.lat}</td>
+        <td>${loc.lng}</td>
+        <td>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-loc='${JSON.stringify(loc)}'>Edit</button>
+            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-loc-id="${loc.id}">Delete</button>
+          </div>
+        </td>
+      </tr>
       `).join('');
 
-      document.querySelectorAll('#customLocItems .edit-btn').forEach(btn => {
+      document.querySelectorAll('#customLocationsList .edit-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const loc = JSON.parse(e.target.getAttribute('data-loc'));
           editLocation(loc);
         });
       });
 
-      document.querySelectorAll('#customLocItems .delete-btn').forEach(btn => {
+      document.querySelectorAll('#customLocationsList .delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const locId = parseInt(e.target.getAttribute('data-loc-id'));
           deleteLocation(locId);
@@ -614,30 +634,36 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRules() {
       if (websiteRules.length === 0) {
         rulesItems.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          </svg>
-          <p>No custom website rules yet</p>
-          <small>Add rules to apply specific user agents to certain websites</small>
-        </div>
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <p>No custom website rules yet</p>
+                <span>Add rules to apply specific user agents to certain websites</span>
+              </div>
+            </div>
+          </td>
+        </tr>
       `;
         return;
       }
 
       rulesItems.innerHTML = websiteRules.map(rule => `
-      <div class="rule-item" data-rule-id="${rule.id}" style="grid-template-columns: 2fr 2fr 0.5fr 1fr 1fr 1fr 1fr;">
-        <div class="item-website">${escapeHtml(rule.website)}</div>
-        <div class="item-ua" style="font-size: 11px;">${escapeHtml(truncateUA(rule.userAgent))}</div>
-        <div class="item-touch">${rule.touchPoints || 0}</div>
-        <div class="item-js-blocked">${rule.jsBlocked ? '&#10003; Yes' : 'No'}</div>
-        <div class="item-js-protected">${rule.jsProtected ? '&#10003; Yes' : 'No'}</div>
-        <div class="item-geo-spoofed">${rule.geoSpoofEnabled ? '&#10003; Yes' : 'No'}</div>
-        <div class="item-actions">
-          <button class="edit-btn" data-rule='${JSON.stringify(rule)}'>Edit</button>
-          <button class="delete-btn" data-rule-id="${rule.id}">Delete</button>
-        </div>
-      </div>
+      <tr>
+        <td>${escapeHtml(rule.website)}</td>
+        <td style="font-size: 11px;">${escapeHtml(truncateUA(rule.userAgent))}</td>
+        <td>${rule.touchPoints || 0}</td>
+        <td>${rule.jsBlocked ? '&#10003; Yes' : 'No'}</td>
+        <td>${rule.jsProtected ? '&#10003; Yes' : 'No'}</td>
+        <td>${rule.geoSpoofEnabled ? '&#10003; Yes' : 'No'}</td>
+        <td>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule='${JSON.stringify(rule)}'>Edit</button>
+            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule-id="${rule.id}">Delete</button>
+          </div>
+        </td>
+      </tr>
     `).join('');
 
       // Add event listeners to buttons
@@ -659,25 +685,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderBlockList() {
       if (blockList.length === 0) {
         blockItems.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
-          </svg>
-          <p>No blocked websites yet</p>
-          <small>Add websites where user agent spoofing should be disabled</small>
-        </div>
+        <tr>
+          <td colspan="2">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <p>No blocked websites yet</p>
+                <span>Add websites where user agent spoofing should be disabled</span>
+              </div>
+            </div>
+          </td>
+        </tr>
       `;
         return;
       }
 
       blockItems.innerHTML = blockList.map(item => `
-      <div class="block-item" data-block-id="${item.id}">
-        <div class="item-website">${escapeHtml(item.website)}</div>
-        <div class="item-actions">
-          <button class="edit-btn" data-block='${JSON.stringify(item)}'>Edit</button>
-          <button class="delete-btn" data-block-id="${item.id}">Remove</button>
-        </div>
-      </div>
+      <tr>
+        <td>${escapeHtml(item.website)}</td>
+        <td>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block='${JSON.stringify(item)}'>Edit</button>
+            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block-id="${item.id}">Remove</button>
+          </div>
+        </td>
+      </tr>
     `).join('');
 
       document.querySelectorAll('.block-item .edit-btn').forEach(btn => {
@@ -840,51 +872,40 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTabSettings() {
     if (tabSettings.length === 0) {
       tabSettingsItems.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-            <path d="M14,2A8,8 0 0,1 22,10A8,8 0 0,1 14,18A8,8 0 0,1 6,10A8,8 0 0,1 14,2M14,4A6,6 0 0,0 8,10A6,6 0 0,0 14,16A6,6 0 0,0 20,10A6,6 0 0,0 14,4Z"/>
-          </svg>
-          <p>No tab-specific settings found</p>
-          <small>Apply settings to individual tabs from the main popup to see them here</small>
-        </div>
+        <tr>
+          <td colspan="4">
+            <div class="empty-state">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <p>No tab-specific settings found</p>
+                <span>Apply settings to individual tabs from the main popup to see them here</span>
+              </div>
+            </div>
+          </td>
+        </tr>
       `;
       return;
     }
+    tabSettingsItems.innerHTML = tabSettings.map(tab => {
+      let touchText = 'Default';
+      if (tab.touchSpoofEnabled) touchText = tab.maxTouchPoints;
+      
+      return `
+      <tr>
+        <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(tab.url)}">${escapeHtml(tab.url)}</td>
+        <td style="font-size: 11px;">${tab.uaSpoofEnabled && tab.userAgent ? escapeHtml(truncateUA(tab.userAgent)) : 'Disabled'}</td>
+        <td>${touchText}</td>
+        <td>
+          <button class="btn btn-danger-outline delete-tab-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-tab-id="${tab.tabId}">Clear</button>
+        </td>
+      </tr>
+      `;
+    }).join('');
 
-    tabSettingsItems.innerHTML = tabSettings.map(tab => `
-      <div class="rule-item" data-tab-id="${tab.tabId}">
-        <div class="item-website">
-          <div class="website-url">${escapeHtml(tab.url)}</div>
-          <div class="website-title">${escapeHtml(tab.title || 'Untitled')}</div>
-        </div>
-        <div class="item-ua">${escapeHtml(tab.userAgent).substring(0, 60)}${tab.userAgent.length > 60 ? '...' : ''}</div>
-        <div class="item-touch">${tab.touchPoints || 0}</div>
-        <div class="item-actions">
-          <button class="copy-btn" data-tab-id="${tab.tabId}" title="Copy settings">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-            </svg>
-          </button>
-          <button class="delete-btn" data-tab-id="${tab.tabId}" title="Remove tab settings">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    // Add event listeners
-    document.querySelectorAll('.rule-item .copy-btn').forEach(btn => {
+    // Add event listeners to delete buttons
+    document.querySelectorAll('.delete-tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const tabId = parseInt(e.target.closest('button').getAttribute('data-tab-id'));
-        copyTabSettings(tabId);
-      });
-    });
-
-    document.querySelectorAll('.rule-item .delete-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tabId = parseInt(e.target.closest('button').getAttribute('data-tab-id'));
+        const tabId = parseInt(e.target.getAttribute('data-tab-id'));
         deleteTabSettings(tabId);
       });
     });

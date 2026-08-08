@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initTouchControls() {
     touchToggle.addEventListener('change', () => {
       const isEnabled = touchToggle.checked;
-      touchControls.classList.toggle('visible', isEnabled);
+      touchControls.style.display = isEnabled ? 'block' : 'none';
       
       if (isEnabled && selectedProfile && selectedProfile.profile.touchPoints !== undefined) {
         touchPointsInput.value = selectedProfile.profile.touchPoints;
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize touch controls visibility
-    touchControls.classList.toggle('visible', touchToggle.checked);
+    touchControls.style.display = touchToggle.checked ? 'block' : 'none';
   }
 
   // Status Messages
@@ -583,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     touchToggle.checked = rule.touchPoints > 0;
     touchPointsInput.value = rule.touchPoints || 0;
-    touchControls.classList.toggle('visible', touchToggle.checked);
+    touchControls.style.display = touchToggle.checked ? 'block' : 'none';
     jsBlockToggle.checked = !!rule.jsBlocked;
     jsProtectToggle.checked = !!rule.jsProtected;
     
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         touchToggle.checked = !!settings.touchSpoofEnabled;
         touchPointsInput.value = settings.maxTouchPoints || 0;
-        touchControls.classList.toggle('visible', touchToggle.checked);
+        touchControls.style.display = touchToggle.checked ? 'block' : 'none';
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
         
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectCategory('desktop');
         touchToggle.checked = false;
         touchPointsInput.value = 0;
-        touchControls.classList.remove('visible');
+        touchControls.style.display = 'none';
         jsBlockToggle.checked = false;
         jsProtectToggle.checked = false;
         if (rtcProtectToggle) rtcProtectToggle.checked = true;

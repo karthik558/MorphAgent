@@ -6,370 +6,429 @@
   <title>Advanced Settings - MorphAgent</title>
   <link rel="stylesheet" href="css/advanced-settings.css">
 </head>
-<body>
+<body class="dark-mode">
   <div class="container">
     <!-- Header -->
     <header class="header">
-      <div class="header-content">
+      <div class="header-left">
+        <button class="back-btn" id="backBtn" title="Back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
         <div class="title-section">
           <h1>Advanced Settings</h1>
           <p>Manage custom website rules and block lists</p>
         </div>
-        <div class="header-actions">
-          <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-            <svg class="theme-icon light-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
-            </svg>
-            <svg class="theme-icon dark-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z"/>
-            </svg>
-          </button>
-          <button class="close-btn" id="closeBtn" title="Close">
-            <span class="icon">✕</span>
-          </button>
-        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" title="Toggle theme">
+          <svg class="theme-icon light-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="theme-icon dark-icon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="closeBtn" title="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
+      
       <!-- Threat Analytics Section -->
       <section class="settings-section">
-        <div class="section-header">
-          <h2>Threat Analytics Dashboard</h2>
-          <p>Live monitoring of fingerprinting and tracking attempts across all domains</p>
-        </div>
-        
-        <div class="rules-container" style="padding: 20px; background: var(--bg-glass); backdrop-filter: blur(12px); border-radius: var(--radius-lg); border: 1px solid var(--border-secondary);">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <div style="flex: 1; padding: 16px; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,0,0,0.1); border-radius: var(--radius-md); text-align: center; margin-right: 12px;">
-              <h3 style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Total Threats Blocked</h3>
-              <div id="analytics-total" style="font-size: 32px; font-weight: 700; color: var(--accent); margin-top: 8px;">0</div>
-            </div>
-            <div style="flex: 1; padding: 16px; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.1); border-radius: var(--radius-md); text-align: center;">
-              <h3 style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Most Targeted Domain</h3>
-              <div id="analytics-domain" style="font-size: 20px; font-weight: 700; color: var(--success); margin-top: 14px; word-break: break-all;">None</div>
-            </div>
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/><polyline points="12 11 12 14"/></svg>
           </div>
-          
-          <div style="height: 300px; width: 100%; position: relative;">
-            <canvas id="threatChart"></canvas>
+          <div class="section-header-text">
+            <h2>Threat Analytics Dashboard</h2>
+            <p>Live monitoring of fingerprinting and tracking attempts across all domains</p>
+          </div>
+          <div class="header-badge">Live</div>
+        </div>
+        <div class="section-body">
+          <div class="analytics-grid">
+            <div class="analytics-card danger">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <h3>TOTAL THREATS BLOCKED</h3>
+              <div id="analytics-total" class="value">0</div>
+              <div class="subtext">No threats blocked yet</div>
+            </div>
+            <div class="analytics-card success">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <h3>MOST TARGETED DOMAIN</h3>
+              <div id="analytics-domain" class="value">None</div>
+              <div class="subtext">No data available</div>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Website Rules Section -->
       <section class="settings-section">
-        <div class="section-header">
-          <h2>Website-Specific Rules</h2>
-          <p>Set custom user agents for specific websites</p>
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Website-Specific Rules</h2>
+            <p>Set custom user agents for specific websites</p>
+          </div>
         </div>
-        
-        <div class="rules-container">
-          <div class="add-rule-form">
-            <div class="form-row">
-              <div class="input-group">
-                <label for="websiteUrl">Website URL or Pattern</label>
-                <input type="text" id="websiteUrl" placeholder="e.g., google.com or *.example.com">
-              </div>
-              <div class="input-group">
-                <label for="customUserAgent">Custom User Agent</label>
-                <select id="customUserAgent">
+        <div class="section-body">
+          <div class="form-row">
+            <div class="input-group">
+              <label for="websiteUrl">WEBSITE URL OR PATTERN</label>
+              <input type="text" id="websiteUrl" class="custom-input" placeholder="e.g., google.com or *.example.com">
+            </div>
+            <div class="input-group">
+              <label for="customUserAgent">CUSTOM USER AGENT</label>
+              <div class="select-wrapper">
+                <select id="customUserAgent" class="custom-select">
                   <option value="">Select from profiles...</option>
                   <option value="custom">Enter custom UA...</option>
                 </select>
-              </div>
-              <div class="input-group">
-                <label for="touchPoints">Touch Points</label>
-                <input type="number" id="touchPoints" min="0" max="20" value="0" placeholder="0-20">
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
             </div>
-            
+            <div class="input-group">
+              <label for="touchPoints">TOUCH POINTS</label>
+              <input type="number" id="touchPoints" class="custom-input" min="0" max="20" value="0" placeholder="0">
+            </div>
+          </div>
+          <div class="custom-ua-input" id="customUaInput" style="display: none; margin-top: 10px;">
+            <div class="input-group">
+              <label for="customUaText">CUSTOM USER AGENT STRING</label>
+              <textarea id="customUaText" class="custom-input" placeholder="Enter custom user agent string..." style="height: 60px; resize: none;"></textarea>
+            </div>
+          </div>
+          <div class="form-row" style="align-items: center; justify-content: space-between;">
+            <div class="input-group" style="flex-direction: row; align-items: center; gap: 16px;">
+              <label style="margin-right: 8px;">SECURITY & SPOOFING</label>
+              <div class="checkbox-row">
+                <label class="checkbox-label"><input type="checkbox" id="jsBlockRule"> Block JS</label>
+                <label class="checkbox-label"><input type="checkbox" id="jsProtectRule"> Protect JS</label>
+                <label class="checkbox-label"><input type="checkbox" id="geoSpoofRule"> Geo Spoof</label>
+                <label class="checkbox-label"><input type="checkbox" id="mediaQueryRule"> Media Query Spoof</label>
+                <label class="checkbox-label"><input type="checkbox" id="timingShieldRule"> Timing Shield</label>
+              </div>
+            </div>
+            <button class="btn btn-solid" id="addRuleBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Rule
+            </button>
+          </div>
+          
+          <div class="input-group" id="geoCoordsGroup" style="display: none; margin-top: 10px;">
             <div class="form-row">
-              <div class="input-group" style="flex: 2; min-width: 200px;">
-                <label>Security & Spoofing</label>
-                <div style="display: flex; gap: 16px; align-items: center; padding: 10px 14px; background: var(--bg-glass); border-radius: var(--radius); border: 1px solid var(--border-primary); flex-wrap: wrap; min-height: 42px;">
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
-                    <input type="checkbox" id="jsBlockRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
-                    <span style="white-space: nowrap; margin-bottom: 0;">Block JS</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
-                    <input type="checkbox" id="jsProtectRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
-                    <span style="white-space: nowrap; margin-bottom: 0;">Protect JS</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
-                    <input type="checkbox" id="geoSpoofRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
-                    <span style="white-space: nowrap; margin-bottom: 0;">Geo Spoof</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
-                    <input type="checkbox" id="mediaQueryRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
-                    <span style="white-space: nowrap; margin-bottom: 0;">Media Query Spoof</span>
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
-                    <input type="checkbox" id="timingShieldRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
-                    <span style="white-space: nowrap; margin-bottom: 0;">Timing Shield</span>
-                  </label>
+              <div class="input-group">
+                <label for="geoCoordsPreset">LOCATION</label>
+                <div class="select-wrapper">
+                  <select id="geoCoordsPreset" class="custom-select">
+                    <option value="40.7128,-74.0060">New York</option>
+                    <option value="51.5074,-0.1278">London</option>
+                    <option value="35.6762,139.6503">Tokyo</option>
+                    <option value="48.8566,2.3522">Paris</option>
+                    <option value="37.7749,-122.4194">San Francisco</option>
+                    <option value="-33.8688,151.2093">Sydney</option>
+                    <option value="custom">Custom...</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
               </div>
-              <div class="input-group" id="geoCoordsGroup" style="display: none; flex: 1;">
-                <label for="geoCoordsPreset">Location</label>
-                <select id="geoCoordsPreset">
-                  <option value="40.7128,-74.0060">New York</option>
-                  <option value="51.5074,-0.1278">London</option>
-                  <option value="35.6762,139.6503">Tokyo</option>
-                  <option value="48.8566,2.3522">Paris</option>
-                  <option value="37.7749,-122.4194">San Francisco</option>
-                  <option value="-33.8688,151.2093">Sydney</option>
-                  <option value="custom">Custom...</option>
-                </select>
-                <div id="geoCustomCoords" style="display: none; margin-top: 5px;">
-                  <input type="number" id="geoLatRule" placeholder="Lat" step="any" style="width: 45%; display: inline-block;">
-                  <input type="number" id="geoLngRule" placeholder="Lng" step="any" style="width: 45%; display: inline-block;">
+              <div class="input-group" id="geoCustomCoords" style="display: none;">
+                <label>LATITUDE & LONGITUDE</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="number" id="geoLatRule" class="custom-input" placeholder="Lat" step="any">
+                  <input type="number" id="geoLngRule" class="custom-input" placeholder="Lng" step="any">
                 </div>
               </div>
-              <div style="flex: 0 0 auto; display: flex; align-items: flex-end;">
-                <button class="add-rule-btn" id="addRuleBtn" style="height: 42px;">
-                  <span class="icon">+</span>
-                  Add Rule
-                </button>
-              </div>
-            </div>
-            
-            <div class="custom-ua-input" id="customUaInput" style="display: none;">
-              <label for="customUaText">Custom User Agent String</label>
-              <textarea id="customUaText" placeholder="Enter custom user agent string..."></textarea>
             </div>
           </div>
 
-          <div class="rules-list">
-            <div class="list-header" style="grid-template-columns: 2fr 2fr 0.5fr 1fr 1fr 1fr 1fr;">
-              <span>Website</span>
-              <span>User Agent</span>
-              <span>Touch</span>
-              <span>Block JS</span>
-              <span>Protect JS</span>
-              <span>Geo Spoof</span>
-              <span>Actions</span>
-            </div>
-            <div class="rules-items" id="rulesItems">
-              <!-- Rules will be dynamically added here -->
-            </div>
-          </div>
+          <table class="custom-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 25%">WEBSITE</th>
+                <th style="width: 25%">USER AGENT</th>
+                <th style="width: 10%">TOUCH</th>
+                <th style="width: 10%">BLOCK JS</th>
+                <th style="width: 10%">PROTECT JS</th>
+                <th style="width: 10%">GEO SPOOF</th>
+                <th style="width: 10%">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="rulesItems">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <p>No custom website rules yet</p>
+                      <span>Add rules to apply specific user agents to certain websites</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
       <!-- Block List Section -->
       <section class="settings-section">
-        <div class="section-header">
-          <h2>Block List</h2>
-          <p>Websites where user agent spoofing should be disabled</p>
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Block List</h2>
+            <p>Websites where user agent spoofing should be disabled</p>
+          </div>
         </div>
-        
-        <div class="blocklist-container">
-          <div class="add-block-form">
-            <div class="form-row">
-              <div class="input-group">
-                <label for="blockUrl">Website URL or Pattern</label>
-                <input type="text" id="blockUrl" placeholder="e.g., bank.com or *.financial.org">
-              </div>
-              <button class="add-block-btn" id="addBlockBtn">
-                <span class="icon">+</span>
-                Add to Block List
-              </button>
+        <div class="section-body">
+          <div class="form-row" style="align-items: flex-end;">
+            <div class="input-group" style="flex: 1;">
+              <label for="blockUrl">WEBSITE URL OR PATTERN</label>
+              <input type="text" id="blockUrl" class="custom-input" placeholder="e.g., bank.com or *.financial.org">
             </div>
+            <button class="btn btn-solid" id="addBlockBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add to Block List
+            </button>
           </div>
-
-          <div class="block-list">
-            <div class="list-header">
-              <span>Blocked Website</span>
-              <span>Actions</span>
-            </div>
-            <div class="block-items" id="blockItems">
-              <!-- Blocked items will be dynamically added here -->
-            </div>
-          </div>
+          <table class="custom-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 80%">BLOCKED WEBSITE</th>
+                <th style="width: 20%">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="blockItems">
+              <tr>
+                <td colspan="2">
+                  <div class="empty-state">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <p>No blocked websites yet</p>
+                      <span>Add websites where user agent spoofing should be disabled</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <!-- Feature Descriptions Guide -->
-      <section class="settings-section">
-        <div class="section-header">
-          <h2>Feature Descriptions</h2>
-          <p>Reference guide for spoofing and protection features</p>
-        </div>
-        <div class="rules-container" style="padding: 16px; background: var(--bg-glass); backdrop-filter: blur(8px); border-radius: var(--radius-lg); border: 1px solid var(--border-secondary); box-shadow: var(--shadow-sm);">
-          <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 12px; font-size: 13px; color: var(--text-secondary);">
-            <li><strong style="color: var(--text-primary);">Spoof User Agent:</strong> Turn off to keep your real User-Agent while running individual features below.</li>
-            <li><strong style="color: var(--text-primary);">Touch Spoofing:</strong> Spoofs touchscreen capability (0 = desktop, 5 = phone, 10 = tablet).</li>
-            <li><strong style="color: var(--text-primary);">Block JavaScript:</strong> Blocks all JS execution. Reload pages after toggling.</li>
-            <li><strong style="color: var(--text-primary);">Detection Shield:</strong> Spoofs navigator, plugins, canvas & WebGL fingerprints to prevent detection.</li>
-            <li><strong style="color: var(--text-primary);">Location Spoofing:</strong> Overrides the Geolocation API with preset or custom coordinates.</li>
-          </ul>
-        </div>
-      </section>
+      <!-- Side-by-Side: Features & Locations -->
+      <div class="sections-grid">
+        <section class="settings-section">
+          <div class="section-header-box">
+            <div class="section-icon-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </div>
+            <div class="section-header-text">
+              <h2>Feature Descriptions</h2>
+              <p>Reference guide for spoofing and protection features</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="features-list">
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                <div class="feature-text"><strong>Spoof User Agent:</strong> Turn off to keep your real User-Agent while running individual features below.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5V5a2.5 2.5 0 0 0-5 0v11H8a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z"/></svg>
+                <div class="feature-text"><strong>Touch Spoofing:</strong> Spoofs touchscreen capability (0 = desktop, 5 = phone, 10 = tablet).</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <div class="feature-text"><strong>Block JavaScript:</strong> Blocks all JS execution. Reload pages after toggling.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div class="feature-text"><strong>Detection Shield:</strong> Spoofs navigator, plugins, canvas & WebGL fingerprints to prevent detection.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <div class="feature-text"><strong>Location Spoofing:</strong> Overrides the Geolocation API with preset or custom coordinates.</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <!-- Custom Locations Section -->
-      <section class="settings-section">
-        <div class="section-header">
-          <h2>Custom Locations</h2>
-          <p>Define custom GPS coordinates for the Location Spoofing feature</p>
-        </div>
-        
-        <div class="rules-container">
-          <div class="add-rule-form">
+        <section class="settings-section">
+          <div class="section-header-box">
+            <div class="section-icon-badge">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="section-header-text">
+              <h2>Custom Locations</h2>
+              <p>Define custom GPS coordinates for the Location Spoofing feature</p>
+            </div>
+          </div>
+          <div class="section-body">
             <div class="form-row">
               <div class="input-group">
-                <label for="locNameInput">Location Name</label>
-                <input type="text" id="locNameInput" placeholder="e.g., My Office">
+                <label for="newLocName">LOCATION NAME</label>
+                <input type="text" id="newLocName" class="custom-input" placeholder="e.g., My Office">
               </div>
               <div class="input-group">
-                <label for="locLatInput">Latitude</label>
-                <input type="number" id="locLatInput" step="any" placeholder="e.g., 40.7128">
+                <label for="newLocLat">LATITUDE</label>
+                <input type="number" id="newLocLat" class="custom-input" placeholder="e.g., 40.7128" step="any">
               </div>
               <div class="input-group">
-                <label for="locLngInput">Longitude</label>
-                <input type="number" id="locLngInput" step="any" placeholder="e.g., -74.0060">
+                <label for="newLocLng">LONGITUDE</label>
+                <input type="number" id="newLocLng" class="custom-input" placeholder="e.g., -74.0060" step="any">
               </div>
-              <button class="add-rule-btn" id="addLocBtn">
-                <span class="icon">+</span>
+            </div>
+            <div>
+              <button class="btn btn-outline" id="addLocationBtn" style="color: var(--accent-red); border-color: var(--border-danger);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Save Location
               </button>
             </div>
-            
-            <div class="rules-list">
-              <div class="list-header" style="grid-template-columns: 2fr 1fr 1fr auto;">
-                <span>Name</span>
-                <span>Latitude</span>
-                <span>Longitude</span>
-                <span>Actions</span>
-              </div>
-              <div class="rules-items" id="customLocItems">
-                <!-- Custom locations added dynamically here -->
-              </div>
-            </div>
+            <table class="custom-table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th style="width: 40%">NAME</th>
+                  <th style="width: 25%">LATITUDE</th>
+                  <th style="width: 25%">LONGITUDE</th>
+                  <th style="width: 10%">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="customLocationsList">
+                <tr>
+                  <td colspan="4">
+                    <div class="empty-state">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <p>No custom locations yet</p>
+                        <span>Add your own GPS coordinates here to use in the popup</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <!-- Tab-Specific Settings Section -->
       <section class="settings-section">
-        <div class="section-header">
-          <h2>Tab-Specific Settings</h2>
-          <p>View and manage settings applied to individual tabs</p>
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Tab-Specific Settings</h2>
+            <p>View and manage settings applied to individual tabs</p>
+          </div>
         </div>
-        
-        <div class="tab-settings-container">
-          <div class="tab-settings-controls">
-            <button class="refresh-tabs-btn" id="refreshTabsBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-                </svg>
-              </span>
+        <div class="section-body">
+          <div class="form-row">
+            <button class="btn btn-outline" id="refreshTabsBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               Refresh Tab List
             </button>
-            <button class="clear-all-tabs-btn" id="clearAllTabsBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                </svg>
-              </span>
+            <button class="btn btn-danger-outline" id="clearTabSettingsBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               Clear All Tab Settings
             </button>
           </div>
-
-          <div class="tab-settings-list">
-            <div class="list-header">
-              <span>Tab URL</span>
-              <span>User Agent</span>
-              <span>Touch Points</span>
-              <span>Actions</span>
-            </div>
-            <div class="tab-settings-items" id="tabSettingsItems">
-              <div class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-                  <path d="M14,2A8,8 0 0,1 22,10A8,8 0 0,1 14,18A8,8 0 0,1 6,10A8,8 0 0,1 14,2M14,4A6,6 0 0,0 8,10A6,6 0 0,0 14,16A6,6 0 0,0 20,10A6,6 0 0,0 14,4Z"/>
-                </svg>
-                <p>No tab-specific settings found</p>
-                <small>Apply settings to individual tabs from the main popup to see them here</small>
-              </div>
-            </div>
-          </div>
+          <table class="custom-table" style="margin-top: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 30%">TAB URL</th>
+                <th style="width: 40%">USER AGENT</th>
+                <th style="width: 15%">TOUCH POINTS</th>
+                <th style="width: 15%">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="tabSettingsItems">
+              <tr>
+                <td colspan="4">
+                  <div class="empty-state">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <p>No tab-specific settings found</p>
+                      <span>Apply settings to individual tabs from the main popup to see them here</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <!-- Import/Export Section -->
+      <!-- Import / Export Section -->
       <section class="settings-section">
-        <div class="section-header">
-          <h2>Import / Export</h2>
-          <p>Backup and restore your settings</p>
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Import / Export</h2>
+            <p>Backup and restore your settings</p>
+          </div>
         </div>
-        
-        <div class="import-export-container">
-          <div class="action-buttons">
-            <button class="export-btn" id="exportBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                </svg>
-              </span>
+        <div class="section-body">
+          <div class="form-row">
+            <button class="btn btn-outline" id="exportBtn" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Export Settings
             </button>
-            <button class="import-btn" id="importBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 16v-6H5l7-7 7 7h-4v6H9zm-4 4h14v2H5z"/>
-                </svg>
-              </span>
+            <button class="btn btn-outline" id="importBtn" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Import Settings
             </button>
-            <button class="debug-btn" id="debugBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 3v1H4v2h1v13h4V8h6v11h4V6h1V4h-5V3h-6zm2 2h2v1H11V5zm-7 4h2v2H4V9zm16 0h2v2h-2V9zM4 13h2v2H4v-2zm16 0h2v2h-2v-2zM4 17h2v2H4v-2zm16 0h2v2h-2v-2z"/>
-                </svg>
-              </span>
+            <button class="btn btn-outline" id="debugBtn" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
               Open Extension Debugging
             </button>
-            <input type="file" id="importFile" accept=".json" style="display: none;">
           </div>
           
-          <div class="reset-section">
-            <button class="reset-btn" id="resetAllBtn">
-              <span class="icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-                </svg>
-              </span>
+          <div style="margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border-light);">
+            <button class="btn btn-danger-outline" id="factoryResetBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               Reset All Settings
             </button>
-            <p class="reset-warning">This will permanently delete all custom rules and block list entries</p>
+            <p class="danger-subtext">This will permanently delete all custom rules and block list entries</p>
           </div>
         </div>
       </section>
+
     </main>
 
     <!-- Status Message -->
-    <div class="status-message" id="statusMessage" style="display: none;">
-      <span class="status-text" id="statusText"></span>
+    <div class="status-message" id="statusMessage">
+      <span id="statusText"></span>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <div class="footer-content">
-        <span class="footer-text">Developed by</span>
-        <a href="https://karthiklal.in" target="_blank" class="footer-link">
-          <svg class="footer-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-          </svg>
-          KARTHIK LAL
-        </a>
-      </div>
+      <span>Developed by</span>
+      <a href="https://karthiklal.in" target="_blank" class="footer-link" style="color: var(--text-primary); text-decoration: none; font-weight: 600;">
+        <svg class="heart-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Karthik Lal
+      </a>
     </footer>
   </div>
 
-  <script src="js/profiles.js"></script>
+  <input type="file" id="importFile" style="display: none;" accept=".json">
   <script src="js/lib/chart.umd.js"></script>
+  <script src="js/profiles.js"></script>
   <script src="js/advanced-settings.js"></script>
 </body>
 </html>
