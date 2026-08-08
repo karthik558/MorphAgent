@@ -7,6 +7,7 @@ const UA_HEADER = 'User-Agent';
 let cachedUA = typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 let websiteRules = [];
 let blockList = [];
+let listMode = 'blacklist';
 let jsBlockEnabled = false;
 let jsBlockedSites = [];
 let jsProtectEnabled = true;
@@ -127,11 +128,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Load settings from storage
 async function loadSettings() {
   try {
-    const syncData = await api.storage.sync.get(['websiteRules', 'blockList']);
+    const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'listMode']);
     const localData = await api.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory']);
 
     websiteRules = syncData.websiteRules || [];
     blockList = syncData.blockList || [];
+    listMode = syncData.listMode || 'blacklist';
     jsBlockEnabled = !!localData.jsBlockEnabled;
     jsProtectEnabled = localData.jsProtectEnabled !== undefined ? !!localData.jsProtectEnabled : true;
     uaSpoofEnabled = localData.uaSpoofEnabled !== undefined ? !!localData.uaSpoofEnabled : true;
@@ -169,6 +171,9 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.blockList) {
       blockList = changes.blockList.newValue || [];
+    }
+    if (changes.listMode) {
+      listMode = changes.listMode.newValue || 'blacklist';
     }
     if (changes.customLocations) {
       setupContextMenus();
@@ -217,10 +222,18 @@ function getUserAgentForUrl(url) {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
+    let inList = false;
     for (const blockItem of blockList) {
       if (matchesPattern(hostname, blockItem.website) || matchesPattern(url, blockItem.website)) {
-        return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
+        inList = true;
+        break;
       }
+    }
+
+    if (listMode === 'blacklist' && inList) {
+      return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
+    } else if (listMode === 'whitelist' && !inList) {
+      return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
     }
 
     for (const rule of websiteRules) {
@@ -450,7 +463,7 @@ function setupContextMenus() {
       api.contextMenus.create({
         id: 'morph-agent-block-site',
         parentId: 'morph-agent-root',
-        title: 'Add to Block List (Disable Spoofing)',
+        title: 'Add to Exception List (Toggle Spoofing)',
         contexts: ['all']
       });
 

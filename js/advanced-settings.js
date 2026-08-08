@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const blockItems = document.getElementById('blockItems');
   const statusMessage = document.getElementById('statusMessage');
   const statusText = document.getElementById('statusText');
+  const modeTabs = document.querySelectorAll('.mode-tab');
+  const blockTableTitle = document.getElementById('blockTableTitle');
+  const blockEmptyTitle = document.getElementById('blockEmptyTitle');
+  const blockEmptyDesc = document.getElementById('blockEmptyDesc');
+  const modeDescription = document.getElementById('modeDescription');
 
   // Custom Locations Elements
   const locNameInput = document.getElementById('newLocName');
@@ -54,6 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let websiteRules = [];
   let blockList = [];
+  let listMode = 'blacklist';
+  let activeCategory = 'desktop';
   let customLocations = [];
   let editingRule = null;
   let editingBlock = null;
@@ -160,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="empty-state">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
               <div style="display: flex; flex-direction: column; gap: 4px;">
-                <p>No blocked websites yet</p>
-                <span>Add websites where user agent spoofing should be disabled</span>
+                <p>${blockEmptyTitle.textContent}</p>
+                <span>${blockEmptyDesc.textContent}</span>
               </div>
             </div>
           </td>
@@ -230,8 +237,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       // Add rule
       addRuleBtn.addEventListener('click', addOrUpdateRule);
+    
 
-      // Geo Spoof logic
+    if (modeTabs.length > 0) {
+      modeTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          modeTabs.forEach(t => t.classList.remove('active'));
+          e.target.classList.add('active');
+          listMode = e.target.getAttribute('data-mode');
+          saveSettings();
+          renderBlockList();
+        });
+      });
+    }  // Geo Spoof logic
       geoSpoofRuleCheckbox.addEventListener('change', (e) => {
         geoCoordsGroupDiv.style.display = e.target.checked ? 'block' : 'none';
       });
@@ -273,6 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
             blockList = changes.blockList.newValue || [];
             renderBlockList();
           }
+          if (changes.listMode) {
+            listMode = changes.listMode.newValue || 'blacklist';
+            renderBlockList();
+          }
           if (changes.customLocations) {
             customLocations = changes.customLocations.newValue || [];
             renderLocations();
@@ -291,10 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadSettings() {
       const browser = window.browser || window.chrome;
-      browser.storage.sync.get(['websiteRules', 'blockList', 'customLocations'], (result) => {
+      browser.storage.sync.get(['websiteRules', 'blockList', 'customLocations', 'listMode'], (result) => {
         websiteRules = result.websiteRules || [];
         blockList = result.blockList || [];
         customLocations = result.customLocations || [];
+        listMode = result.listMode || 'blacklist';
         renderRules();
         renderBlockList();
         renderLocations();
@@ -306,7 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
       browser.storage.sync.set({
         websiteRules: websiteRules,
         blockList: blockList,
-        customLocations: customLocations
+        customLocations: customLocations,
+        listMode: listMode
       }, () => {
         showStatus('Settings saved successfully!');
       });
@@ -857,6 +881,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBlockList() {
+      if (modeTabs.length > 0) {
+        modeTabs.forEach(tab => {
+          if (tab.getAttribute('data-mode') === listMode) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        });
+        if (listMode === 'whitelist') {
+          if (blockTableTitle) blockTableTitle.textContent = 'ALLOWED WEBSITE';
+          if (blockEmptyTitle) blockEmptyTitle.textContent = 'No websites in whitelist yet';
+          if (blockEmptyDesc) blockEmptyDesc.textContent = 'Add websites where user agent spoofing should be enabled';
+          if (modeDescription) modeDescription.textContent = 'Enable spoofing ONLY on these websites.';
+        } else {
+          if (blockTableTitle) blockTableTitle.textContent = 'BLOCKED WEBSITE';
+          if (blockEmptyTitle) blockEmptyTitle.textContent = 'No websites in blacklist yet';
+          if (blockEmptyDesc) blockEmptyDesc.textContent = 'Add websites where user agent spoofing should be disabled';
+          if (modeDescription) modeDescription.textContent = 'Disable spoofing on these websites.';
+        }
+      }
+
       if (blockList.length === 0) {
         blockItems.innerHTML = `
         <tr>
@@ -966,6 +1011,9 @@ document.addEventListener('DOMContentLoaded', () => {
             blockList = settings.blockList;
           }
 
+          if (settings.listMode) {
+            listMode = settings.listMode;
+          }
           if (settings.customLocations && Array.isArray(settings.customLocations)) {
             customLocations = settings.customLocations;
           }

@@ -240,6 +240,41 @@ body {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+/* Mode Tabs (Segmented Control) */
+.mode-tabs {
+  display: flex;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  margin-bottom: 4px;
+}
+.mode-tab {
+  flex: 1;
+  padding: 6px 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.mode-tab:hover {
+  color: var(--text-primary);
+}
+.mode-tab.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-light);
+}
+
+.mode-description {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
 
 /* Main Content */
 .main-content {

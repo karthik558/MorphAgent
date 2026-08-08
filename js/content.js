@@ -16,12 +16,64 @@
     'geoSpoofEnabled',
     'geoCoords'
   ]).then((settings) => {
-    // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
-    window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(settings) }));
+    api.storage.sync.get(['blockList', 'listMode', 'websiteRules']).then((syncResult) => {
+      const blockList = syncResult.blockList || [];
+      const listMode = syncResult.listMode || 'blacklist';
+      const websiteRules = syncResult.websiteRules || [];
+      const currentHostname = window.location.hostname;
 
-    if (settings.jsBlockEnabled) {
-      blockInlineJavaScript();
-    }
+      // Check blockList / whitelist mode
+      let inList = false;
+      for (const blockItem of blockList) {
+        const pattern = blockItem.website.replace(/\*/g, '');
+        if (currentHostname.includes(pattern)) {
+          inList = true;
+          break;
+        }
+      }
+
+      let shouldSpoof = true;
+      if (listMode === 'blacklist' && inList) {
+        shouldSpoof = false;
+      } else if (listMode === 'whitelist' && !inList) {
+        shouldSpoof = false;
+      }
+
+      if (!shouldSpoof) {
+        settings.uaSpoofEnabled = false;
+        settings.touchSpoofEnabled = false;
+        settings.jsBlockEnabled = false;
+        settings.jsProtectEnabled = false;
+        settings.geoSpoofEnabled = false;
+        settings.mediaQuerySpoofEnabled = false;
+        settings.timingShieldEnabled = false;
+      } else {
+        // Apply website rules if we are spoofing
+        for (const rule of websiteRules) {
+          const rulePattern = rule.website.replace(/\*/g, '');
+          if (currentHostname.includes(rulePattern)) {
+            settings.selectedUA = rule.userAgent || settings.selectedUA;
+            settings.uaSpoofEnabled = rule.uaSpoofEnabled !== false;
+            settings.maxTouchPoints = rule.touchPoints || 0;
+            settings.touchSpoofEnabled = (rule.touchPoints || 0) > 0;
+            settings.jsBlockEnabled = !!rule.jsBlocked;
+            settings.jsProtectEnabled = !!rule.jsProtected;
+            settings.mediaQuerySpoofEnabled = !!rule.mediaQuerySpoofEnabled;
+            settings.timingShieldEnabled = !!rule.timingShieldEnabled;
+            settings.geoSpoofEnabled = !!rule.geoSpoofEnabled;
+            settings.geoCoords = rule.geoCoords || settings.geoCoords;
+            break;
+          }
+        }
+      }
+
+      // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
+      window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(settings) }));
+
+      if (settings.jsBlockEnabled) {
+        blockInlineJavaScript();
+      }
+    });
   }).catch(err => {
     console.warn('[MorphAgent 4.0] Storage access error:', err);
   });
@@ -46,34 +98,6 @@
     }
   });
 
-  // Check per-website rule overrides
-  api.storage.sync.get(['websiteRules']).then((result) => {
-    const websiteRules = result.websiteRules || [];
-    const currentHostname = window.location.hostname;
-
-    for (const rule of websiteRules) {
-      const rulePattern = rule.website.replace(/\*/g, '');
-      if (currentHostname.includes(rulePattern)) {
-        if (rule.jsBlocked) {
-          blockInlineJavaScript();
-        }
-        const ruleSettings = {
-          selectedUA: rule.userAgent,
-          uaSpoofEnabled: rule.uaSpoofEnabled !== false,
-          maxTouchPoints: rule.touchPoints || 0,
-          touchSpoofEnabled: (rule.touchPoints || 0) > 0,
-          jsProtectEnabled: !!rule.jsProtected,
-          mediaQuerySpoofEnabled: !!rule.mediaQuerySpoofEnabled,
-          timingShieldEnabled: !!rule.timingShieldEnabled,
-          geoSpoofEnabled: !!rule.geoSpoofEnabled,
-          geoCoords: rule.geoCoords
-        };
-        // Dispatch directly from isolated world
-        window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(ruleSettings) }));
-        break;
-      }
-    }
-  }).catch(() => {});
 
   function blockInlineJavaScript() {
     const meta = document.createElement('meta');
