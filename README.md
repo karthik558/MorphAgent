@@ -26,29 +26,42 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
 
 <table>
    <tr>
-      <th colspan="2" style="font-size:1.1em;">Main Interface (Light & Dark Mode)</th>
+      <th colspan="2" style="font-size:1.1em;">Main Interface (Popup)</th>
    </tr>
    <tr>
       <td>
-         <img src="https://files.catbox.moe/zfvhw8.png" alt="Light Mode Interface" width="300" />
-         <div>Light Mode</div>
+         <img src="https://files.catbox.moe/c0b6o4.png" alt="Popup Light Mode" width="300" />
+         <div style="text-align: center;">Light Mode</div>
       </td>
       <td>
-         <img src="https://files.catbox.moe/6o72h6.png" alt="Dark Mode Interface" width="300" />
-         <div>Dark Mode</div>
+         <img src="https://files.catbox.moe/d2q90g.png" alt="Popup Dark Mode" width="300" />
+         <div style="text-align: center;">Dark Mode</div>
       </td>
    </tr>
    <tr>
-      <th colspan="2" style="font-size:1.1em;">Features Overview</th>
+      <th colspan="2" style="font-size:1.1em;">Threat Analytics Dashboard</th>
    </tr>
    <tr>
       <td>
-         <img src="https://files.catbox.moe/7i2z0e.png" alt="Features Light" width="300" />
-         <div>Features (Light)</div>
+         <img src="https://files.catbox.moe/pphnn8.png" alt="Analytics Light Mode" width="400" />
+         <div style="text-align: center;">Light Mode</div>
       </td>
       <td>
-         <img src="https://files.catbox.moe/6zghjh.png" alt="Features Dark" width="300" />
-         <div>Features (Dark)</div>
+         <img src="https://files.catbox.moe/ea7901.png" alt="Analytics Dark Mode" width="400" />
+         <div style="text-align: center;">Dark Mode</div>
+      </td>
+   </tr>
+   <tr>
+      <th colspan="2" style="font-size:1.1em;">Feature Descriptions</th>
+   </tr>
+   <tr>
+      <td>
+         <img src="https://files.catbox.moe/qeeewr.png" alt="Features Light Mode" width="400" />
+         <div style="text-align: center;">Light Mode</div>
+      </td>
+      <td>
+         <img src="https://files.catbox.moe/h3jyf6.png" alt="Features Dark Mode" width="400" />
+         <div style="text-align: center;">Dark Mode</div>
       </td>
    </tr>
 </table>
