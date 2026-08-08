@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const ghostModeToggle = document.getElementById('ghost-mode-toggle');
   const ghostControls = document.getElementById('ghost-controls');
   const ghostInterval = document.getElementById('ghost-interval');
+  
+  // New buttons
+  const btnCurrentTab = document.getElementById('btn-current-tab');
+  const btnAllTabs = document.getElementById('btn-all-tabs');
+  const copyUaBtn = document.getElementById('copy-ua-btn');
+  const saveIndicator = document.getElementById('save-indicator');
+  const saveIndicatorText = document.getElementById('save-indicator-text');
+  let currentScope = 'current';
 
   function updateUASpoofUIState() {
     const enabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
@@ -63,6 +71,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (uaSpoofToggle) {
     uaSpoofToggle.addEventListener('change', updateUASpoofUIState);
+  }
+
+  // Scope Selection Handlers
+  if (btnCurrentTab && btnAllTabs) {
+    btnCurrentTab.addEventListener('click', () => {
+      currentScope = 'current';
+      btnCurrentTab.classList.add('btn-solid');
+      btnCurrentTab.classList.remove('btn-ghost');
+      btnAllTabs.classList.add('btn-ghost');
+      btnAllTabs.classList.remove('btn-solid');
+    });
+
+    btnAllTabs.addEventListener('click', () => {
+      currentScope = 'all';
+      btnAllTabs.classList.add('btn-solid');
+      btnAllTabs.classList.remove('btn-ghost');
+      btnCurrentTab.classList.add('btn-ghost');
+      btnCurrentTab.classList.remove('btn-solid');
+    });
+  }
+
+  // Copy UA Handler
+  if (copyUaBtn && customUAInput) {
+    copyUaBtn.addEventListener('click', () => {
+      customUAInput.select();
+      document.execCommand('copy');
+      showStatus('User Agent copied to clipboard');
+    });
   }
 
   // Location Controls Event Listeners
@@ -167,12 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyTheme(theme) {
+    document.documentElement.classList.remove('dark-mode', 'light-mode');
     document.body.classList.remove('dark-mode', 'light-mode');
     if (theme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
       document.body.classList.add('dark-mode');
       themeToggle.querySelector('.light-icon').style.display = 'none';
       themeToggle.querySelector('.dark-icon').style.display = 'block';
     } else {
+      document.documentElement.classList.add('light-mode');
       document.body.classList.add('light-mode');
       themeToggle.querySelector('.light-icon').style.display = 'block';
       themeToggle.querySelector('.dark-icon').style.display = 'none';
@@ -441,19 +480,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Status Messages
   function showStatus(message, type = 'success') {
-    statusMessage.textContent = message;
-    statusMessage.className = `status-message visible ${type}`;
-    
-    // Clear any existing timeout
-    if (statusMessage.timeoutId) {
-      clearTimeout(statusMessage.timeoutId);
+    if (saveIndicator && saveIndicatorText) {
+      saveIndicatorText.textContent = message;
+      saveIndicator.className = `save-indicator visible ${type}`;
+      
+      // Clear any existing timeout
+      if (saveIndicator.timeoutId) {
+        clearTimeout(saveIndicator.timeoutId);
+      }
+      
+      // Set new timeout
+      saveIndicator.timeoutId = setTimeout(() => {
+        saveIndicator.classList.remove('visible');
+        saveIndicator.timeoutId = null;
+      }, 2000);
     }
-    
-    // Set new timeout
-    statusMessage.timeoutId = setTimeout(() => {
-      statusMessage.classList.remove('visible');
-      statusMessage.timeoutId = null;
-    }, 3000);
   }
 
   // Settings Management
@@ -577,8 +618,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Set apply scope to current tab since this is a tab-specific rule
-    const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
-    if (currentRadio) currentRadio.checked = true;
+    currentScope = 'current';
+    btnCurrentTab.classList.add('btn-solid');
+    btnCurrentTab.classList.remove('btn-ghost');
+    btnAllTabs.classList.add('btn-ghost');
+    btnAllTabs.classList.remove('btn-solid');
   }
 
   function loadGlobalSettings() {
@@ -661,9 +705,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        // Set apply scope to all tabs for global settings
-        const allRadio = document.querySelector('input[name="apply-scope"][value="all"]');
-        if (allRadio) allRadio.checked = true;
+        currentScope = 'all';
+        btnAllTabs.classList.add('btn-solid');
+        btnAllTabs.classList.remove('btn-ghost');
+        btnCurrentTab.classList.add('btn-ghost');
+        btnCurrentTab.classList.remove('btn-solid');
       } else {
         // Set defaults
         selectCategory('desktop');
@@ -690,9 +736,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        // Default to current tab
-        const currentRadio = document.querySelector('input[name="apply-scope"][value="current"]');
-        if (currentRadio) currentRadio.checked = true;
+        currentScope = 'current';
+        btnCurrentTab.classList.add('btn-solid');
+        btnCurrentTab.classList.remove('btn-ghost');
+        btnAllTabs.classList.add('btn-ghost');
+        btnAllTabs.classList.remove('btn-solid');
       }
     }).catch((error) => {
       console.error('Failed to load settings:', error);
@@ -724,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lng: geoLng ? (parseFloat(geoLng.value) || -74.0060) : -74.0060
       };
     }
-    const applyScope = document.querySelector('input[name="apply-scope"]:checked').value;
+    const applyScope = currentScope;
 
     if (!selectedUA && uaSpoofEnabled) {
       showStatus('Please select a profile or enter a custom user agent', 'error');
@@ -797,10 +845,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Save updated rules
           browser.storage.sync.set({ websiteRules }).then(() => {
-            showStatus(`Applied to ${hostname}! Reload page to see changes.`);
+            showStatus('Saved');
           }).catch(error => {
             console.error('Failed to save site-specific rule:', error);
-            showStatus('Failed to save site-specific rule', 'error');
+            showStatus('Error', 'error');
           });
         }).catch(error => {
           console.error('Failed to get existing rules:', error);
@@ -808,7 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }).catch(error => {
         console.error('Failed to get current tab:', error);
-        showStatus('Failed to get current tab information', 'error');
+        showStatus('Error', 'error');
       });
     } else {
       // Apply globally
@@ -839,13 +887,13 @@ document.addEventListener('DOMContentLoaded', () => {
         data: settings
       }).then((response) => {
         if (response && response.success !== false) {
-          showStatus('Settings applied to all tabs successfully! Reload pages to see changes.');
+          showStatus('Saved');
         } else {
-          showStatus('Failed to apply settings', 'error');
+          showStatus('Error', 'error');
         }
       }).catch((error) => {
         console.error('Failed to save settings:', error);
-        showStatus('Failed to save settings', 'error');
+        showStatus('Error', 'error');
       });
     }
   }
@@ -934,6 +982,39 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedProfile = null;
     }
   });
+
+  if (copyUaBtn) {
+    copyUaBtn.addEventListener('click', () => {
+      const ua = customUAInput.value.trim();
+      if (ua) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(ua).then(() => {
+            showStatus('Copied!');
+          });
+        }
+      }
+    });
+  }
+
+  if (btnCurrentTab && btnAllTabs) {
+    btnCurrentTab.addEventListener('click', () => {
+      currentScope = 'current';
+      btnCurrentTab.classList.add('btn-solid');
+      btnCurrentTab.classList.remove('btn-ghost');
+      btnAllTabs.classList.add('btn-ghost');
+      btnAllTabs.classList.remove('btn-solid');
+      saveSettings();
+    });
+
+    btnAllTabs.addEventListener('click', () => {
+      currentScope = 'all';
+      btnAllTabs.classList.add('btn-solid');
+      btnAllTabs.classList.remove('btn-ghost');
+      btnCurrentTab.classList.add('btn-ghost');
+      btnCurrentTab.classList.remove('btn-solid');
+      saveSettings();
+    });
+  }
 
   // Initialize Extension
   function init() {

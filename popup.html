@@ -8,40 +8,41 @@
 </head>
 <body>
   <div class="extension-container">
-    <!-- Decorative gradient bar -->
     <div class="gradient-bar"></div>
 
     <header class="header">
-      <div class="header-content">
-        <div class="logo-section">
-          <div class="logo-glow">
-            <img src="icons/icon.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px; filter: brightness(0) invert(1);">
-          </div>
-          <div class="title-group">
-            <h1 class="title">MorphAgent</h1>
-            <span class="version-badge" id="version-badge">v4.0 Ultimate</span>
-          </div>
+      <div class="header-left">
+        <div class="logo-box">
+          <img src="icons/icon.png" alt="Logo">
         </div>
-        <div class="header-actions">
-          <button class="icon-btn" id="settings-btn" title="Advanced Settings">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </button>
-          <button class="icon-btn" id="theme-toggle" title="Toggle theme">
-            <svg class="theme-icon light-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="theme-icon dark-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-          </button>
+        <div class="title-group">
+          <h1 class="title">MorphAgent</h1>
+          <span class="version-badge" id="version-badge">V4.0.2</span>
         </div>
+      </div>
+      <div class="header-actions">
+        <span id="save-indicator" class="save-indicator">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="save-indicator-text">Saved</span>
+        </span>
+        <button class="icon-btn" id="settings-btn" title="Advanced Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+          <svg class="theme-icon light-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="theme-icon dark-icon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -54,284 +55,279 @@
         </div>
       </div>
 
-      <form id="ua-form" class="form">
+      <form id="ua-form">
         <!-- Device Category -->
         <div class="form-section">
-          <div class="section-header">
-            <svg class="section-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-            <label class="form-label">Device</label>
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            DEVICE
           </div>
           <div class="device-grid">
-            <button type="button" class="device-card" data-category="mobile">
+            <div class="device-card" data-category="mobile">
               <div class="device-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                  <line x1="12" y1="18" x2="12.01" y2="18"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
               </div>
               <span>Mobile</span>
-            </button>
-            <button type="button" class="device-card" data-category="tablet">
+            </div>
+            <div class="device-card" data-category="tablet">
               <div class="device-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-                  <line x1="12" y1="18" x2="12.01" y2="18"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
               </div>
               <span>Tablet</span>
-            </button>
-            <button type="button" class="device-card" data-category="desktop">
+            </div>
+            <div class="device-card" data-category="desktop">
               <div class="device-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                  <line x1="8" y1="21" x2="16" y2="21"/>
-                  <line x1="12" y1="17" x2="12" y2="21"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
               </div>
               <span>Desktop</span>
-            </button>
-            <button type="button" class="device-card" data-category="gaming">
+            </div>
+            <div class="device-card" data-category="gaming">
               <div class="device-card-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="6" y1="12" x2="10" y2="12"/>
-                  <line x1="8" y1="10" x2="8" y2="14"/>
-                  <circle cx="15" cy="13" r="1"/><circle cx="18" cy="11" r="1"/>
-                  <rect x="2" y="6" width="20" height="12" rx="2"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15" cy="13" r="1"/><circle cx="18" cy="11" r="1"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
               </div>
               <span>Gaming</span>
-            </button>
+            </div>
           </div>
         </div>
 
         <!-- Profile Selectors -->
-        <div class="form-section">
-          <div class="section-header">
-            <svg class="section-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            <label class="form-label">Profile</label>
+        <div class="form-section" style="margin-top:20px;">
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            PROFILE
           </div>
           <div class="select-stack">
             <div class="select-wrapper">
               <select id="platform-select" class="custom-select">
                 <option value="">Platform...</option>
               </select>
-              <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
             <div class="select-row">
               <div class="select-wrapper">
                 <select id="browser-select" class="custom-select">
                   <option value="">Browser...</option>
                 </select>
-                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
               <div class="select-wrapper">
                 <select id="profile-select" class="custom-select">
                   <option value="">Device...</option>
                 </select>
-                <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Custom UA -->
-        <div class="form-section">
-          <div class="section-header">
-            <svg class="section-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            <label class="form-label" for="custom-ua">User Agent String</label>
+        <div class="form-section" style="margin-top:20px;">
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            USER AGENT STRING
           </div>
-          <textarea id="custom-ua" class="custom-ua-input" placeholder="Select a profile above or paste a custom UA string..." rows="2"></textarea>
+          <div class="ua-block">
+            <textarea id="custom-ua" class="ua-text" style="background:transparent;border:none;outline:none;resize:none;overflow:hidden;" placeholder="Select a profile above or paste a custom UA string..." rows="3"></textarea>
+            <button type="button" class="copy-btn" id="copy-ua-btn" title="Copy User Agent">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
         </div>
 
         <!-- Feature Toggles -->
-        <div class="form-section">
-          <div class="section-header">
-            <svg class="section-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <label class="form-label">Features</label>
+        <div class="form-section" style="margin-top:20px;">
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            FEATURES
           </div>
 
-          <div class="toggle-card-group">
-            <!-- Spoof User Agent Toggle -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Spoof User Agent</span>
+          <div class="features-list">
+            <!-- Spoof User Agent -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="ua-spoof-toggle" class="checkbox" checked>
-                  <span class="toggle-slider"></span>
-                </label>
+                <div class="feature-text">
+                  <div class="feature-title-row">
+                    <span class="feature-title">Spoof User Agent</span>
+                  </div>
+                  <span class="feature-desc">Hide your real user agent</span>
+                </div>
               </div>
-              <div class="ua-spoof-info" id="ua-spoof-info">
-              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ua-spoof-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
             </div>
 
             <!-- Touch Spoofing -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Touch Spoofing</span>
+            <div class="feature-row" style="flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
+                <div class="feature-left">
+                  <div class="feature-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5V5a2.5 2.5 0 0 0-5 0v11H8a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <span class="feature-title">Touch Spoofing</span>
+                    <span class="feature-desc">Emulate touch capabilities</span>
+                  </div>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="touch-toggle" class="checkbox">
+                  <input type="checkbox" id="touch-toggle">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
-              <div class="touch-controls" id="touch-controls">
+              <div class="sub-controls" id="touch-controls" style="width:100%;">
                 <div class="inline-input-group">
-                  <label class="mini-label" for="touch-points">Touch Points</label>
+                  <span class="mini-label">Touch Points</span>
                   <input type="number" id="touch-points" class="number-input" min="0" max="20" value="5">
                 </div>
               </div>
             </div>
 
-            <!-- JS Blocking -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Block JavaScript</span>
+            <!-- Block JavaScript -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="js-block-toggle" class="checkbox">
-                  <span class="toggle-slider"></span>
-                </label>
+                <div class="feature-text">
+                  <span class="feature-title">Block JavaScript</span>
+                  <span class="feature-desc">Prevent JavaScript execution</span>
+                </div>
               </div>
-              <div class="js-block-info" id="js-block-info">
-              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="js-block-toggle">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
 
-            <!-- JS Detection Protection -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Detection Shield</span>
-                  <span class="badge badge-recommended">Recommended</span>
+            <!-- Detection Shield -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="js-protect-toggle" class="checkbox">
-                  <span class="toggle-slider"></span>
-                </label>
+                <div class="feature-text">
+                  <div class="feature-title-row">
+                    <span class="feature-title">Detection Shield</span>
+                    <span class="badge badge-recommended">RECOMMENDED</span>
+                  </div>
+                  <span class="feature-desc">Block fingerprinting & tracking</span>
+                </div>
               </div>
-              <div class="js-protect-info" id="js-protect-info">
-              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="js-protect-toggle">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
 
             <!-- Location Spoofing -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Location Spoofing</span>
+            <div class="feature-row" style="flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
+                <div class="feature-left">
+                  <div class="feature-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <span class="feature-title">Location Spoofing</span>
+                    <span class="feature-desc">Override your geolocation</span>
+                  </div>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="geo-toggle" class="checkbox">
+                  <input type="checkbox" id="geo-toggle">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
-              <div class="geo-controls" id="geo-controls">
-                <div class="select-wrapper geo-select-wrapper">
-                  <select id="geo-preset" class="custom-select geo-select">
+              <div class="sub-controls" style="width:100%;">
+                <div class="select-wrapper" style="margin-bottom:8px;">
+                  <select id="geo-preset" class="custom-select">
                     <option value="40.7128,-74.0060">New York, USA (40.7128, -74.0060)</option>
                     <option value="51.5074,-0.1278">London, UK (51.5074, -0.1278)</option>
                     <option value="35.6762,139.6503">Tokyo, Japan (35.6762, 139.6503)</option>
-                    <option value="48.8566,2.3522">Paris, France (48.8566, 2.3522)</option>
-                    <option value="37.7749,-122.4194">San Francisco, USA (37.7749, -122.4194)</option>
-                    <option value="-33.8688,151.2093">Sydney, Australia (-33.8688, 151.2093)</option>
                     <option value="custom">Custom Coordinates...</option>
                   </select>
-                  <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
-                <div id="custom-geo-inputs" class="custom-geo-inputs">
-                  <input type="number" step="any" id="geo-lat" class="geo-coordinate-input" placeholder="Latitude" value="40.7128">
-                  <input type="number" step="any" id="geo-lng" class="geo-coordinate-input" placeholder="Longitude" value="-74.0060">
+                <div id="custom-geo-inputs" style="display:none; grid-template-columns:1fr 1fr; gap:8px;">
+                  <input type="number" step="any" id="geo-lat" class="number-input" placeholder="Latitude" value="40.7128" style="width:100%;">
+                  <input type="number" step="any" id="geo-lng" class="number-input" placeholder="Longitude" value="-74.0060" style="width:100%;">
                 </div>
-              </div>
-            </div>
-            <!-- WebRTC Shield -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">WebRTC IP Shield</span>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="rtc-protect-toggle" class="checkbox" checked>
-                  <span class="toggle-slider"></span>
-                </label>
               </div>
             </div>
 
+            <!-- WebRTC IP Shield -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                </div>
+                <div class="feature-text">
+                  <span class="feature-title">WebRTC IP Shield</span>
+                  <span class="feature-desc">Prevent IP address leaks</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="rtc-protect-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
             <!-- Ghost Mode -->
-            <div class="toggle-card">
-              <div class="toggle-card-row">
-                <div class="toggle-card-info">
-                  <span class="toggle-card-label">Ghost Mode (Auto-Rotate)</span>
-                  <span class="badge badge-recommended" style="background:var(--gradient-primary)">Ultimate</span>
+            <div class="feature-row" style="flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
+                <div class="feature-left">
+                  <div class="feature-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <div class="feature-title-row">
+                      <span class="feature-title">Ghost Mode</span>
+                      <span class="badge badge-ultimate">ULTIMATE</span>
+                    </div>
+                    <span class="feature-desc">Rotate identities automatically</span>
+                  </div>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" id="ghost-mode-toggle" class="checkbox">
+                  <input type="checkbox" id="ghost-mode-toggle">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
-              <div class="ghost-controls" id="ghost-controls" style="display: none; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-primary);">
+              <div class="sub-controls" style="width:100%;">
                 <div class="inline-input-group">
-                  <label class="mini-label" for="ghost-interval">Rotation Interval (minutes)</label>
+                  <span class="mini-label">Rotation Interval (minutes)</span>
                   <input type="number" id="ghost-interval" class="number-input" min="1" max="1440" value="15">
                 </div>
               </div>
             </div>
+
           </div>
         </div>
 
-        <!-- Apply Scope -->
-        <div class="form-section">
-          <div class="scope-selector">
-            <label class="scope-option">
-              <input type="radio" name="apply-scope" value="current" class="radio-input" checked>
-              <span class="scope-pill">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-                Current Tab
-              </span>
-            </label>
-            <label class="scope-option">
-              <input type="radio" name="apply-scope" value="all" class="radio-input">
-              <span class="scope-pill">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                All Tabs
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="form-actions">
-          <button type="button" id="reset-btn" class="btn btn-secondary" style="width: 100%;">
-            <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="1 4 1 10 7 10"/>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-            </svg>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button type="button" class="btn btn-ghost" id="btn-current-tab">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+            Current Tab
+          </button>
+          <button type="button" class="btn btn-solid" id="btn-all-tabs">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            All Tabs
+          </button>
+          <button type="button" class="btn btn-ghost btn-full" id="reset-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
             Reset All Settings
           </button>
         </div>
       </form>
-
-      <div id="status" class="status-message"></div>
     </main>
 
     <footer class="footer">
       <div class="footer-content">
-        <span class="footer-text">Made with care by</span>
-        <a href="https://github.com/karthik558" target="_blank" class="footer-link">
-          <svg class="footer-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-          </svg>
+        Made with care by
+        <a href="https://karthiklal.in" target="_blank" class="footer-link">
+          <svg class="heart-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           Karthik Lal
         </a>
       </div>
@@ -341,4 +337,4 @@
   <script src="js/profiles.js"></script>
   <script src="js/popup.js"></script>
 </body>
-</html> 
+</html>
