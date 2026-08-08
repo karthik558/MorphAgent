@@ -17,6 +17,7 @@
       }
     } catch (e) {}
 
+    window.__MORPH_SYNC_LOADED = isSettingsLoaded;
     window.__MORPH_AGENT_SETTINGS__ = cachedSettings || window.__MORPH_AGENT_SETTINGS__ || {};
 
     function applyStealthSettings(s) {
@@ -143,19 +144,53 @@
             if (keySystem === 'com.microsoft.playready' || keySystem === 'com.apple.fps.1_0') {
               return Promise.reject(new DOMException('Unsupported keySystem', 'NotSupportedError'));
             }
+            
+            // Suppress DRM robustness warnings from Chrome
+            if (supportedConfigurations && Array.isArray(supportedConfigurations)) {
+              supportedConfigurations.forEach(config => {
+                if (config.videoCapabilities && Array.isArray(config.videoCapabilities)) {
+                  config.videoCapabilities.forEach(cap => {
+                    if (!cap.robustness) cap.robustness = 'SW_SECURE_CRYPTO';
+                  });
+                }
+                if (config.audioCapabilities && Array.isArray(config.audioCapabilities)) {
+                  config.audioCapabilities.forEach(cap => {
+                    if (!cap.robustness) cap.robustness = 'SW_SECURE_CRYPTO';
+                  });
+                }
+              });
+            }
+            
             return originalRequestMediaKeySystemAccess.call(this, keySystem, supportedConfigurations);
           };
         }
 
         if (!window.__MORPH_CANVAS_PROTECTED) {
           window.__MORPH_CANVAS_PROTECTED = true;
+          
+          const origGetContext = HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+            if (type === '2d') {
+              attributes = attributes || {};
+              attributes.willReadFrequently = true; // Suppresses readback warnings
+            }
+            return origGetContext.call(this, type, attributes);
+          };
+
           const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
           HTMLCanvasElement.prototype.toDataURL = function(...args) {
-            const ctx = this.getContext('2d');
+            const ctx = origGetContext.call(this, '2d');
             if (ctx) {
               try {
-                const imgData = ctx.getImageData(0, 0, Math.min(this.width || 10, 10), Math.min(this.height || 10, 10));
-                if (imgData.data.length > 0) imgData.data[0] = (imgData.data[0] + (domainHash % 3) + 1) % 255;
+                const w = Math.min(this.width || 10, 10);
+                const h = Math.min(this.height || 10, 10);
+                if (w > 0 && h > 0) {
+                  const imgData = ctx.getImageData(0, 0, w, h);
+                  if (imgData.data.length > 0) {
+                    imgData.data[0] = (imgData.data[0] + (domainHash % 3) + 1) % 255;
+                    ctx.putImageData(imgData, 0, 0); // Apply the noise so toDataURL captures it
+                  }
+                }
               } catch (e) {}
             }
             return originalToDataURL.apply(this, args);
@@ -166,8 +201,10 @@
             CanvasRenderingContext2D.prototype.getImageData = function(...args) {
               const imageData = originalGetImageData.apply(this, args);
               // Inject microscopic, domain-specific noise (e.g. modify every 17th pixel slightly)
-              for (let i = 0; i < imageData.data.length; i += (17 * 4)) {
-                imageData.data[i] = (imageData.data[i] + (domainHash % 3)) % 255;
+              if (imageData && imageData.data) {
+                for (let i = 0; i < imageData.data.length; i += (17 * 4)) {
+                  imageData.data[i] = (imageData.data[i] + (domainHash % 3)) % 255;
+                }
               }
               return imageData;
             };
@@ -315,23 +352,6 @@
               }, configurable: true
             });
           }
-        }
-
-        // Battery API Spoofing
-        if (!window.__MORPH_BATTERY_PROTECTED && window.navigator && window.navigator.getBattery) {
-          window.__MORPH_BATTERY_PROTECTED = true;
-          window.navigator.getBattery = function() {
-            return Promise.resolve({
-              charging: false,
-              chargingTime: Infinity,
-              dischargingTime: 86400,
-              level: 0.85 - ((domainHash % 10) * 0.01),
-              onchargingchange: null,
-              onchargingtimechange: null,
-              ondischargingtimechange: null,
-              onlevelchange: null
-            });
-          };
         }
       }
 
@@ -558,5 +578,62 @@
       }
       return nativeToString.apply(this, arguments);
     };
+
+    // Bulletproof Top-Level Battery API Spoofing (Bypasses all sync race conditions)
+    if (!window.__MORPH_BATTERY_PROTECTED && window.navigator && window.Navigator) {
+      window.__MORPH_BATTERY_PROTECTED = true;
+      let origGetBattery = null;
+      if (Navigator.prototype.getBattery) origGetBattery = Navigator.prototype.getBattery;
+      else if (window.navigator.getBattery) origGetBattery = window.navigator.getBattery;
+
+      if (origGetBattery) {
+        const spoofBattery = function(...args) {
+          return new Promise((resolve, reject) => {
+            const checkAndResolve = () => {
+              const s = window.__MORPH_AGENT_SETTINGS__ || {};
+              if (s.jsProtectEnabled) {
+                const domainHash = Array.from(window.location.hostname || "localhost").reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+                const hashVal = isNaN(domainHash) ? 0 : domainHash;
+                resolve({
+                  charging: false,
+                  chargingTime: Infinity,
+                  dischargingTime: 86400,
+                  level: 0.85 - ((hashVal % 10) * 0.01),
+                  onchargingchange: null,
+                  onchargingtimechange: null,
+                  ondischargingtimechange: null,
+                  onlevelchange: null
+                });
+              } else {
+                origGetBattery.apply(window.navigator, args).then(resolve).catch(reject);
+              }
+            };
+
+            if (window.__MORPH_SYNC_LOADED || (window.__MORPH_AGENT_SETTINGS__ && typeof window.__MORPH_AGENT_SETTINGS__.jsProtectEnabled !== 'undefined')) {
+              checkAndResolve();
+            } else {
+              let attempts = 0;
+              const interval = setInterval(() => {
+                if ((window.__MORPH_AGENT_SETTINGS__ && typeof window.__MORPH_AGENT_SETTINGS__.jsProtectEnabled !== 'undefined') || attempts++ > 50) {
+                  clearInterval(interval);
+                  checkAndResolve();
+                }
+              }, 10);
+            }
+          });
+        };
+
+        try { 
+          Object.defineProperty(Navigator.prototype, 'getBattery', { value: spoofBattery, configurable: true }); 
+        } catch (e) {
+          window.__MORPH_BATTERY_ERROR = 'NavProto Error: ' + e.message;
+        }
+        try { 
+          Object.defineProperty(window.navigator, 'getBattery', { value: spoofBattery, configurable: true }); 
+        } catch (e) {
+          window.__MORPH_BATTERY_ERROR = (window.__MORPH_BATTERY_ERROR ? window.__MORPH_BATTERY_ERROR + ' | ' : '') + 'WinNav Error: ' + e.message;
+        }
+      }
+    }
   } catch (e) {}
 })();

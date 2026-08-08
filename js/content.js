@@ -26,6 +26,14 @@
     console.warn('[MorphAgent 4.0] Storage access error:', err);
   });
 
+  if (api.runtime && api.runtime.onMessage) {
+    api.runtime.onMessage.addListener((message) => {
+      if (message.type === 'update-settings' && message.data) {
+        window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(message.data) }));
+      }
+    });
+  }
+
   // Check per-website rule overrides
   api.storage.sync.get(['websiteRules']).then((result) => {
     const websiteRules = result.websiteRules || [];

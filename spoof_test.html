@@ -1,118 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MorphAgent Ultimate Spoof Test</title>
+    <link rel="icon" type="image/png" href="icons/icon.png">
+    <link rel="stylesheet" href="css/advanced-settings.css">
     <style>
-        :root {
-            --bg-primary: #f8fafc;
-            --bg-secondary: #ffffff;
-            --text-primary: #0f172a;
-            --border-primary: rgba(15, 23, 42, 0.1);
-            --accent: #ff0000;
-            --radius: 12px;
-            --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-primary: #0f0f0f;
-                --bg-secondary: #212121;
-                --text-primary: #f8fafc;
-                --border-primary: rgba(255, 255, 255, 0.1);
-                --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-            }
-        }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 40px 20px; 
-            background: var(--bg-primary); 
-            color: var(--text-primary); 
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-        h2 { font-weight: 600; margin-bottom: 24px; color: var(--text-primary); }
-        .card { 
-            background: var(--bg-secondary); 
-            padding: 24px; 
-            border-radius: var(--radius); 
-            margin-bottom: 24px; 
+        .test-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px;
             border: 1px solid var(--border-primary);
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-sm);
         }
-        h3 { margin-top: 0; font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--border-primary); padding-bottom: 12px; margin-bottom: 16px; color: var(--accent); }
-        pre { 
-            background: var(--bg-primary); 
-            padding: 16px; 
-            border-radius: 8px; 
-            overflow-x: auto; 
-            border: 1px solid var(--border-primary);
+        .test-card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-secondary);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+        .test-card pre {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-secondary);
             font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 13px;
             margin: 0;
             white-space: pre-wrap;
+            color: var(--text-primary);
         }
+        
+        .theme-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .theme-toggle-btn:hover {
+            background: var(--bg-hover);
+        }
+        .dark-icon { display: none; }
+        body.dark-mode .dark-icon { display: block; }
+        body.dark-mode .light-icon { display: none; }
     </style>
 </head>
-<body>
-    <h2>MorphAgent Ultimate Privacy Test</h2>
-    <p>Enable <strong>Detection Shield</strong> and <strong>Location Spoofing</strong> in the extension, reload this page, and check the values below.</p>
+<body class="dark-mode">
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="title-section">
+                    <h1>MorphAgent Ultimate Privacy Test</h1>
+                    <p>Enable <strong>Detection Shield</strong> and <strong>Location Spoofing</strong> in the extension, reload this page, and check the values below.</p>
+                </div>
+                <button class="theme-toggle-btn" id="themeToggle" title="Toggle theme">
+                    <svg class="light-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+                    </svg>
+                    <svg class="dark-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
 
-    <div class="card">
-        <h3>1. Hardware Info</h3>
-        <div id="hw"></div>
-    </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <section class="settings-section">
+                <div class="test-grid">
+                    <div class="test-card">
+                        <h3>1. Hardware Info</h3>
+                        <div id="hw"></div>
+                    </div>
 
-    <div class="card">
-        <h3>2. Timezone Info</h3>
-        <div id="tz"></div>
-    </div>
+                    <div class="test-card">
+                        <h3>2. Timezone Info</h3>
+                        <div id="tz"></div>
+                    </div>
 
-    <div class="card">
-        <h3>3. WebGL Info</h3>
-        <div id="webgl"></div>
-    </div>
+                    <div class="test-card">
+                        <h3>3. WebGL Info</h3>
+                        <div id="webgl"></div>
+                    </div>
 
-    <div class="card">
-        <h3>4. Canvas Hash</h3>
-        <div id="canvas"></div>
-    </div>
+                    <div class="test-card">
+                        <h3>4. Canvas Hash</h3>
+                        <div id="canvas"></div>
+                    </div>
 
-    <div class="card">
-        <h3>5. Screen Info</h3>
-        <div id="screen-info"></div>
-    </div>
+                    <div class="test-card">
+                        <h3>5. Screen Info</h3>
+                        <div id="screen-info"></div>
+                    </div>
 
-    <div class="card">
-        <h3>6. Media Devices</h3>
-        <div id="media-info"><pre id="media-out">Checking...</pre></div>
-    </div>
+                    <div class="test-card">
+                        <h3>6. Media Devices</h3>
+                        <div id="media-info"><pre id="media-out">Checking...</pre></div>
+                    </div>
 
-    <div class="card">
-        <h3>7. DRM Probing</h3>
-        <div id="drm-info"><pre id="drm-out">Checking DRM support...</pre></div>
-    </div>
+                    <div class="test-card">
+                        <h3>7. DRM Probing</h3>
+                        <div id="drm-info"><pre id="drm-out">Checking DRM support...</pre></div>
+                    </div>
 
-    <div class="card">
-        <h3>8. Battery API</h3>
-        <div id="battery-info"><pre id="battery-out">Checking...</pre></div>
-    </div>
+                    <div class="test-card">
+                        <h3>8. Battery API</h3>
+                        <div id="battery-info"><pre id="battery-out">Checking...</pre></div>
+                    </div>
 
-    <div class="card">
-        <h3>9. Network & Connection</h3>
-        <div id="network-info"><pre id="network-out">Checking...</pre></div>
-    </div>
+                    <div class="test-card">
+                        <h3>9. Network & Connection</h3>
+                        <div id="network-info"><pre id="network-out">Checking...</pre></div>
+                    </div>
 
-    <div class="card">
-        <h3>10. ClientRects & DOM Box</h3>
-        <div id="dom-info"><pre id="dom-out">Checking...</pre></div>
-    </div>
+                    <div class="test-card">
+                        <h3>10. ClientRects & DOM Box</h3>
+                        <div id="dom-info"><pre id="dom-out">Checking...</pre></div>
+                    </div>
 
-    <div class="card">
-        <h3>11. Font Enumeration Hash</h3>
-        <div id="font-info"><pre id="font-out">Checking...</pre></div>
+                    <div class="test-card">
+                        <h3>11. Font Enumeration Hash</h3>
+                        <div id="font-info"><pre id="font-out">Checking...</pre></div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
+        // Apply theme from storage
+        const browser = window.browser || window.chrome;
+        if (browser && browser.storage) {
+            browser.storage.local.get(['theme']).then((data) => {
+                if (data.theme === 'light') {
+                    document.body.classList.remove('dark-mode');
+                } else if (!data.theme && !window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.remove('dark-mode');
+                }
+            });
+        }
+        
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-mode');
+            if (browser && browser.storage) {
+                browser.storage.local.set({ theme: isDark ? 'dark' : 'light' });
+            }
+        });
+
         // 1. Hardware
         const hwStr = `Hardware Concurrency: ${navigator.hardwareConcurrency} cores\nDevice Memory: ${navigator.deviceMemory} GB`;
         document.getElementById('hw').innerHTML = `<pre>${hwStr}</pre>`;
@@ -140,7 +191,8 @@
         // 4. Canvas Hash
         function getCanvasHash() {
             const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            // Adding willReadFrequently to suppress Chrome warnings during readback operations
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.textBaseline = "top";
             ctx.font = "14px 'Arial'";
             ctx.fillStyle = "#f60";
@@ -176,7 +228,11 @@
 
         // 7. DRM / EME
         async function checkDRM() {
-            const config = [{ initDataTypes: ['cenc'], videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }] }];
+            // Adding robustness level to suppress Chrome deprecation/unexpected behavior warnings
+            const config = [{ 
+                initDataTypes: ['cenc'], 
+                videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"', robustness: 'SW_SECURE_CRYPTO' }] 
+            }];
             let out = '';
             
             try {
@@ -201,7 +257,16 @@
         // 8. Battery API
         if (navigator.getBattery) {
             navigator.getBattery().then(b => {
-                document.getElementById('battery-out').innerText = `Level: ${b.level * 100}%\nCharging: ${b.charging}`;
+                let debugState = 'MorphAgent Settings: ' + JSON.stringify(window.__MORPH_AGENT_SETTINGS__ || 'Not Loaded');
+                debugState += '\nSync Load Success (sessionStorage): ' + (window.__MORPH_SYNC_LOADED ? 'YES' : 'NO');
+                debugState += '\nBattery Spoof Error: ' + (window.__MORPH_BATTERY_ERROR || 'None');
+                if (b && typeof b.level !== 'undefined') {
+                    document.getElementById('battery-out').innerText = `Level: ${b.level * 100}%\nCharging: ${b.charging}\n\n[Debug] ${debugState}`;
+                } else {
+                    document.getElementById('battery-out').innerText = `Raw Battery Data: ${JSON.stringify(b)}\n(If empty, browser blocked it)\n\n[Debug] ${debugState}`;
+                }
+            }).catch(err => {
+                document.getElementById('battery-out').innerText = `Error: ${err.message}`;
             });
         } else {
             document.getElementById('battery-out').innerText = `Battery API Not Supported`;
