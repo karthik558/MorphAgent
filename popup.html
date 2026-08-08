@@ -247,6 +247,38 @@
                 </div>
               </div>
             </div>
+            <!-- WebRTC Shield -->
+            <div class="toggle-card">
+              <div class="toggle-card-row">
+                <div class="toggle-card-info">
+                  <span class="toggle-card-label">WebRTC IP Shield</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="rtc-protect-toggle" class="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Ghost Mode -->
+            <div class="toggle-card">
+              <div class="toggle-card-row">
+                <div class="toggle-card-info">
+                  <span class="toggle-card-label">Ghost Mode (Auto-Rotate)</span>
+                  <span class="badge badge-recommended" style="background:var(--gradient-primary)">Ultimate</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="ghost-mode-toggle" class="checkbox">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="ghost-controls" id="ghost-controls" style="display: none; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-primary);">
+                <div class="inline-input-group">
+                  <label class="mini-label" for="ghost-interval">Rotation Interval (minutes)</label>
+                  <input type="number" id="ghost-interval" class="number-input" min="1" max="1440" value="15">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -27,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const customGeoInputs = document.getElementById('custom-geo-inputs');
   const geoLat = document.getElementById('geo-lat');
   const geoLng = document.getElementById('geo-lng');
+  const rtcProtectToggle = document.getElementById('rtc-protect-toggle');
+  const ghostModeToggle = document.getElementById('ghost-mode-toggle');
+  const ghostControls = document.getElementById('ghost-controls');
+  const ghostInterval = document.getElementById('ghost-interval');
 
   function updateUASpoofUIState() {
     const enabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
@@ -66,6 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
     geoToggle.addEventListener('change', () => {
       geoControls.classList.toggle('visible', geoToggle.checked);
       geoControls.style.display = geoToggle.checked ? 'block' : 'none';
+    });
+  }
+
+  if (ghostModeToggle && ghostControls) {
+    ghostModeToggle.addEventListener('change', () => {
+      ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
     });
   }
 
@@ -535,6 +545,13 @@ document.addEventListener('DOMContentLoaded', () => {
     touchControls.classList.toggle('visible', touchToggle.checked);
     jsBlockToggle.checked = !!rule.jsBlocked;
     jsProtectToggle.checked = !!rule.jsProtected;
+    
+    if (rtcProtectToggle) rtcProtectToggle.checked = rule.rtcProtectEnabled !== false;
+    if (ghostModeToggle) {
+      ghostModeToggle.checked = !!rule.ghostModeEnabled;
+      if (ghostControls) ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
+      if (ghostInterval) ghostInterval.value = rule.ghostInterval || 15;
+    }
 
     if (uaSpoofToggle) {
       uaSpoofToggle.checked = rule.uaSpoofEnabled !== false;
@@ -614,6 +631,13 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.toggle('visible', touchToggle.checked);
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
+        
+        if (rtcProtectToggle) rtcProtectToggle.checked = settings.rtcProtectEnabled !== false;
+        if (ghostModeToggle) {
+          ghostModeToggle.checked = !!settings.ghostModeEnabled;
+          if (ghostControls) ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
+          if (ghostInterval) ghostInterval.value = settings.ghostInterval || 15;
+        }
         if (uaSpoofToggle) {
           uaSpoofToggle.checked = settings.uaSpoofEnabled !== false;
           updateUASpoofUIState();
@@ -648,6 +672,12 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.classList.remove('visible');
         jsBlockToggle.checked = false;
         jsProtectToggle.checked = false;
+        if (rtcProtectToggle) rtcProtectToggle.checked = true;
+        if (ghostModeToggle) {
+          ghostModeToggle.checked = false;
+          if (ghostControls) ghostControls.style.display = 'none';
+          if (ghostInterval) ghostInterval.value = 15;
+        }
         if (uaSpoofToggle) {
           uaSpoofToggle.checked = true;
           updateUASpoofUIState();
@@ -676,6 +706,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const touchSpoofEnabled = touchToggle.checked;
     const jsBlockEnabled = jsBlockToggle.checked;
     const jsProtectEnabled = jsProtectToggle.checked;
+    const rtcProtectEnabled = rtcProtectToggle ? rtcProtectToggle.checked : true;
+    const ghostModeEnabled = ghostModeToggle ? ghostModeToggle.checked : false;
+    const ghostIntervalVal = ghostInterval ? parseInt(ghostInterval.value, 10) || 15 : 15;
     const uaSpoofEnabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
     const geoSpoofEnabled = geoToggle ? geoToggle.checked : false;
     const geoPresetValue = geoPreset ? geoPreset.value : '40.7128,-74.0060';
@@ -737,6 +770,9 @@ document.addEventListener('DOMContentLoaded', () => {
           touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
           jsBlocked: jsBlockEnabled,
           jsProtected: jsProtectEnabled,
+          rtcProtectEnabled,
+          ghostModeEnabled,
+          ghostInterval: ghostIntervalVal,
           uaSpoofEnabled,
           geoSpoofEnabled,
           geoPresetValue,
@@ -782,6 +818,9 @@ document.addEventListener('DOMContentLoaded', () => {
         touchSpoofEnabled,
         jsBlockEnabled,
         jsProtectEnabled,
+        rtcProtectEnabled,
+        ghostModeEnabled,
+        ghostInterval: ghostIntervalVal,
         uaSpoofEnabled,
         geoSpoofEnabled,
         geoPresetValue,
@@ -828,6 +867,12 @@ document.addEventListener('DOMContentLoaded', () => {
     touchControls.classList.remove('visible');
     jsBlockToggle.checked = false;
     jsProtectToggle.checked = false;
+    if (rtcProtectToggle) rtcProtectToggle.checked = true;
+    if (ghostModeToggle) {
+      ghostModeToggle.checked = false;
+      if (ghostControls) ghostControls.style.display = 'none';
+      if (ghostInterval) ghostInterval.value = 15;
+    }
 
     // Reset to browser default user agent (not the selected profile)
     const resetData = {
@@ -836,6 +881,9 @@ document.addEventListener('DOMContentLoaded', () => {
       touchSpoofEnabled: false,
       jsBlockEnabled: false,
       jsProtectEnabled: false,
+      rtcProtectEnabled: true,
+      ghostModeEnabled: false,
+      ghostInterval: 15,
       applyScope: 'current'
     };
 

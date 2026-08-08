@@ -92,6 +92,26 @@
         <div id="drm-info"><pre id="drm-out">Checking DRM support...</pre></div>
     </div>
 
+    <div class="card">
+        <h3>8. Battery API</h3>
+        <div id="battery-info"><pre id="battery-out">Checking...</pre></div>
+    </div>
+
+    <div class="card">
+        <h3>9. Network & Connection</h3>
+        <div id="network-info"><pre id="network-out">Checking...</pre></div>
+    </div>
+
+    <div class="card">
+        <h3>10. ClientRects & DOM Box</h3>
+        <div id="dom-info"><pre id="dom-out">Checking...</pre></div>
+    </div>
+
+    <div class="card">
+        <h3>11. Font Enumeration Hash</h3>
+        <div id="font-info"><pre id="font-out">Checking...</pre></div>
+    </div>
+
     <script>
         // 1. Hardware
         const hwStr = `Hardware Concurrency: ${navigator.hardwareConcurrency} cores\nDevice Memory: ${navigator.deviceMemory} GB`;
@@ -177,6 +197,43 @@
             document.getElementById('drm-out').innerText = out;
         }
         checkDRM();
+
+        // 8. Battery API
+        if (navigator.getBattery) {
+            navigator.getBattery().then(b => {
+                document.getElementById('battery-out').innerText = `Level: ${b.level * 100}%\nCharging: ${b.charging}`;
+            });
+        } else {
+            document.getElementById('battery-out').innerText = `Battery API Not Supported`;
+        }
+
+        // 9. Network API
+        if (navigator.connection) {
+            const c = navigator.connection;
+            document.getElementById('network-out').innerText = `Effective Type: ${c.effectiveType}\nDownlink: ${c.downlink} Mbps\nRTT: ${c.rtt} ms`;
+        } else {
+            document.getElementById('network-out').innerText = `Network Information API Not Supported`;
+        }
+
+        // 10. ClientRects
+        const testEl = document.createElement('div');
+        testEl.style.width = '100px';
+        testEl.style.height = '100px';
+        testEl.style.position = 'absolute';
+        document.body.appendChild(testEl);
+        const rect = testEl.getBoundingClientRect();
+        document.getElementById('dom-out').innerText = `Width: ${rect.width}\nHeight: ${rect.height}`;
+        testEl.remove();
+
+        // 11. Font Hash
+        const fontTest = document.createElement('span');
+        fontTest.innerText = "mmmmmmmmmmllllliii";
+        fontTest.style.fontSize = "72px";
+        fontTest.style.position = "absolute";
+        fontTest.style.visibility = "hidden";
+        document.body.appendChild(fontTest);
+        document.getElementById('font-out').innerText = `OffsetWidth: ${fontTest.offsetWidth}\nOffsetHeight: ${fontTest.offsetHeight}`;
+        fontTest.remove();
     </script>
 </body>
 </html>

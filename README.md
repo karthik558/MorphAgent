@@ -69,32 +69,38 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 2. **Client Hints (`Sec-CH-UA`) & `navigator.userAgentData` Synchronous Engine**  
    Full spoofing of `Sec-CH-UA`, `Sec-CH-UA-Mobile`, and `Sec-CH-UA-Platform` headers paired with synchronous `navigator.userAgentData.getHighEntropyValues()` injection.
 
-3. **Deterministic Canvas & WebGL Stealth Matrix**  
-   Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 without triggering CreepJS or FingerprintJS heuristic detection.
+3. **Cryptographic Canvas & WebGL Stealth Matrix**  
+   Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 with cryptographic sub-pixel variation.
 
-4. **AudioContext Fingerprint Shield & WebRTC IP Leak Defense**  
-   Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and local ICE candidate IP sanitization for WebRTC.
+4. **Ghost Mode (Intelligent Auto-Rotation)**  
+   When enabled, a background timer automatically rotates your entire browser identity (User Agent, Touch Points, Canvas Seed) at configurable intervals to break persistent cross-site tracking sessions.
 
-5. **GPS Geolocation & Location Spoofing Engine**  
-   GPS coordinate mocking (`navigator.geolocation.getCurrentPosition` & `watchPosition`), city presets (New York, London, Tokyo, Paris, Sydney, San Francisco) and custom latitude/longitude inputs.
+5. **ClientRects & DOM Bounding Box Spoofing**  
+   Intercepts `getBoundingClientRect` to inject microscopic noise, destroying OS-level font rendering and layout tracking vectors.
 
-6. **Screen Resolution, Orientation & Font Metrics Matrix**  
-   Device-accurate `screen.width`, `screen.height`, `screen.colorDepth`, `window.devicePixelRatio`, orientation, and canvas `TextMetrics` micro-variation.
+6. **WebRTC IP Leak Shield & Network Spoofing**  
+   Silently strips local IPv4/IPv6 addresses from WebRTC offers (with a dedicated toggle) and spoofs `navigator.connection` to perfectly match your selected device profile (e.g. returning a 4G cellular connection when spoofing an iPhone).
 
-7. **Custom Profile Builder Studio**  
-   GUI in Advanced Settings to create, edit, save, and delete custom device profiles with custom Client Hints, touch points, screen size, and OS parameters.
+7. **Battery API & Sensor Spoofing**  
+   Spoofs `navigator.getBattery()` to return a fake, slowly discharging 85% battery level across all tabs.
 
-8. **Real-Time Live Fingerprint Leak Inspector**  
-   Embedded live testing inspector that evaluates active User-Agent, Client Hints, Canvas noise, Audio noise, WebGL GPU string, and WebRTC status in real time.
+8. **Font Enumeration Defender & Behavioral Masking**  
+   Defeats font hashing by adding variance to `offsetWidth`/`offsetHeight`, and introduces slight jitter into mouse coordinates and typing timestamps to mask behavioral biometrics.
 
-9. **Context Menu Fast Switcher & Toolbar Action Badges**  
-   Right-click context menu options for instant profile switching (`iPhone 17`, `Chrome 145`) and live action badge indicators (`MOB`, `TAB`, `DES`, `GAM`).
+9. **AudioContext Fingerprint Shield**  
+   Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and offline audio buffers.
 
-10. **Futuristic Animated UI**  
-    Glassmorphic interface featuring a sleek red accent theme, quick search profile filter, keyboard shortcuts, and dark/light modes.
+10. **GPS Geolocation & Timezone Spoofing Engine**  
+    GPS coordinate mocking (`getCurrentPosition` & `watchPosition`), city presets, custom latitude/longitude inputs, and synchronous `Intl.DateTimeFormat` timezone spoofing.
 
-11. **Standalone Feature Mode (Independent Feature Toggles)**  
-    Allows users to run individual features (Location Spoofing, Touch Spoofing, Block JavaScript, Detection Shield) independently without modifying or overriding the browser's real User-Agent flag.
+11. **Screen Resolution, Orientation & Media Devices Masking**  
+    Device-accurate `screen.width/height`, pixel depth, orientation, and deterministic webcam/microphone enumeration masking.
+
+12. **Custom Profile Builder Studio & Context Menu Switcher**  
+    GUI to create custom device profiles. Right-click context menus for instant profile switching (`iPhone 17`, `Chrome 145`) and quick location presets.
+
+13. **Real-Time Live Fingerprint Leak Inspector**  
+    Embedded live testing inspector (`spoof_test.html`) that evaluates Canvas noise, WebGL GPU string, WebRTC, ClientRects, Network, and Battery status in real time.
 
 ---
 

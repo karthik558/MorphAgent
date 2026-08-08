@@ -185,7 +185,7 @@
           };
         }
 
-        if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection) {
+        if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection && s.rtcProtectEnabled !== false) {
           window.__MORPH_RTC_PROTECTED = true;
           const origCreateOffer = RTCPeerConnection.prototype.createOffer;
           RTCPeerConnection.prototype.createOffer = function(options) {
@@ -196,6 +196,21 @@
               return offer;
             });
           };
+        }
+
+        if (!window.__MORPH_NETWORK_PROTECTED && window.navigator && s.rtcProtectEnabled !== false) {
+          window.__MORPH_NETWORK_PROTECTED = true;
+          if (navigator.connection) {
+            const fakeConn = {
+              downlink: isMobile ? 2.5 : 10,
+              effectiveType: '4g',
+              rtt: isMobile ? 100 : 50,
+              saveData: false,
+              type: isMobile ? 'cellular' : 'wifi',
+              onchange: null
+            };
+            Object.defineProperty(navigator, 'connection', { get: () => fakeConn, configurable: true });
+          }
         }
 
         // Offline AudioContext Spoofing
@@ -216,15 +231,107 @@
           const spoofWebGL = (ctxProto) => {
             if (!ctxProto) return;
             const originalGetParameter = ctxProto.getParameter;
+            const originalReadPixels = ctxProto.readPixels;
+            
             ctxProto.getParameter = function(parameter) {
-              // UNMASKED_VENDOR_WEBGL = 37445, UNMASKED_RENDERER_WEBGL = 37446
               if (parameter === 37445) return 'Google Inc. (Intel)';
               if (parameter === 37446) return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
               return originalGetParameter.apply(this, arguments);
             };
+            
+            if (originalReadPixels) {
+              ctxProto.readPixels = function(...args) {
+                originalReadPixels.apply(this, args);
+                const pixels = args[6];
+                if (pixels && pixels.length > 0) {
+                  pixels[0] = (pixels[0] + (domainHash % 5)) % 255;
+                }
+              };
+            }
           };
           spoofWebGL(window.WebGLRenderingContext.prototype);
           spoofWebGL(window.WebGL2RenderingContext ? window.WebGL2RenderingContext.prototype : null);
+        }
+
+        // ClientRects Bounding Box Spoofing
+        if (!window.__MORPH_CLIENTRECTS_PROTECTED && window.Element) {
+          window.__MORPH_CLIENTRECTS_PROTECTED = true;
+          const origGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+          const applyNoiseToRect = (rect) => {
+            if (!rect) return rect;
+            const noise = (domainHash % 100) * 0.0001;
+            const modified = {
+              x: rect.x + noise, y: rect.y + noise,
+              width: rect.width + noise, height: rect.height + noise,
+              top: rect.top + noise, right: rect.right + noise,
+              bottom: rect.bottom + noise, left: rect.left + noise,
+              toJSON: rect.toJSON
+            };
+            Object.setPrototypeOf(modified, DOMRect.prototype);
+            return modified;
+          };
+          Element.prototype.getBoundingClientRect = function() {
+            return applyNoiseToRect(origGetBoundingClientRect.apply(this, arguments));
+          };
+        }
+
+        // Font Enumeration Defender
+        if (!window.__MORPH_FONT_PROTECTED && window.HTMLElement) {
+          window.__MORPH_FONT_PROTECTED = true;
+          const origOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+          const origOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+          if (origOffsetWidth && origOffsetHeight) {
+            Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+              get: function() {
+                const val = origOffsetWidth.get.call(this);
+                return val + (domainHash % 3 === 0 && val > 10 ? 1 : 0);
+              }, configurable: true
+            });
+            Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+              get: function() {
+                const val = origOffsetHeight.get.call(this);
+                return val + (domainHash % 2 === 0 && val > 10 ? 1 : 0);
+              }, configurable: true
+            });
+          }
+        }
+
+        // Behavioral Biometric Masking
+        if (!window.__MORPH_BEHAVIOR_PROTECTED && window.MouseEvent) {
+          window.__MORPH_BEHAVIOR_PROTECTED = true;
+          const origClientX = Object.getOwnPropertyDescriptor(MouseEvent.prototype, 'clientX');
+          const origClientY = Object.getOwnPropertyDescriptor(MouseEvent.prototype, 'clientY');
+          if (origClientX && origClientY) {
+            Object.defineProperty(MouseEvent.prototype, 'clientX', {
+              get: function() {
+                const val = origClientX.get.call(this);
+                return this.isTrusted ? val + (domainHash % 3) : val;
+              }, configurable: true
+            });
+            Object.defineProperty(MouseEvent.prototype, 'clientY', {
+              get: function() {
+                const val = origClientY.get.call(this);
+                return this.isTrusted ? val + (domainHash % 3) : val;
+              }, configurable: true
+            });
+          }
+        }
+
+        // Battery API Spoofing
+        if (!window.__MORPH_BATTERY_PROTECTED && window.navigator && window.navigator.getBattery) {
+          window.__MORPH_BATTERY_PROTECTED = true;
+          window.navigator.getBattery = function() {
+            return Promise.resolve({
+              charging: false,
+              chargingTime: Infinity,
+              dischargingTime: 86400,
+              level: 0.85 - ((domainHash % 10) * 0.01),
+              onchargingchange: null,
+              onchargingtimechange: null,
+              ondischargingtimechange: null,
+              onlevelchange: null
+            });
+          };
         }
       }
 

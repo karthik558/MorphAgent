@@ -254,6 +254,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       'touchSpoofEnabled',
       'jsBlockEnabled',
       'jsProtectEnabled',
+      'rtcProtectEnabled',
+      'ghostModeEnabled',
+      'ghostInterval',
       'geoSpoofEnabled',
       'geoPresetValue',
       'geoCoords',
@@ -272,6 +275,14 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       if (message.data.activeCategory) {
         activeCategory = message.data.activeCategory;
+      }
+      if (message.data.ghostModeEnabled !== undefined && api.alarms) {
+        if (message.data.ghostModeEnabled) {
+          const interval = message.data.ghostInterval || 15;
+          api.alarms.create('ghostModeRotate', { periodInMinutes: interval });
+        } else {
+          api.alarms.clear('ghostModeRotate');
+        }
       }
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
@@ -559,6 +570,27 @@ if (api.contextMenus && api.contextMenus.onClicked) {
       } catch (e) {
         console.warn('[MorphAgent] Failed to apply site rule from context menu:', e);
       }
+    }
+  });
+}
+
+// Ghost Mode Alarm Listener
+if (api.alarms && api.alarms.onAlarm) {
+  api.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'ghostModeRotate') {
+      const randomUA = TOP_10_UAS[Math.floor(Math.random() * TOP_10_UAS.length)];
+      api.storage.local.set({
+        selectedUA: randomUA.ua,
+        activeCategory: randomUA.category,
+        touchSpoofEnabled: randomUA.touch || false,
+        maxTouchPoints: randomUA.touch ? 5 : 0
+      }).then(() => {
+        cachedUA = randomUA.ua;
+        activeCategory = randomUA.category;
+        updateDeclarativeNetRequestRules(cachedUA);
+        updateBadge(cachedUA, activeCategory);
+        console.log('[MorphAgent 4.0 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
+      });
     }
   });
 }
