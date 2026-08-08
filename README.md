@@ -74,7 +74,20 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ---
 
-## What's New in Version 4.0
+## What's New in Version 4.1
+
+1. **Access Control (Blacklist & Whitelist Modes)**  
+   Full support for Blacklist Mode (disable spoofing on specified sites) and Whitelist Mode (enable spoofing ONLY on specified sites) across both HTTP headers and JS stealth injections.
+
+2. **Access Control UI & Segmented Controls**  
+   Modernized tab controls matching MorphAgent's dark neon red theme, dynamic context descriptions, responsive layout fixes, and updated sidebar navigation.
+
+3. **In-App Protections & Usage Guide**  
+   Embedded reference guide in Advanced Settings covering all 10+ stealth protections with recommended configurations for privacy, compatibility, and evasion.
+
+---
+
+## Features Overview
 
 1. **Dual Engine Manifest V3 & Manifest Generator (`scripts/generate-manifest.js`)**  
    Automatically builds Manifest V3 for Chromium browsers and Manifest V2/V3 for Firefox with dynamic header spoofing.
