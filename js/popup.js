@@ -947,6 +947,36 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initDeviceCards();
     initTouchControls();
+
+    // Query active tab and check for threats
+    if (browser.tabs && browser.tabs.query) {
+      browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+        if (tabs && tabs[0] && tabs[0].url && !tabs[0].url.startsWith('chrome://')) {
+          const url = new URL(tabs[0].url);
+          const hostname = url.hostname;
+          const threatBanner = document.getElementById('threat-banner');
+          const threatDetails = document.getElementById('threat-details');
+
+          // Check for threats in the last 15 minutes for this domain
+          browser.storage.local.get(['threatLogs']).then(res => {
+              const logs = res.threatLogs || [];
+              const recentThreats = logs.filter(log => log.domain === hostname && (Date.now() - log.timestamp < 15 * 60 * 1000));
+              if (recentThreats.length > 0 && threatBanner && threatDetails) {
+                threatBanner.style.display = 'flex';
+                const types = [...new Set(recentThreats.map(t => t.type))];
+                threatDetails.textContent = types.slice(0, 3).join(', ') + (types.length > 3 ? '...' : '');
+                
+                // Color code the banner based on volume
+                if (recentThreats.length > 10) {
+                  threatBanner.style.backgroundColor = 'rgba(255, 0, 0, 0.15)';
+                  threatBanner.style.borderColor = 'rgba(255, 0, 0, 0.4)';
+                  threatBanner.querySelector('.threat-text strong').textContent = 'High Threat Detected';
+                }
+              }
+            });
+        }
+      });
+    }
     
     // Wait for theme to be applied before loading settings
     setTimeout(() => {

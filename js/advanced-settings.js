@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const touchPointsInput = document.getElementById('touchPoints');
   const jsBlockRuleCheckbox = document.getElementById('jsBlockRule');
   const jsProtectRuleCheckbox = document.getElementById('jsProtectRule');
+  const mediaQueryRuleCheckbox = document.getElementById('mediaQueryRule');
+  const timingShieldRuleCheckbox = document.getElementById('timingShieldRule');
   const blockUrlInput = document.getElementById('blockUrl');
   const geoSpoofRuleCheckbox = document.getElementById('geoSpoofRule');
   const geoCoordsPresetSelect = document.getElementById('geoCoordsPreset');
@@ -69,6 +71,73 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLocations();
     setupEventListeners();
     loadTabSettings();
+    renderAnalytics();
+  }
+
+  function renderAnalytics() {
+    const browser = window.browser || window.chrome;
+    browser.storage.local.get(['threatLogs'], (result) => {
+      const logs = result.threatLogs || [];
+      const totalEl = document.getElementById('analytics-total');
+      const domainEl = document.getElementById('analytics-domain');
+      const canvasEl = document.getElementById('threatChart');
+      
+      if (!totalEl || !domainEl || !canvasEl) return;
+      
+      totalEl.textContent = logs.length.toString();
+      
+      if (logs.length > 0) {
+        // Calculate most targeted domain
+        const domainCounts = {};
+        logs.forEach(log => {
+          domainCounts[log.domain] = (domainCounts[log.domain] || 0) + 1;
+        });
+        const maxDomain = Object.keys(domainCounts).reduce((a, b) => domainCounts[a] > domainCounts[b] ? a : b);
+        domainEl.textContent = maxDomain;
+        
+        // Prepare chart data (Threat types frequency)
+        const typeCounts = {};
+        logs.forEach(log => {
+          typeCounts[log.type] = (typeCounts[log.type] || 0) + 1;
+        });
+        
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#94a3b8' : '#475569';
+        const gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        
+        if (window.threatChartInstance) {
+          window.threatChartInstance.destroy();
+        }
+        
+        if (typeof Chart !== 'undefined') {
+          window.threatChartInstance = new Chart(canvasEl, {
+            type: 'bar',
+            data: {
+              labels: Object.keys(typeCounts),
+              datasets: [{
+                label: 'Threats Blocked',
+                data: Object.values(typeCounts),
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } },
+                x: { grid: { display: false }, ticks: { color: textColor } }
+              },
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+        }
+      }
+    });
   }
 
   function renderBlockList() {
@@ -305,6 +374,8 @@ document.addEventListener('DOMContentLoaded', () => {
         touchPoints: touchPoints,
         jsBlocked: jsBlockRuleCheckbox.checked,
         jsProtected: jsProtectRuleCheckbox.checked,
+        mediaQuerySpoofEnabled: mediaQueryRuleCheckbox ? mediaQueryRuleCheckbox.checked : false,
+        timingShieldEnabled: timingShieldRuleCheckbox ? timingShieldRuleCheckbox.checked : false,
         geoSpoofEnabled: geoSpoofRuleCheckbox.checked,
         geoCoords: geoCoords,
         created: editingRule ? editingRule.created : new Date().toISOString()
@@ -330,6 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
       touchPointsInput.value = '0';
       jsBlockRuleCheckbox.checked = false;
       jsProtectRuleCheckbox.checked = false;
+      if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = false;
+      if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = false;
       geoSpoofRuleCheckbox.checked = false;
       geoCoordsPresetSelect.value = '40.7128,-74.0060';
       geoLatRuleInput.value = '';
@@ -349,6 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
       touchPointsInput.value = rule.touchPoints || 0;
       jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
       jsProtectRuleCheckbox.checked = !!rule.jsProtected;
+      if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = !!rule.mediaQuerySpoofEnabled;
+      if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = !!rule.timingShieldEnabled;
       
       geoSpoofRuleCheckbox.checked = !!rule.geoSpoofEnabled;
       geoCoordsGroupDiv.style.display = rule.geoSpoofEnabled ? 'block' : 'none';

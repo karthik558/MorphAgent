@@ -34,6 +34,18 @@
     });
   }
 
+  // Telemetry Bridge: Listen for threats detected by inject.js and forward to background script
+  window.addEventListener('morph-threat-detected', (e) => {
+    if (e.detail && e.detail.type) {
+      try {
+        api.runtime.sendMessage({
+          type: 'log-threat',
+          data: e.detail
+        });
+      } catch (err) {}
+    }
+  });
+
   // Check per-website rule overrides
   api.storage.sync.get(['websiteRules']).then((result) => {
     const websiteRules = result.websiteRules || [];
@@ -51,6 +63,8 @@
           maxTouchPoints: rule.touchPoints || 0,
           touchSpoofEnabled: (rule.touchPoints || 0) > 0,
           jsProtectEnabled: !!rule.jsProtected,
+          mediaQuerySpoofEnabled: !!rule.mediaQuerySpoofEnabled,
+          timingShieldEnabled: !!rule.timingShieldEnabled,
           geoSpoofEnabled: !!rule.geoSpoofEnabled,
           geoCoords: rule.geoCoords
         };

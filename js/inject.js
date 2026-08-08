@@ -107,9 +107,85 @@
         Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
       }
 
+      // Threat Telemetry Emitter
+      const emitThreat = (type) => {
+        try {
+          window.dispatchEvent(new CustomEvent('morph-threat-detected', { detail: { type, domain: window.location.hostname || 'localhost' } }));
+        } catch (e) {}
+      };
+
+      // CSS Media Query Spoofing
+      if (s.mediaQuerySpoofEnabled && window.matchMedia) {
+        const origMatchMedia = window.matchMedia;
+        window.matchMedia = function(query) {
+          if (typeof query === 'string' && query.includes('prefers-color-scheme')) {
+            return {
+              matches: query.includes('dark') ? false : true, // Force light mode default or whatever spoof
+              media: query,
+              onchange: null,
+              addListener: function() {},
+              removeListener: function() {},
+              addEventListener: function() {},
+              removeEventListener: function() {},
+              dispatchEvent: function() { return true; }
+            };
+          }
+          return origMatchMedia.apply(this, arguments);
+        };
+      }
+
       // Hardware & Screen Stealth Protections
       if (s.jsProtectEnabled) {
-        const domainHash = Array.from(window.location.hostname).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+        const domainHash = Array.from(window.location.hostname || "localhost").reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
+
+        // Precision Timing Shield (Anti-Spectre)
+        if (s.timingShieldEnabled && !window.__MORPH_TIMING_PROTECTED && window.performance && performance.now) {
+          window.__MORPH_TIMING_PROTECTED = true;
+          const origNow = performance.now;
+          performance.now = function() {
+            emitThreat('Timing (performance.now)');
+            const now = origNow.call(this);
+            const jitter = (Math.random() * 0.1) - 0.05; // +/- 0.05ms
+            return now + jitter;
+          };
+        }
+
+        // Clipboard Defender
+        if (!window.__MORPH_CLIPBOARD_PROTECTED && window.navigator && navigator.clipboard) {
+          window.__MORPH_CLIPBOARD_PROTECTED = true;
+          if (navigator.clipboard.readText) {
+            navigator.clipboard.readText = function() {
+              emitThreat('Clipboard Read');
+              return Promise.reject(new DOMException('Read permission denied.', 'NotAllowedError'));
+            };
+          }
+        }
+        
+        // Navigator Plugins & MimeTypes Spoofing
+        if (window.navigator) {
+          const fakePlugin = {
+            description: "Portable Document Format",
+            filename: "internal-pdf-viewer",
+            name: "Chrome PDF Plugin",
+            length: 1,
+            0: { description: "Portable Document Format", suffixes: "pdf", type: "application/x-google-chrome-pdf" }
+          };
+          Object.setPrototypeOf(fakePlugin, Plugin.prototype);
+          
+          const fakePluginArray = { 0: fakePlugin, length: 1, 'Chrome PDF Plugin': fakePlugin, refresh: () => {} };
+          Object.setPrototypeOf(fakePluginArray, PluginArray.prototype);
+          
+          const fakeMime = { description: "Portable Document Format", suffixes: "pdf", type: "application/pdf", enabledPlugin: fakePlugin };
+          Object.setPrototypeOf(fakeMime, MimeType.prototype);
+          
+          const fakeMimeArray = { 0: fakeMime, length: 1, 'application/pdf': fakeMime };
+          Object.setPrototypeOf(fakeMimeArray, MimeTypeArray.prototype);
+
+          try {
+            Object.defineProperty(Navigator.prototype, 'plugins', { get: () => fakePluginArray, configurable: true });
+            Object.defineProperty(Navigator.prototype, 'mimeTypes', { get: () => fakeMimeArray, configurable: true });
+          } catch(e) {}
+        }
 
         // Spoof Hardware Details
         Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => 8, configurable: true });
@@ -140,6 +216,7 @@
         if (window.Navigator && Navigator.prototype.requestMediaKeySystemAccess) {
           const originalRequestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
           Navigator.prototype.requestMediaKeySystemAccess = function(keySystem, supportedConfigurations) {
+            emitThreat('DRM Access');
             // Block proprietary DRMs to prevent OS identification, allow Widevine
             if (keySystem === 'com.microsoft.playready' || keySystem === 'com.apple.fps.1_0') {
               return Promise.reject(new DOMException('Unsupported keySystem', 'NotSupportedError'));
@@ -179,6 +256,7 @@
 
           const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
           HTMLCanvasElement.prototype.toDataURL = function(...args) {
+            emitThreat('Canvas DataURL');
             const ctx = origGetContext.call(this, '2d');
             if (ctx) {
               try {
@@ -199,6 +277,7 @@
           if (window.CanvasRenderingContext2D) {
             const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
             CanvasRenderingContext2D.prototype.getImageData = function(...args) {
+              emitThreat('Canvas Pixel Read');
               const imageData = originalGetImageData.apply(this, args);
               // Inject microscopic, domain-specific noise (e.g. modify every 17th pixel slightly)
               if (imageData && imageData.data) {
@@ -215,6 +294,7 @@
           window.__MORPH_AUDIO_PROTECTED = true;
           const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
           AnalyserNode.prototype.getFloatFrequencyData = function(array) {
+            emitThreat('Audio Analyser');
             origGetFloatFreq.apply(this, arguments);
             for (let i = 0; i < array.length; i += 100) {
               array[i] += (domainHash % 10 - 5) * 0.001;
@@ -271,6 +351,7 @@
             const originalReadPixels = ctxProto.readPixels;
             
             ctxProto.getParameter = function(parameter) {
+              emitThreat('WebGL Parameter');
               if (parameter === 37445) return 'Google Inc. (Intel)';
               if (parameter === 37446) return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
               return originalGetParameter.apply(this, arguments);
@@ -278,6 +359,7 @@
             
             if (originalReadPixels) {
               ctxProto.readPixels = function(...args) {
+                emitThreat('WebGL Pixel Read');
                 originalReadPixels.apply(this, args);
                 const pixels = args[6];
                 if (pixels && pixels.length > 0) {
@@ -294,6 +376,7 @@
         if (!window.__MORPH_CLIENTRECTS_PROTECTED && window.Element) {
           window.__MORPH_CLIENTRECTS_PROTECTED = true;
           const origGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+          let rectWarnCount = 0;
           const applyNoiseToRect = (rect) => {
             if (!rect) return rect;
             const noise = (domainHash % 100) * 0.0001;
@@ -308,6 +391,7 @@
             return modified;
           };
           Element.prototype.getBoundingClientRect = function() {
+            if (rectWarnCount++ < 5) emitThreat('ClientRects'); // Throttle telemetry to avoid spam
             return applyNoiseToRect(origGetBoundingClientRect.apply(this, arguments));
           };
         }
@@ -588,6 +672,7 @@
 
       if (origGetBattery) {
         const spoofBattery = function(...args) {
+          emitThreat('Battery API');
           return new Promise((resolve, reject) => {
             const checkAndResolve = () => {
               const s = window.__MORPH_AGENT_SETTINGS__ || {};

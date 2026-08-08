@@ -33,6 +33,31 @@
 
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Threat Analytics Section -->
+      <section class="settings-section">
+        <div class="section-header">
+          <h2>Threat Analytics Dashboard</h2>
+          <p>Live monitoring of fingerprinting and tracking attempts across all domains</p>
+        </div>
+        
+        <div class="rules-container" style="padding: 20px; background: var(--bg-glass); backdrop-filter: blur(12px); border-radius: var(--radius-lg); border: 1px solid var(--border-secondary);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="flex: 1; padding: 16px; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,0,0,0.1); border-radius: var(--radius-md); text-align: center; margin-right: 12px;">
+              <h3 style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Total Threats Blocked</h3>
+              <div id="analytics-total" style="font-size: 32px; font-weight: 700; color: var(--accent); margin-top: 8px;">0</div>
+            </div>
+            <div style="flex: 1; padding: 16px; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.1); border-radius: var(--radius-md); text-align: center;">
+              <h3 style="color: var(--text-secondary); font-size: 13px; text-transform: uppercase;">Most Targeted Domain</h3>
+              <div id="analytics-domain" style="font-size: 20px; font-weight: 700; color: var(--success); margin-top: 14px; word-break: break-all;">None</div>
+            </div>
+          </div>
+          
+          <div style="height: 300px; width: 100%; position: relative;">
+            <canvas id="threatChart"></canvas>
+          </div>
+        </div>
+      </section>
+
       <!-- Website Rules Section -->
       <section class="settings-section">
         <div class="section-header">
@@ -75,6 +100,14 @@
                   <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
                     <input type="checkbox" id="geoSpoofRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
                     <span style="white-space: nowrap; margin-bottom: 0;">Geo Spoof</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+                    <input type="checkbox" id="mediaQueryRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
+                    <span style="white-space: nowrap; margin-bottom: 0;">Media Query Spoof</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+                    <input type="checkbox" id="timingShieldRule" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0;">
+                    <span style="white-space: nowrap; margin-bottom: 0;">Timing Shield</span>
                   </label>
                 </div>
               </div>
@@ -336,6 +369,7 @@
   </div>
 
   <script src="js/profiles.js"></script>
+  <script src="js/lib/chart.umd.js"></script>
   <script src="js/advanced-settings.js"></script>
 </body>
 </html>

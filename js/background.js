@@ -82,7 +82,8 @@ async function updateDeclarativeNetRequestRules(targetUA) {
           { header: 'User-Agent', operation: 'set', value: targetUA },
           { header: 'Sec-CH-UA', operation: 'set', value: ch.secChUa },
           { header: 'Sec-CH-UA-Mobile', operation: 'set', value: ch.secChUaMobile },
-          { header: 'Sec-CH-UA-Platform', operation: 'set', value: ch.secChUaPlatform }
+          { header: 'Sec-CH-UA-Platform', operation: 'set', value: ch.secChUaPlatform },
+          { header: 'Accept-Language', operation: 'set', value: 'en-US,en;q=0.9' }
         ]
       },
       condition: {
@@ -98,11 +99,30 @@ async function updateDeclarativeNetRequestRules(targetUA) {
       removeRuleIds: [1],
       addRules: rules
     });
-    console.log('[MorphAgent 4.0] Chrome DNR rules updated successfully for target UA');
-  } catch (err) {
-    console.warn('[MorphAgent 4.0] DNR update error:', err);
+    console.log('[MorphAgent 4.0] DNR rules updated for UA & Headers:', targetUA);
+  } catch (e) {
+    console.warn('[MorphAgent 4.0] DNR update failed:', e);
   }
 }
+
+// Threat Analytics Storage Receiver
+api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'log-threat' && message.data) {
+    const threat = {
+      timestamp: Date.now(),
+      type: message.data.type,
+      domain: message.data.domain,
+      tabId: sender.tab ? sender.tab.id : null
+    };
+    
+    api.storage.local.get(['threatLogs']).then(result => {
+      let logs = result.threatLogs || [];
+      logs.unshift(threat);
+      if (logs.length > 500) logs = logs.slice(0, 500); // Cap at 500 entries
+      api.storage.local.set({ threatLogs: logs });
+    });
+  }
+});
 
 // Load settings from storage
 async function loadSettings() {
@@ -313,6 +333,36 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
       sendResponse(tabSettings);
     }).catch(() => sendResponse([]));
+    return true;
+  } else if (message.type === 'delete-tab-settings' && message.tabId) {
+    api.tabs.get(message.tabId).then(tab => {
+      if (tab.url) {
+        const hostname = new URL(tab.url).hostname;
+        const index = websiteRules.findIndex(rule => matchesPattern(hostname, rule.website) || matchesPattern(tab.url, rule.website));
+        if (index > -1) {
+          websiteRules.splice(index, 1);
+          api.storage.sync.set({ websiteRules }).then(() => sendResponse({ success: true }));
+        } else {
+          sendResponse({ success: false });
+        }
+      }
+    }).catch(() => sendResponse({ success: false }));
+    return true;
+  } else if (message.type === 'clear-all-tab-settings') {
+    api.tabs.query({}).then(tabs => {
+      const activeRuleIds = new Set();
+      tabs.forEach(tab => {
+        if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('moz-extension://') && !tab.url.startsWith('about:')) {
+          try {
+            const hostname = new URL(tab.url).hostname;
+            const matchingRule = websiteRules.find(rule => matchesPattern(hostname, rule.website) || matchesPattern(tab.url, rule.website));
+            if (matchingRule) activeRuleIds.add(matchingRule.id);
+          } catch (e) {}
+        }
+      });
+      websiteRules = websiteRules.filter(rule => !activeRuleIds.has(rule.id));
+      api.storage.sync.set({ websiteRules }).then(() => sendResponse({ success: true }));
+    }).catch(() => sendResponse({ success: false }));
     return true;
   }
 });
