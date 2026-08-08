@@ -347,26 +347,68 @@
             </div>
           </div>
           <div class="section-body">
+            <div class="info-card" style="margin-bottom: 24px; background: var(--accent-red-soft); border: 1px solid var(--border-danger); padding: 16px; border-radius: var(--radius-md);">
+              <h3 style="color: var(--text-primary); font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                How to Use MorphAgent Protections
+              </h3>
+              <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 12px;">
+                MorphAgent is modular. You can toggle specific protections from the main extension popup depending on your privacy needs:
+              </p>
+              <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; padding-left: 20px; list-style-type: disc;">
+                <li><strong>For basic website compatibility:</strong> Simply select a device profile and enable <strong>User Agent Spoofing</strong>.</li>
+                <li><strong>For maximum anti-tracking:</strong> Enable the <strong>Detection Shield</strong> to spoof your hardware fingerprints (Canvas, WebGL, Fonts, Audio).</li>
+                <li><strong>For advanced evasion & testing:</strong> Turn on <strong>Ghost Mode</strong> to auto-rotate your identity, and enable the <strong>WebRTC Shield</strong> to hide your real IP.</li>
+              </ul>
+            </div>
             <div class="features-list">
               <div class="feature-item">
                 <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-                <div class="feature-text"><strong>Spoof User Agent:</strong> Turn off to keep your real User-Agent while running individual features below.</div>
+                <div class="feature-text"><strong>Spoof User Agent & Client Hints:</strong> Automatically modifies HTTP Headers (Sec-CH-UA) and navigator.userAgentData to match the selected device.</div>
               </div>
               <div class="feature-item">
                 <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1.5V5a2.5 2.5 0 0 0-5 0v11H8a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z"/></svg>
-                <div class="feature-text"><strong>Touch Spoofing:</strong> Spoofs touchscreen capability (0 = desktop, 5 = phone, 10 = tablet).</div>
-              </div>
-              <div class="feature-item">
-                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                <div class="feature-text"><strong>Block JavaScript:</strong> Blocks all JS execution. Reload pages after toggling.</div>
+                <div class="feature-text"><strong>Touch Spoofing:</strong> Modifies navigator.maxTouchPoints to accurately emulate touchscreen capability (0 = desktop, 5 = phone, 10 = tablet).</div>
               </div>
               <div class="feature-item">
                 <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <div class="feature-text"><strong>Detection Shield:</strong> Spoofs navigator, plugins, canvas & WebGL fingerprints to prevent detection.</div>
+                <div class="feature-text"><strong>Detection Shield (Canvas & WebGL):</strong> Spoofs UNMASKED_VENDOR_WEBGL and UNMASKED_RENDERER_WEBGL, and injects cryptographic sub-pixel noise into toDataURL() and getImageData().</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div class="feature-text"><strong>Ghost Mode (Auto-Rotation):</strong> Automatically rotates your entire browser identity (User Agent, Touch Points, Canvas Seed) at configurable intervals to break persistent tracking sessions.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18M9 21V9"/></svg>
+                <div class="feature-text"><strong>ClientRects & DOM Bounding Box:</strong> Intercepts getBoundingClientRect to inject microscopic noise, destroying OS-level font rendering and layout tracking vectors.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12" y2="20"/></svg>
+                <div class="feature-text"><strong>WebRTC IP Leak Shield & Network:</strong> Silently strips local IPs from WebRTC offers and spoofs navigator.connection to perfectly match your selected device profile (e.g. 4G cellular).</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg>
+                <div class="feature-text"><strong>Battery API & Sensor Spoofing:</strong> Spoofs navigator.getBattery() to return a fake, slowly discharging 85% battery level across all tabs.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                <div class="feature-text"><strong>Font Enumeration Defender:</strong> Defeats font hashing by adding variance to offsetWidth/offsetHeight, and masks behavioral biometrics (mouse jitter/typing).</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5v14M7 9v6M22 9v6M2 9v6"/></svg>
+                <div class="feature-text"><strong>AudioContext Fingerprint Shield:</strong> Introduces imperceptible frequency noise into AnalyserNode.getFloatFrequencyData and offline audio buffers.</div>
               </div>
               <div class="feature-item">
                 <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <div class="feature-text"><strong>Location Spoofing:</strong> Overrides the Geolocation API with preset or custom coordinates.</div>
+                <div class="feature-text"><strong>GPS Geolocation & Timezone:</strong> Overrides the Geolocation API (getCurrentPosition) with preset coordinates, and applies synchronous Intl.DateTimeFormat timezone spoofing.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                <div class="feature-text"><strong>Screen & Media Devices Masking:</strong> Spoofs screen.width/height, pixel depth, orientation, and deterministic webcam/microphone enumeration masking.</div>
+              </div>
+              <div class="feature-item">
+                <svg class="feature-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <div class="feature-text"><strong>Block JavaScript (Optional):</strong> Drastically blocks all inline and external JS execution via injected Content-Security-Policy rules. Reload required after toggling.</div>
               </div>
             </div>
           </div>

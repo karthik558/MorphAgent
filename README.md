@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
 > 100% Chromium (Manifest V3) & Firefox Dual Engine with 10 Ultimate Stealth Protections
 
-![Version](https://img.shields.io/badge/version-4.0.2-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.1.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)

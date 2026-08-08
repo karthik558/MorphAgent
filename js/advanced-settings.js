@@ -278,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // Storage change listeners
-      const browser = window.browser || window.chrome;
       browser.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'sync') {
           if (changes.websiteRules) {

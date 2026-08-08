@@ -1,5 +1,5 @@
-// content.js - MorphAgent 4.0.2
-// 10-Tier Anti-Fingerprinting & Stealth Content Injection Suite
+// content.js - MorphAgent 4.1.0
+// Inject stealth scripts into the page context immediately to override native methods.
 
 (function() {
   const api = typeof browser !== 'undefined' ? browser : chrome;
