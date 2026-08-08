@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elements
   const themeToggle = document.getElementById('themeToggle');
   const closeBtn = document.getElementById('closeBtn');
-  const backBtn = document.getElementById('backBtn');
   const addRuleBtn = document.getElementById('addRuleBtn');
   // Elements
   const addBlockBtn = document.getElementById('addBlockBtn');
@@ -189,12 +188,23 @@ document.addEventListener('DOMContentLoaded', () => {
         window.close();
       });
 
-      // Back button
-      if (backBtn) {
-        backBtn.addEventListener('click', () => {
-          window.close();
+      // Sidebar Navigation
+      const sidebarLinks = document.querySelectorAll('.sidebar-link');
+      const settingsSections = document.querySelectorAll('.settings-section');
+
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          sidebarLinks.forEach(l => l.classList.remove('active'));
+          settingsSections.forEach(s => s.classList.remove('active-section'));
+
+          e.target.classList.add('active');
+          const targetId = e.target.getAttribute('data-target');
+          const targetSection = document.getElementById(targetId);
+          if (targetSection) {
+            targetSection.classList.add('active-section');
+          }
         });
-      }
+      });
 
       // Custom UA select change
       customUserAgentSelect.addEventListener('change', (e) => {
@@ -586,6 +596,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderLocations() {
+      const geoCoordsPreset = document.getElementById('geoCoordsPreset');
+      if (geoCoordsPreset) {
+        // Remove old custom options
+        const customOptions = geoCoordsPreset.querySelectorAll('option.custom-loc-option');
+        customOptions.forEach(opt => opt.remove());
+        
+        // Add current custom locations before the "Custom Coordinates..." option if it existed, or at the end
+        const customCoordsOption = geoCoordsPreset.querySelector('option[value="custom"]');
+        
+        customLocations.forEach(loc => {
+          const option = document.createElement('option');
+          option.value = `${loc.lat},${loc.lng}`;
+          option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
+          option.className = 'custom-loc-option';
+          if (customCoordsOption) {
+            geoCoordsPreset.insertBefore(option, customCoordsOption);
+          } else {
+            geoCoordsPreset.appendChild(option);
+          }
+        });
+      }
+
       if (customLocations.length === 0) {
         customLocItems.innerHTML = `
         <tr>

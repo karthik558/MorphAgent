@@ -170,6 +170,9 @@ api.storage.onChanged.addListener((changes, areaName) => {
     if (changes.blockList) {
       blockList = changes.blockList.newValue || [];
     }
+    if (changes.customLocations) {
+      setupContextMenus();
+    }
   }
   if (areaName === 'local') {
     if (changes.selectedUA) {
