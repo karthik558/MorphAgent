@@ -251,7 +251,10 @@ body {
 .mode-tab {
   flex: 1;
   padding: 6px 16px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -267,6 +270,21 @@ body {
   color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-light);
+}
+.mode-tab .tab-count {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
+  color: var(--text-tertiary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.mode-tab.active .tab-count {
+  background: var(--accent-red-soft);
+  color: var(--accent-red);
+  border-color: var(--border-danger);
 }
 
 .mode-description {

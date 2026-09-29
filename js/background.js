@@ -7,6 +7,7 @@ const UA_HEADER = 'User-Agent';
 let cachedUA = typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 let websiteRules = [];
 let blockList = [];
+let whiteList = [];
 let listMode = 'blacklist';
 let jsBlockEnabled = false;
 let jsBlockedSites = [];
@@ -128,11 +129,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Load settings from storage
 async function loadSettings() {
   try {
-    const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'listMode']);
+    const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode']);
     const localData = await api.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory']);
 
     websiteRules = syncData.websiteRules || [];
     blockList = syncData.blockList || [];
+    whiteList = syncData.whiteList || [];
     listMode = syncData.listMode || 'blacklist';
     jsBlockEnabled = !!localData.jsBlockEnabled;
     jsProtectEnabled = localData.jsProtectEnabled !== undefined ? !!localData.jsProtectEnabled : true;
@@ -171,6 +173,9 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.blockList) {
       blockList = changes.blockList.newValue || [];
+    }
+    if (changes.whiteList) {
+      whiteList = changes.whiteList.newValue || [];
     }
     if (changes.listMode) {
       listMode = changes.listMode.newValue || 'blacklist';
@@ -222,18 +227,28 @@ function getUserAgentForUrl(url) {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
-    let inList = false;
-    for (const blockItem of blockList) {
-      if (matchesPattern(hostname, blockItem.website) || matchesPattern(url, blockItem.website)) {
-        inList = true;
-        break;
+    if (listMode === 'blacklist') {
+      let inBlacklist = false;
+      for (const blockItem of blockList) {
+        if (matchesPattern(hostname, blockItem.website) || matchesPattern(url, blockItem.website)) {
+          inBlacklist = true;
+          break;
+        }
       }
-    }
-
-    if (listMode === 'blacklist' && inList) {
-      return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
-    } else if (listMode === 'whitelist' && !inList) {
-      return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
+      if (inBlacklist) {
+        return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
+      }
+    } else if (listMode === 'whitelist') {
+      let inWhitelist = false;
+      for (const whiteItem of whiteList) {
+        if (matchesPattern(hostname, whiteItem.website) || matchesPattern(url, whiteItem.website)) {
+          inWhitelist = true;
+          break;
+        }
+      }
+      if (!inWhitelist) {
+        return typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA;
+      }
     }
 
     for (const rule of websiteRules) {
@@ -595,11 +610,13 @@ if (api.contextMenus && api.contextMenus.onClicked) {
         const hostname = new URL(tab.url).hostname;
 
         if (info.menuItemId === 'morph-agent-block-site') {
-          api.storage.sync.get(['blockList']).then(res => {
+          api.storage.sync.get(['blockList', 'whiteList']).then(res => {
             const list = res.blockList || [];
+            const white = res.whiteList || [];
             if (!list.find(b => b.website === hostname)) {
-              list.push({ id: Date.now(), website: hostname });
-              api.storage.sync.set({ blockList: list }).then(() => {
+              list.push({ id: Date.now(), website: hostname, created: new Date().toISOString() });
+              const updatedWhite = white.filter(w => w.website !== hostname);
+              api.storage.sync.set({ blockList: list, whiteList: updatedWhite }).then(() => {
                 if (api.tabs && api.tabs.reload) api.tabs.reload(tab.id);
               });
             }

@@ -16,26 +16,35 @@
     'geoSpoofEnabled',
     'geoCoords'
   ]).then((settings) => {
-    api.storage.sync.get(['blockList', 'listMode', 'websiteRules']).then((syncResult) => {
+    api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
+      const whiteList = syncResult.whiteList || [];
       const listMode = syncResult.listMode || 'blacklist';
       const websiteRules = syncResult.websiteRules || [];
       const currentHostname = window.location.hostname;
 
-      // Check blockList / whitelist mode
-      let inList = false;
+      let inBlacklist = false;
       for (const blockItem of blockList) {
         const pattern = blockItem.website.replace(/\*/g, '');
         if (currentHostname.includes(pattern)) {
-          inList = true;
+          inBlacklist = true;
+          break;
+        }
+      }
+
+      let inWhitelist = false;
+      for (const whiteItem of whiteList) {
+        const pattern = whiteItem.website.replace(/\*/g, '');
+        if (currentHostname.includes(pattern)) {
+          inWhitelist = true;
           break;
         }
       }
 
       let shouldSpoof = true;
-      if (listMode === 'blacklist' && inList) {
+      if (listMode === 'blacklist' && inBlacklist) {
         shouldSpoof = false;
-      } else if (listMode === 'whitelist' && !inList) {
+      } else if (listMode === 'whitelist' && !inWhitelist) {
         shouldSpoof = false;
       }
 

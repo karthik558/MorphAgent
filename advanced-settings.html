@@ -298,25 +298,34 @@
         </div>
         <div class="section-body">
           <div class="mode-tabs">
-            <div class="mode-tab active" data-mode="blacklist">Blacklist</div>
-            <div class="mode-tab" data-mode="whitelist">Whitelist</div>
+            <div class="mode-tab active" data-mode="blacklist">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <span>Blacklist</span>
+              <span class="tab-count" id="blacklistCount">0</span>
+            </div>
+            <div class="mode-tab" data-mode="whitelist">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span>Whitelist</span>
+              <span class="tab-count" id="whitelistCount">0</span>
+            </div>
           </div>
-          <div class="mode-description" id="modeDescription">Disable spoofing on these sites.</div>
-          <div class="form-row" style="align-items: flex-end;">
+          <div class="mode-description" id="modeDescription">Blacklist Mode: Spoofing is enabled everywhere EXCEPT on these websites.</div>
+          <div class="form-row" style="align-items: flex-end; gap: 8px;">
             <div class="input-group" style="flex: 1;">
-              <label for="blockUrl">WEBSITE URL OR PATTERN</label>
+              <label for="blockUrl" id="blockUrlLabel">WEBSITE URL OR PATTERN (BLACKLIST)</label>
               <input type="text" id="blockUrl" class="custom-input" placeholder="e.g., bank.com or *.financial.org">
             </div>
-            <button class="btn btn-solid" id="addBlockBtn">
+            <button class="btn btn-solid" id="addBlockBtn" style="white-space: nowrap;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add to Exception List
+              <span id="addBlockBtnText">Add to Blacklist</span>
             </button>
+            <button class="btn btn-outline" id="cancelEditBlockBtn" style="display: none; height: 38px; white-space: nowrap;">Cancel</button>
           </div>
           <table class="custom-table" style="margin-top: 10px;">
             <thead>
               <tr>
-                <th style="width: 80%" id="blockTableTitle">BLOCKED WEBSITE</th>
-                <th style="width: 20%">ACTIONS</th>
+                <th style="width: 55%" id="blockTableTitle">BLACKLISTED WEBSITES</th>
+                <th style="width: 45%; text-align: right; padding-right: 8px;">ACTIONS</th>
               </tr>
             </thead>
             <tbody id="blockItems">
@@ -325,8 +334,8 @@
                   <div class="empty-state">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                      <p id="blockEmptyTitle">No websites in exception list yet</p>
-                      <span id="blockEmptyDesc">Add websites where user agent spoofing should be toggled</span>
+                      <p id="blockEmptyTitle">No websites in blacklist yet</p>
+                      <span id="blockEmptyDesc">Add websites where user agent spoofing should be disabled</span>
                     </div>
                   </div>
                 </td>

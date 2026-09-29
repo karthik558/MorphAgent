@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const blockEmptyTitle = document.getElementById('blockEmptyTitle');
   const blockEmptyDesc = document.getElementById('blockEmptyDesc');
   const modeDescription = document.getElementById('modeDescription');
+  const blockUrlLabel = document.getElementById('blockUrlLabel');
+  const addBlockBtnText = document.getElementById('addBlockBtnText');
+  const cancelEditBlockBtn = document.getElementById('cancelEditBlockBtn');
+  const blacklistCount = document.getElementById('blacklistCount');
+  const whitelistCount = document.getElementById('whitelistCount');
 
   // Custom Locations Elements
   const locNameInput = document.getElementById('newLocName');
@@ -59,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let websiteRules = [];
   let blockList = [];
+  let whiteList = [];
   let listMode = 'blacklist';
   let activeCategory = 'desktop';
   let customLocations = [];
@@ -159,45 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function renderBlockList() {
-    if (blockList.length === 0) {
-      blockItems.innerHTML = `
-        <tr>
-          <td colspan="2">
-            <div class="empty-state">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <p>${blockEmptyTitle.textContent}</p>
-                <span>${blockEmptyDesc.textContent}</span>
-              </div>
-            </div>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    blockItems.innerHTML = blockList.map(item => `
-      <tr>
-        <td>${escapeHtml(item.website)}</td>
-        <td>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block='${JSON.stringify(item)}'>Edit</button>
-            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block-id="${item.id}">Remove</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-
-    // Add event listeners to block delete buttons
-    document.querySelectorAll('.block-item .delete-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const blockId = parseInt(e.target.getAttribute('data-block-id'));
-        deleteBlock(blockId);
-      });
-    });
-  }
-    function populateUserAgentOptions() {
+  function populateUserAgentOptions() {
       categorySelect.innerHTML = '<option value="">Category...</option>';
       if (typeof profilesStructured !== 'undefined') {
         Object.entries(profilesStructured).forEach(([catKey, cat]) => {
@@ -242,14 +210,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modeTabs.length > 0) {
       modeTabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
-          modeTabs.forEach(t => t.classList.remove('active'));
-          e.target.classList.add('active');
-          listMode = e.target.getAttribute('data-mode');
+          const tabEl = e.target.closest('.mode-tab');
+          if (!tabEl) return;
+          const targetMode = tabEl.getAttribute('data-mode');
+          if (targetMode === listMode) return;
+          listMode = targetMode;
+          if (editingBlock) {
+            cancelEditBlock();
+          }
           saveSettings();
           renderBlockList();
         });
       });
-    }  // Geo Spoof logic
+    }
+
+    if (cancelEditBlockBtn) {
+      cancelEditBlockBtn.addEventListener('click', cancelEditBlock);
+    }
+
+    // Geo Spoof logic
       geoSpoofRuleCheckbox.addEventListener('change', (e) => {
         geoCoordsGroupDiv.style.display = e.target.checked ? 'block' : 'none';
       });
@@ -290,6 +269,10 @@ document.addEventListener('DOMContentLoaded', () => {
             blockList = changes.blockList.newValue || [];
             renderBlockList();
           }
+          if (changes.whiteList) {
+            whiteList = changes.whiteList.newValue || [];
+            renderBlockList();
+          }
           if (changes.listMode) {
             listMode = changes.listMode.newValue || 'blacklist';
             renderBlockList();
@@ -304,6 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
       blockUrlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addBlock();
       });
+      blockUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && editingBlock) {
+          cancelEditBlock();
+        }
+      });
 
       // Tab-specific buttons
       refreshTabsBtn.addEventListener('click', loadTabSettings);
@@ -312,9 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadSettings() {
       const browser = window.browser || window.chrome;
-      browser.storage.sync.get(['websiteRules', 'blockList', 'customLocations', 'listMode'], (result) => {
+      browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode'], (result) => {
         websiteRules = result.websiteRules || [];
         blockList = result.blockList || [];
+        whiteList = result.whiteList || [];
         customLocations = result.customLocations || [];
         listMode = result.listMode || 'blacklist';
         renderRules();
@@ -328,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       browser.storage.sync.set({
         websiteRules: websiteRules,
         blockList: blockList,
+        whiteList: whiteList,
         customLocations: customLocations,
         listMode: listMode
       }, () => {
@@ -657,25 +647,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addBlock() {
-      const website = blockUrlInput.value.trim();
+      const rawWebsite = blockUrlInput.value.trim();
 
-      if (!website) {
-        showStatus('Please enter a website URL', 'error');
+      if (!rawWebsite) {
+        showStatus('Please enter a website URL or pattern', 'error');
         return;
       }
 
+      // Normalize website pattern (strip protocol if user pasted URL)
+      let website = rawWebsite;
+      try {
+        if (website.startsWith('http://') || website.startsWith('https://')) {
+          website = new URL(website).hostname;
+        }
+      } catch (err) {
+        // use rawWebsite
+      }
+
+      const isWhite = listMode === 'whitelist';
+      const currentList = isWhite ? whiteList : blockList;
+      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+      const oppositeList = isWhite ? blockList : whiteList;
+      const oppositeListName = isWhite ? 'Blacklist' : 'Whitelist';
+
       if (editingBlock) {
-        const index = blockList.findIndex(b => b.id === editingBlock.id);
+        const index = currentList.findIndex(b => b.id === editingBlock.id);
         if (index !== -1) {
-          blockList[index].website = website;
+          currentList[index].website = website;
         }
         editingBlock = null;
-        if (addBlockBtn) addBlockBtn.innerHTML = '<span class="icon">+</span> Add to Block List';
+        if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
+        showStatus(`Updated website in ${currentListName}`);
       } else {
-        // Check for duplicates
-        if (blockList.some(item => item.website === website)) {
-          showStatus('Website already in block list', 'error');
+        // Check for duplicates in current list
+        if (currentList.some(item => item.website.toLowerCase() === website.toLowerCase())) {
+          showStatus(`Website already in ${currentListName}`, 'error');
           return;
+        }
+
+        // If exists in opposite list, remove it from opposite list to avoid contradiction
+        const oppIndex = oppositeList.findIndex(item => item.website.toLowerCase() === website.toLowerCase());
+        if (oppIndex !== -1) {
+          oppositeList.splice(oppIndex, 1);
+          showStatus(`Added to ${currentListName} (moved from ${oppositeListName})`);
+        } else {
+          showStatus(`Added to ${currentListName}!`);
         }
 
         const blockItem = {
@@ -684,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
           created: new Date().toISOString()
         };
 
-        blockList.push(blockItem);
+        currentList.push(blockItem);
       }
       
       blockUrlInput.value = '';
@@ -693,16 +709,100 @@ document.addEventListener('DOMContentLoaded', () => {
       renderBlockList();
     }
 
-    function editBlock(block) {
-      editingBlock = block;
-      blockUrlInput.value = block.website;
-      if (addBlockBtn) addBlockBtn.innerHTML = '<span class="icon">✓</span> Update Block List';
+    function editBlock(id) {
+      const currentList = listMode === 'whitelist' ? whiteList : blockList;
+      const item = currentList.find(b => b.id === id);
+      if (!item) return;
+
+      editingBlock = item;
+      blockUrlInput.value = item.website;
+      if (addBlockBtnText) {
+        addBlockBtnText.textContent = `Update in ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
+      }
+      if (cancelEditBlockBtn) {
+        cancelEditBlockBtn.style.display = 'inline-flex';
+      }
       blockUrlInput.focus();
     }
 
+    function cancelEditBlock() {
+      editingBlock = null;
+      blockUrlInput.value = '';
+      if (addBlockBtnText) {
+        addBlockBtnText.textContent = `Add to ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
+      }
+      if (cancelEditBlockBtn) {
+        cancelEditBlockBtn.style.display = 'none';
+      }
+    }
+
     function deleteBlock(id) {
-      if (confirm('Are you sure you want to remove this website from the block list?')) {
-        blockList = blockList.filter(item => item.id !== id);
+      const isWhite = listMode === 'whitelist';
+      const currentList = isWhite ? whiteList : blockList;
+      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+      const item = currentList.find(i => i.id === id);
+      const name = item ? `"${item.website}"` : 'this website';
+
+      if (confirm(`Are you sure you want to remove ${name} from the ${currentListName}?`)) {
+        if (isWhite) {
+          whiteList = whiteList.filter(item => item.id !== id);
+        } else {
+          blockList = blockList.filter(item => item.id !== id);
+        }
+
+        if (editingBlock && editingBlock.id === id) {
+          cancelEditBlock();
+        }
+
+        saveSettings();
+        renderBlockList();
+        showStatus(`Removed from ${currentListName}`);
+      }
+    }
+
+    function moveBlockItem(id, action) {
+      if (action === 'to-whitelist') {
+        const itemIndex = blockList.findIndex(b => b.id === id);
+        if (itemIndex === -1) return;
+        const [item] = blockList.splice(itemIndex, 1);
+
+        if (!whiteList.some(w => w.website.toLowerCase() === item.website.toLowerCase())) {
+          whiteList.push({
+            id: item.id || Date.now(),
+            website: item.website,
+            created: item.created || new Date().toISOString()
+          });
+          showStatus(`Moved "${item.website}" to Whitelist!`);
+        } else {
+          showStatus(`"${item.website}" is already in Whitelist (removed from Blacklist)`);
+        }
+
+        if (editingBlock && editingBlock.id === id) {
+          cancelEditBlock();
+        }
+
+        saveSettings();
+        renderBlockList();
+      } else if (action === 'to-blacklist') {
+        const itemIndex = whiteList.findIndex(w => w.id === id);
+        if (itemIndex === -1) return;
+        const [item] = whiteList.splice(itemIndex, 1);
+
+        if (!blockList.some(b => b.website.toLowerCase() === item.website.toLowerCase())) {
+          blockList.push({
+            id: item.id || Date.now(),
+            website: item.website,
+            created: item.created || new Date().toISOString()
+          });
+          showStatus(`Moved "${item.website}" to Blacklist!`);
+        } else {
+          showStatus(`"${item.website}" is already in Blacklist (removed from Whitelist)`);
+        }
+
+        if (editingBlock && editingBlock.id === id) {
+          cancelEditBlock();
+        }
+
         saveSettings();
         renderBlockList();
       }
@@ -880,6 +980,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBlockList() {
+      // Update count badges
+      if (blacklistCount) blacklistCount.textContent = blockList.length;
+      if (whitelistCount) whitelistCount.textContent = whiteList.length;
+
+      // Update tabs active state
       if (modeTabs.length > 0) {
         modeTabs.forEach(tab => {
           if (tab.getAttribute('data-mode') === listMode) {
@@ -888,60 +993,123 @@ document.addEventListener('DOMContentLoaded', () => {
             tab.classList.remove('active');
           }
         });
-        if (listMode === 'whitelist') {
-          if (blockTableTitle) blockTableTitle.textContent = 'ALLOWED WEBSITE';
-          if (blockEmptyTitle) blockEmptyTitle.textContent = 'No websites in whitelist yet';
-          if (blockEmptyDesc) blockEmptyDesc.textContent = 'Add websites where user agent spoofing should be enabled';
-          if (modeDescription) modeDescription.textContent = 'Enable spoofing ONLY on these websites.';
-        } else {
-          if (blockTableTitle) blockTableTitle.textContent = 'BLOCKED WEBSITE';
-          if (blockEmptyTitle) blockEmptyTitle.textContent = 'No websites in blacklist yet';
-          if (blockEmptyDesc) blockEmptyDesc.textContent = 'Add websites where user agent spoofing should be disabled';
-          if (modeDescription) modeDescription.textContent = 'Disable spoofing on these websites.';
-        }
       }
 
-      if (blockList.length === 0) {
+      // Update headers, labels, descriptions
+      const isWhite = listMode === 'whitelist';
+      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+      const targetListName = isWhite ? 'Blacklist' : 'Whitelist';
+
+      if (modeDescription) {
+        modeDescription.textContent = isWhite
+          ? 'Whitelist Mode active: Spoofing is DISABLED everywhere EXCEPT on these websites.'
+          : 'Blacklist Mode active: Spoofing is ENABLED everywhere EXCEPT on these websites.';
+      }
+
+      if (blockTableTitle) {
+        blockTableTitle.textContent = isWhite
+          ? 'WHITELISTED WEBSITES (SPOOFING ACTIVE)'
+          : 'BLACKLISTED WEBSITES (SPOOFING BYPASSED)';
+      }
+
+      if (blockUrlLabel) {
+        blockUrlLabel.textContent = `WEBSITE URL OR PATTERN (${currentListName.toUpperCase()})`;
+      }
+
+      if (blockUrlInput) {
+        blockUrlInput.placeholder = isWhite
+          ? 'e.g., mysite.com or *.allowed.org'
+          : 'e.g., bank.com or *.financial.org';
+      }
+
+      if (addBlockBtnText) {
+        addBlockBtnText.textContent = editingBlock 
+          ? `Update in ${currentListName}` 
+          : `Add to ${currentListName}`;
+      }
+
+      const currentList = isWhite ? whiteList : blockList;
+
+      if (currentList.length === 0) {
         blockItems.innerHTML = `
-        <tr>
-          <td colspan="2">
-            <div class="empty-state">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <p>No blocked websites yet</p>
-                <span>Add websites where user agent spoofing should be disabled</span>
+          <tr>
+            <td colspan="2">
+              <div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <p>No websites in ${currentListName.toLowerCase()} yet</p>
+                  <span>${isWhite 
+                    ? 'Add websites where user agent spoofing should exclusively be enabled' 
+                    : 'Add websites where user agent spoofing should be disabled'}</span>
+                </div>
               </div>
-            </div>
-          </td>
-        </tr>
-      `;
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      blockItems.innerHTML = blockList.map(item => `
-      <tr>
-        <td>${escapeHtml(item.website)}</td>
-        <td>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block='${JSON.stringify(item)}'>Edit</button>
-            <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-block-id="${item.id}">Remove</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+      const badgeStyle = isWhite
+        ? 'background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3);'
+        : 'background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);';
 
-      document.querySelectorAll('.block-item .edit-btn').forEach(btn => {
+      const badgeLabel = isWhite ? 'Whitelisted' : 'Blacklisted';
+
+      const moveAction = isWhite ? 'to-blacklist' : 'to-whitelist';
+      const moveBtnLabel = isWhite 
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Move to Blacklist`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Move to Whitelist`;
+      const moveBtnTitle = `Move this website to the ${targetListName}`;
+
+      blockItems.innerHTML = currentList.map(item => `
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 500; color: var(--text-primary); font-family: var(--font-mono, monospace); font-size: 13px;">${escapeHtml(item.website)}</span>
+              <span style="font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; ${badgeStyle}">${badgeLabel}</span>
+            </div>
+          </td>
+          <td>
+            <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+              <button class="btn btn-outline move-block-btn" style="height: 26px; font-size: 11px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;" data-id="${item.id}" data-action="${moveAction}" title="${moveBtnTitle}">
+                ${moveBtnLabel}
+              </button>
+              <button class="btn btn-outline edit-block-btn" style="height: 26px; font-size: 11px; padding: 3px 8px;" data-id="${item.id}">Edit</button>
+              <button class="btn btn-danger-outline delete-block-btn" style="height: 26px; font-size: 11px; padding: 3px 8px;" data-id="${item.id}">Remove</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      // Add event listeners
+      blockItems.querySelectorAll('.move-block-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const block = JSON.parse(e.target.getAttribute('data-block'));
-          editBlock(block);
+          const targetBtn = e.target.closest('.move-block-btn');
+          if (!targetBtn) return;
+          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+          const action = targetBtn.getAttribute('data-action');
+          moveBlockItem(id, action);
         });
       });
 
-      // Add event listeners to block delete buttons
-      document.querySelectorAll('.block-item .delete-btn').forEach(btn => {
+      blockItems.querySelectorAll('.edit-block-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          const blockId = parseInt(e.target.getAttribute('data-block-id'));
-          deleteBlock(blockId);
+          const targetBtn = e.target.closest('.edit-block-btn');
+          if (!targetBtn) return;
+          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+          editBlock(id);
+        });
+      });
+
+      blockItems.querySelectorAll('.delete-block-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const targetBtn = e.target.closest('.delete-block-btn');
+          if (!targetBtn) return;
+          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+          deleteBlock(id);
         });
       });
     }
@@ -973,10 +1141,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const settings = {
           websiteRules: websiteRules,
           blockList: blockList,
+          whiteList: whiteList,
+          listMode: listMode,
           customLocations: customLocations,
           globalSettings: localResult,
           exportedAt: new Date().toISOString(),
-          version: '1.1'
+          version: '1.2'
         };
 
         const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -1008,6 +1178,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (settings.blockList && Array.isArray(settings.blockList)) {
             blockList = settings.blockList;
+          }
+
+          if (settings.whiteList && Array.isArray(settings.whiteList)) {
+            whiteList = settings.whiteList;
           }
 
           if (settings.listMode) {
@@ -1059,7 +1233,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (confirm('Are you sure you want to reset all advanced settings? This action cannot be undone.')) {
         websiteRules = [];
         blockList = [];
+        whiteList = [];
+        listMode = 'blacklist';
         editingRule = null;
+        editingBlock = null;
+        if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
 
         // Clear forms
         websiteUrlInput.value = '';
