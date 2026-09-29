@@ -96,8 +96,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (copyUaBtn && customUAInput) {
     copyUaBtn.addEventListener('click', () => {
       customUAInput.select();
-      document.execCommand('copy');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(customUAInput.value).catch(() => document.execCommand('copy'));
+      } else {
+        document.execCommand('copy');
+      }
       showStatus('User Agent copied to clipboard');
+
+      const originalHTML = copyUaBtn.innerHTML;
+      copyUaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      copyUaBtn.style.borderColor = 'var(--accent-green)';
+      setTimeout(() => {
+        copyUaBtn.innerHTML = originalHTML;
+        copyUaBtn.style.borderColor = '';
+      }, 1500);
     });
   }
 

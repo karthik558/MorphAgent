@@ -201,8 +201,10 @@ body {
 
 .sidebar-link.active {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
   font-weight: 600;
+  border-left: 3px solid var(--accent-red);
+  padding-left: 11px;
 }
 
 .sidebar-link.active svg {
@@ -380,7 +382,7 @@ body {
 }
 .header-badge.live::before,
 .header-badge:has(.live-pulse)::before {
-  display: none;
+  display: none !important;
 }
 
 /* Section Body */
