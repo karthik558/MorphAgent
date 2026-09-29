@@ -1,7 +1,7 @@
-// content.js - MorphAgent 4.1.0
+// content.js - MorphAgent 4.2.0
 // Inject stealth scripts into the page context immediately to override native methods.
 
-(function() {
+(function () {
   const api = typeof browser !== 'undefined' ? browser : chrome;
 
   // Retrieve settings and initialize stealth suite
@@ -14,7 +14,13 @@
     'jsProtectEnabled',
     'activeCategory',
     'geoSpoofEnabled',
-    'geoCoords'
+    'geoCoords',
+    'hardwareHarmonizeEnabled',
+    'customHardwareCores',
+    'customDeviceMemory',
+    'autoHarmonizeTzEnabled',
+    'geoTimezone',
+    'geoLocale'
   ]).then((settings) => {
     api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
@@ -103,7 +109,7 @@
           type: 'log-threat',
           data: e.detail
         });
-      } catch (err) {}
+      } catch (err) { }
     }
   });
 

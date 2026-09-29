@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ghostModeToggle = document.getElementById('ghost-mode-toggle');
   const ghostControls = document.getElementById('ghost-controls');
   const ghostInterval = document.getElementById('ghost-interval');
-  
+
   // New buttons
   const btnCurrentTab = document.getElementById('btn-current-tab');
   const btnAllTabs = document.getElementById('btn-all-tabs');
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const browser = window.browser || window.chrome;
 
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.1.0' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.2.0' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Use new profiles structure or fall back to legacy
   const profilesData = window.profiles || window.profilesStructured || {};
-  
+
   // Debug: Log the loaded profiles data
   console.log('Loaded profiles data:', profilesData);
   console.log('Available categories:', Object.keys(profilesData));
@@ -220,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   themeToggle.addEventListener('click', () => {
     if (!isInitialized) return;
-    
+
     const isDark = document.body.classList.contains('dark-mode');
     const newTheme = isDark ? 'light' : 'dark';
-    
+
     browser.storage.local.set({ theme: newTheme }).then(() => {
       applyTheme(newTheme);
     }).catch(console.error);
@@ -236,20 +236,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!browserType || browserType === 'all') {
       return profilesList;
     }
-    
+
     const bObj = availableBrowserTypes[browserType];
     if (!bObj) return profilesList;
 
     const patterns = bObj.patterns || (bObj.pattern ? [bObj.pattern] : []);
-    
+
     const filtered = profilesList.filter(profile => {
       if (!profile.ua) return false;
       if (browserType === 'safari') {
-        return profile.ua.includes('Safari') && 
-               !profile.ua.includes('Chrome') && 
-               !profile.ua.includes('Edg') && 
-               !profile.ua.includes('OPR') && 
-               !profile.ua.includes('CriOS');
+        return profile.ua.includes('Safari') &&
+          !profile.ua.includes('Chrome') &&
+          !profile.ua.includes('Edg') &&
+          !profile.ua.includes('OPR') &&
+          !profile.ua.includes('CriOS');
       }
       return patterns.some(pat => pat && profile.ua.includes(pat));
     });
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentCategory = category;
     currentPlatform = null; // Reset platform when category changes
     currentBrowser = null; // Reset browser when category changes
-    
+
     // Populate platforms for this category
     populatePlatforms(category);
   }
@@ -318,18 +318,18 @@ document.addEventListener('DOMContentLoaded', () => {
     platformSelect.innerHTML = '<option value="">Select platform...</option>';
     browserSelect.innerHTML = '<option value="">Select browser...</option>';
     profileSelect.innerHTML = '<option value="">Select profile...</option>';
-    
+
     // Reset current state
     currentPlatform = null;
     currentBrowser = null;
-    
+
     if (!profilesData[category] || !profilesData[category].platforms) {
       console.warn('No platforms found for category:', category);
       return;
     }
 
     const platforms = profilesData[category].platforms;
-    
+
     Object.keys(platforms).forEach(platformKey => {
       const platform = platforms[platformKey];
       const option = document.createElement('option');
@@ -344,19 +344,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear existing browser options
     browserSelect.innerHTML = '<option value="">Select browser...</option>';
     profileSelect.innerHTML = '<option value="">Select profile...</option>';
-    
+
     if (!currentPlatform) {
       return;
     }
-    
+
     // Add browser options based on current platform
     Object.keys(availableBrowserTypes).forEach(browserKey => {
       const browser = availableBrowserTypes[browserKey];
-      
+
       // Check if browser should be shown for current platform
-      const shouldShow = browser.platforms.includes('all') || 
-                        browser.platforms.includes(currentPlatform);
-      
+      const shouldShow = browser.platforms.includes('all') ||
+        browser.platforms.includes(currentPlatform);
+
       if (shouldShow) {
         const option = document.createElement('option');
         option.value = browserKey;
@@ -376,17 +376,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let variants = profilesData[category].platforms[platform].variants;
-    
+
     if (!variants || variants.length === 0) {
       console.warn('No variants found for:', category, platform);
       return;
     }
-    
+
     // Filter by browser type if selected
     if (browserType && browserType !== 'all') {
       variants = filterProfilesByBrowser(variants, browserType);
     }
-    
+
     // Cache active variants list for selectProfile lookup
     profileSelect.activeVariants = variants;
 
@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
-    
+
     const profile = variants ? variants[index] : null;
     if (!profile) {
       console.warn('Profile not found at index:', index);
@@ -417,18 +417,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     selectedProfile = { category, platform, index, profile, browserType };
-    
+
     // Update UI
     customUAInput.value = profile.ua;
     touchPointsInput.value = profile.touchPoints || 0;
-    
+
     // Update selects
     platformSelect.value = platform;
     if (browserType) {
       browserSelect.value = browserType;
     }
     profileSelect.value = index;
-    
+
     console.log('Selected profile:', profile.name, 'UA:', profile.ua);
   }
 
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
   platformSelect.addEventListener('change', (e) => {
     const platform = e.target.value;
     currentPlatform = platform;
-    
+
     if (platform && currentCategory) {
       // Update browser options immediately when platform is selected
       updateBrowserOptions();
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   browserSelect.addEventListener('change', (e) => {
     currentBrowser = e.target.value;
-    
+
     // Populate profiles with browser filter if category and platform are selected
     if (currentCategory && currentPlatform) {
       populateProfiles(currentCategory, currentPlatform, currentBrowser);
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   profileSelect.addEventListener('change', (e) => {
     const index = parseInt(e.target.value);
-    
+
     if (!isNaN(index) && currentCategory && currentPlatform) {
       selectProfile(currentCategory, currentPlatform, index, currentBrowser);
     }
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     touchToggle.addEventListener('change', () => {
       const isEnabled = touchToggle.checked;
       touchControls.style.display = isEnabled ? 'block' : 'none';
-      
+
       if (isEnabled && selectedProfile && selectedProfile.profile.touchPoints !== undefined) {
         touchPointsInput.value = selectedProfile.profile.touchPoints;
       }
@@ -483,12 +483,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveIndicator && saveIndicatorText) {
       saveIndicatorText.textContent = message;
       saveIndicator.className = `save-indicator visible ${type}`;
-      
+
       // Clear any existing timeout
       if (saveIndicator.timeoutId) {
         clearTimeout(saveIndicator.timeoutId);
       }
-      
+
       // Set new timeout
       saveIndicator.timeoutId = setTimeout(() => {
         saveIndicator.classList.remove('visible');
@@ -507,18 +507,18 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const url = new URL(currentTab.url);
             const hostname = url.hostname;
-            
+
             // Check if current tab has specific settings
             browser.storage.sync.get(['websiteRules']).then(result => {
               const websiteRules = result.websiteRules || [];
               const currentRule = websiteRules.find(rule => rule.website === hostname);
-              
+
               if (currentRule) {
                 // Load current tab specific settings
                 loadTabSpecificSettings(currentRule);
                 return;
               }
-              
+
               // No tab-specific settings, load global settings
               loadGlobalSettings();
             }).catch(() => {
@@ -559,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       // Fallback: find matching profile by UA string
       let foundProfile = false;
-      
+
       Object.keys(profilesData).forEach(category => {
         Object.keys(profilesData[category].platforms || {}).forEach(platform => {
           profilesData[category].platforms[platform].variants.forEach((profile, index) => {
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     touchControls.style.display = touchToggle.checked ? 'block' : 'none';
     jsBlockToggle.checked = !!rule.jsBlocked;
     jsProtectToggle.checked = !!rule.jsProtected;
-    
+
     if (rtcProtectToggle) rtcProtectToggle.checked = rule.rtcProtectEnabled !== false;
     if (ghostModeToggle) {
       ghostModeToggle.checked = !!rule.ghostModeEnabled;
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (geoLng) geoLng.value = rule.geoCoords.lng;
       }
     }
-    
+
     // Set apply scope to current tab since this is a tab-specific rule
     currentScope = 'current';
     btnCurrentTab.classList.add('btn-solid');
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           // Fallback: find matching profile by UA string
           let foundProfile = false;
-          
+
           Object.keys(profilesData).forEach(category => {
             Object.keys(profilesData[category].platforms || {}).forEach(platform => {
               profilesData[category].platforms[platform].variants.forEach((profile, index) => {
@@ -675,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
         touchControls.style.display = touchToggle.checked ? 'block' : 'none';
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
-        
+
         if (rtcProtectToggle) rtcProtectToggle.checked = settings.rtcProtectEnabled !== false;
         if (ghostModeToggle) {
           ghostModeToggle.checked = !!settings.ghostModeEnabled;
@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (geoLng) geoLng.value = settings.geoCoords.lng;
           }
         }
-        
+
         currentScope = 'all';
         btnAllTabs.classList.add('btn-solid');
         btnAllTabs.classList.remove('btn-ghost');
@@ -735,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
             geoControls.style.display = 'none';
           }
         }
-        
+
         currentScope = 'current';
         btnCurrentTab.classList.add('btn-solid');
         btnCurrentTab.classList.remove('btn-ghost');
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const currentTab = tabs[0];
-        
+
         // Validate tab URL
         if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:')) {
           showStatus('Cannot apply settings to this type of page', 'error');
@@ -799,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const url = new URL(currentTab.url);
           hostname = url.hostname;
-          
+
           if (!hostname) {
             showStatus('Invalid URL detected', 'error');
             return;
@@ -836,10 +836,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Get existing rules and add/update this one
         browser.storage.sync.get(['websiteRules']).then(result => {
           let websiteRules = result.websiteRules || [];
-          
+
           // Remove existing rule for this website
           websiteRules = websiteRules.filter(r => r.website !== hostname);
-          
+
           // Add new rule
           websiteRules.push(rule);
 
@@ -909,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateBrowserOptions();
     populateProfiles(defaultCategory, defaultPlatform, null);
     selectProfile(defaultCategory, defaultPlatform, 0, null);
-    
+
     touchToggle.checked = false;
     touchPointsInput.value = 0;
     touchControls.classList.remove('visible');
@@ -1024,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showStatus('Error: Profile data not loaded. Please refresh the extension.', 'error');
       return;
     }
-    
+
     initTheme();
     initDeviceCards();
     initTouchControls();
@@ -1040,25 +1040,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Check for threats in the last 15 minutes for this domain
           browser.storage.local.get(['threatLogs']).then(res => {
-              const logs = res.threatLogs || [];
-              const recentThreats = logs.filter(log => log.domain === hostname && (Date.now() - log.timestamp < 15 * 60 * 1000));
-              if (recentThreats.length > 0 && threatBanner && threatDetails) {
-                threatBanner.style.display = 'flex';
-                const types = [...new Set(recentThreats.map(t => t.type))];
-                threatDetails.textContent = types.slice(0, 3).join(', ') + (types.length > 3 ? '...' : '');
-                
-                // Color code the banner based on volume
-                if (recentThreats.length > 10) {
-                  threatBanner.style.backgroundColor = 'rgba(255, 0, 0, 0.15)';
-                  threatBanner.style.borderColor = 'rgba(255, 0, 0, 0.4)';
-                  threatBanner.querySelector('.threat-text strong').textContent = 'High Threat Detected';
-                }
+            const logs = res.threatLogs || [];
+            const recentThreats = logs.filter(log => log.domain === hostname && (Date.now() - log.timestamp < 15 * 60 * 1000));
+            if (recentThreats.length > 0 && threatBanner && threatDetails) {
+              threatBanner.style.display = 'flex';
+              const types = [...new Set(recentThreats.map(t => t.type))];
+              threatDetails.textContent = types.slice(0, 3).join(', ') + (types.length > 3 ? '...' : '');
+
+              // Color code the banner based on volume
+              if (recentThreats.length > 10) {
+                threatBanner.style.backgroundColor = 'rgba(255, 0, 0, 0.15)';
+                threatBanner.style.borderColor = 'rgba(255, 0, 0, 0.4)';
+                threatBanner.querySelector('.threat-text strong').textContent = 'High Threat Detected';
               }
-            });
+            }
+          });
         }
       });
     }
-    
+
     // Wait for theme to be applied before loading settings
     setTimeout(() => {
       loadSettings();

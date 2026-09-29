@@ -2,7 +2,7 @@ const fs = require('fs');
 
 const baseManifest = {
   name: "MorphAgent",
-  version: "4.1.0",
+  version: "4.2.0",
   description: "Modern User Agent & Anti-Fingerprinting Suite",
   icons: {
     "16": "icons/icon.png",

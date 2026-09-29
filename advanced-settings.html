@@ -44,6 +44,10 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/><polyline points="12 11 12 14"/></svg>
             Threat Analytics
           </button>
+          <button class="sidebar-link" data-target="section-audit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            Stealth Health Audit
+          </button>
           
           <div class="sidebar-category">RULES & PROTECTION</div>
           <button class="sidebar-link" data-target="section-rules">
@@ -98,24 +102,196 @@
           </div>
           <div class="section-header-text">
             <h2>Threat Analytics Dashboard</h2>
-            <p>Live monitoring of fingerprinting and tracking attempts across all domains</p>
+            <p>Live telemetry and real-time monitoring of fingerprinting attempts across all visited domains</p>
           </div>
-          <div class="header-badge">Live</div>
+          <div class="header-badge live">
+            <span class="live-pulse"></span>
+            <span>Live Telemetry</span>
+          </div>
         </div>
         <div class="section-body">
           <div class="analytics-grid">
             <div class="analytics-card danger">
               <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <h3>TOTAL THREATS BLOCKED</h3>
+              <h3>TOTAL THREATS INTERCEPTED</h3>
               <div id="analytics-total" class="value">0</div>
-              <div class="subtext">No threats blocked yet</div>
+              <div class="subtext" id="analytics-total-sub">Live monitoring active</div>
             </div>
             <div class="analytics-card success">
               <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               <h3>MOST TARGETED DOMAIN</h3>
               <div id="analytics-domain" class="value">None</div>
-              <div class="subtext">No data available</div>
+              <div class="subtext" id="analytics-domain-sub">No fingerprinting detected</div>
             </div>
+          </div>
+
+          <!-- Chart Card -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 18px; margin-top: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Vector Distribution</h3>
+              <span style="font-size: 11px; color: var(--text-tertiary);">Frequency by Attack Vector</span>
+            </div>
+            <div style="height: 160px; position: relative;">
+              <canvas id="threatChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Real-Time Fingerprint Interception Feed -->
+          <div class="feed-header-bar">
+            <div class="feed-title-wrap">
+              <span class="live-pulse"></span>
+              <h3>Real-Time Fingerprint Interception Feed</h3>
+              <span class="feed-badge canvas" id="feedCounterBadge" style="margin-left: 6px;">0 Events</span>
+            </div>
+            <div class="feed-actions">
+              <button class="btn btn-outline" id="clearFeedBtn" style="height: 28px; font-size: 11px; padding: 4px 10px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Clear Feed
+              </button>
+              <button class="btn btn-outline" id="exportFeedBtn" style="height: 28px; font-size: 11px; padding: 4px 10px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- Feed Filter Bar -->
+          <div class="feed-filter-bar">
+            <input type="text" id="feedSearch" class="custom-input feed-search-input" placeholder="Search domain or vector...">
+            <div class="vector-pills">
+              <button class="vector-pill active" data-vector="all">All</button>
+              <button class="vector-pill" data-vector="Canvas">Canvas</button>
+              <button class="vector-pill" data-vector="WebGL">WebGL</button>
+              <button class="vector-pill" data-vector="Audio">Audio</button>
+              <button class="vector-pill" data-vector="Battery">Battery</button>
+              <button class="vector-pill" data-vector="Timing">Timing</button>
+              <button class="vector-pill" data-vector="ClientRects">ClientRects</button>
+              <button class="vector-pill" data-vector="DRM">DRM</button>
+            </div>
+          </div>
+
+          <!-- Feed Table -->
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 15%">TIME</th>
+                <th style="width: 25%">TARGET DOMAIN</th>
+                <th style="width: 20%">VECTOR</th>
+                <th style="width: 40%">PROTECTION / ACTION APPLIED</th>
+              </tr>
+            </thead>
+            <tbody id="threatFeedList">
+              <tr>
+                <td colspan="4">
+                  <div class="empty-state">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <p>No fingerprinting activity recorded yet</p>
+                      <span>Browse websites with MorphAgent enabled to see real-time intercepted vectors</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Stealth Health Audit Section -->
+      <section id="section-audit" class="settings-section">
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Stealth Health Audit</h2>
+            <p>Diagnostic verification suite inspecting live API surfaces against commercial browser fingerprint heuristics</p>
+          </div>
+          <div class="header-badge live" id="auditEngineBadge">
+            <span class="live-pulse"></span>
+            <span>Audit Ready</span>
+          </div>
+        </div>
+
+        <div class="section-body">
+          <!-- Executive Status Metrics Grid -->
+          <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="analytics-card success">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <h3>CLOAK INTEGRITY RATING</h3>
+              <div id="auditScoreVal" class="value" style="color: var(--accent-green);">98%</div>
+              <div class="subtext" id="auditRatingText">Optimal · Zero Critical Leaks</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              <h3>VECTORS VERIFIED</h3>
+              <div id="auditTestedCount" class="value">8 / 8</div>
+              <div class="subtext">Hardware, GPU, Audio, Timezone, CDP</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <h3>ANOMALY LEAK RISK</h3>
+              <div id="auditLeakRiskVal" class="value" style="color: var(--accent-green);">Low Risk</div>
+              <div class="subtext" id="auditLeakRiskSub">0 Virtualization / SwiftShader Leaks</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+              <h3>PROFILE SYNCHRONIZATION</h3>
+              <div id="auditProfileSyncVal" class="value" style="font-size: 16px; font-weight: 700; margin-top: 4px;">Harmonized</div>
+              <div class="subtext" id="auditProfileSyncSub">Cores · RAM · TZ Aligned</div>
+            </div>
+          </div>
+
+          <!-- Suite Controls & Actions -->
+          <div class="audit-toolbar-box">
+            <div class="audit-toolbar-info">
+              <h3>Diagnostic Vector Matrix</h3>
+              <p>Evaluates high-entropy browser attributes against heuristics used by Cloudflare, DataDome, Akamai, and PerimeterX</p>
+            </div>
+            <div class="audit-toolbar-actions">
+              <button class="btn btn-solid" id="runAuditBtn" style="height: 32px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Run Diagnostic Audit
+              </button>
+              <button class="btn btn-outline" id="optimizeAuditBtn" style="height: 32px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Auto-Harmonize All
+              </button>
+              <button class="btn btn-outline" id="copyAuditReportBtn" style="height: 32px; font-size: 12px;" title="Copy JSON diagnostic audit to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                Copy Diagnostic Report
+              </button>
+            </div>
+          </div>
+
+          <!-- Detailed Diagnostic Results Table -->
+          <div class="table-container" style="margin-top: 14px;">
+            <table class="custom-table audit-table">
+              <thead>
+                <tr>
+                  <th style="width: 22%;">ATTACK VECTOR</th>
+                  <th style="width: 20%;">INSPECTED API</th>
+                  <th style="width: 22%;">OBSERVED VALUE</th>
+                  <th style="width: 14%;">ENTROPY RISK</th>
+                  <th style="width: 22%;">STATUS & MITIGATION</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Live Console Output / Diagnostic Trace -->
+          <div class="audit-console-box">
+            <div class="audit-console-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="live-pulse" style="width: 6px; height: 6px;"></span>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Audit Diagnostic Telemetry Trace</span>
+              </div>
+              <span id="auditTimestamp" style="font-family: var(--font-mono, monospace); font-size: 10px; color: var(--text-tertiary);">Last Verified: Just Now</span>
+            </div>
+            <pre class="audit-console-log" id="auditConsoleLog">// Initializing Stealth Health Audit engine...</pre>
           </div>
         </div>
       </section>
@@ -253,6 +429,56 @@
                   <input type="number" id="geoLngRule" class="custom-input" placeholder="Lng" step="any">
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Hardware & Memory Harmonization Card -->
+          <div class="harmonize-box" style="margin-top: 18px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Hardware & Memory Harmonization</h3>
+              </div>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer;">
+                <input type="checkbox" id="hwHarmonizeToggle" checked style="accent-color: var(--accent-red);">
+                <span>Auto-Harmonize with Profile</span>
+              </label>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+              Harmonizes reported CPU cores (<code>navigator.hardwareConcurrency</code>) and RAM (<code>navigator.deviceMemory</code>) with your spoofed device architecture to bypass anti-bot consistency heuristics.
+            </p>
+            <div class="form-row" style="margin-bottom: 0;">
+              <div class="input-group">
+                <label for="hwCoresSelect">CPU CORES (HARDWARE CONCURRENCY)</label>
+                <select id="hwCoresSelect" class="custom-select">
+                  <option value="auto">Auto (Harmonized with Device)</option>
+                  <option value="2">2 Cores (Legacy / Budget)</option>
+                  <option value="4">4 Cores (Quad-core Mobile/Laptop)</option>
+                  <option value="6">6 Cores (Apple A17/A18 / Hexa-core)</option>
+                  <option value="8">8 Cores (Desktop / Flagship Octa-core)</option>
+                  <option value="12">12 Cores (High-performance Laptop)</option>
+                  <option value="16">16 Cores (Desktop Workstation)</option>
+                  <option value="24">24 Cores (Pro Workstation)</option>
+                  <option value="32">32 Cores (Server / Extreme Rig)</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="hwMemorySelect">DEVICE MEMORY (RAM)</label>
+                <select id="hwMemorySelect" class="custom-select">
+                  <option value="auto">Auto (Harmonized with Device)</option>
+                  <option value="2">2 GB (Ultra-low mobile)</option>
+                  <option value="4">4 GB (Budget Mobile)</option>
+                  <option value="8">8 GB (Modern Flagship Phone / Base Laptop)</option>
+                  <option value="12">12 GB (High-end Android Flagship)</option>
+                  <option value="16">16 GB (Standard Desktop / Pro Laptop)</option>
+                  <option value="32">32 GB (Workstation / Gaming Rig)</option>
+                </select>
+              </div>
+            </div>
+            <div class="harmonize-row" style="margin-top: 10px;">
+              <div style="font-size: 11px; color: var(--text-tertiary);">Reported Architecture: <span class="harmonize-tag" id="hwArchPreview">ARM64 (Apple Silicon / Mobile)</span></div>
+              <div style="font-size: 11px; color: var(--text-tertiary);">Hardware Concurrency: <span class="harmonize-tag" id="hwCoresPreview">8 Cores</span></div>
+              <div style="font-size: 11px; color: var(--text-tertiary);">Device Memory: <span class="harmonize-tag" id="hwMemoryPreview">8 GB</span></div>
             </div>
           </div>
 
@@ -434,6 +660,28 @@
             </div>
           </div>
           <div class="section-body">
+            <!-- Timezone & Locale Auto-Harmonizer Card -->
+            <div class="harmonize-box" style="margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Timezone & Locale Auto-Harmonizer</h3>
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer;">
+                  <input type="checkbox" id="autoHarmonizeTzToggle" checked style="accent-color: var(--accent-green);">
+                  <span>Auto-Sync Timezone & Locale with GPS</span>
+                </label>
+              </div>
+              <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+                Eliminates geolocation proxy detection by dynamically synchronizing <code>Intl.DateTimeFormat</code>, <code>getTimezoneOffset()</code>, <code>navigator.languages</code>, and HTTP <code>Accept-Language</code> headers with active GPS coordinates.
+              </p>
+              <div class="harmonize-row">
+                <div style="font-size: 11px; color: var(--text-tertiary);">Active Timezone: <span class="harmonize-tag" id="tzPreviewTimezone">America/New_York (UTC-4)</span></div>
+                <div style="font-size: 11px; color: var(--text-tertiary);">Harmonized Languages: <span class="harmonize-tag" id="tzPreviewLanguages">en-US, en</span></div>
+                <div style="font-size: 11px; color: var(--text-tertiary);">Header State: <span class="harmonize-tag" id="tzPreviewHeader">Accept-Language: en-US,en;q=0.9</span></div>
+              </div>
+            </div>
+
             <div class="form-row">
               <div class="input-group">
                 <label for="newLocName">LOCATION NAME</label>

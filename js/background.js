@@ -111,9 +111,12 @@ async function updateDeclarativeNetRequestRules(targetUA) {
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'log-threat' && message.data) {
     const threat = {
-      timestamp: Date.now(),
+      id: Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+      timestamp: message.data.timestamp || Date.now(),
       type: message.data.type,
       domain: message.data.domain,
+      actionTaken: message.data.actionTaken || 'Intercepted & Neutralized',
+      details: message.data.details || '',
       tabId: sender.tab ? sender.tab.id : null
     };
     

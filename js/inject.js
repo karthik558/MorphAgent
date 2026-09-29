@@ -107,10 +107,30 @@
         Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
       }
 
-      // Threat Telemetry Emitter
-      const emitThreat = (type) => {
+      // Threat Telemetry Emitter with rich vector details
+      const emitThreat = (type, details = '') => {
         try {
-          window.dispatchEvent(new CustomEvent('morph-threat-detected', { detail: { type, domain: window.location.hostname || 'localhost' } }));
+          const actionMap = {
+            'Canvas DataURL': 'Cryptographic sub-pixel noise injected into toDataURL()',
+            'Canvas Pixel Read': 'Noise matrix applied to getImageData() / toBlob()',
+            'WebGL Parameter': 'Masked UNMASKED_RENDERER_WEBGL & Vendor strings',
+            'WebGL Pixel Read': 'Pixel readback buffer scrambled with noise',
+            'Audio Analyser': 'Frequency micro-jitter applied to AnalyserNode',
+            'Battery API': 'Static 85% discharging level returned',
+            'Timing (performance.now)': 'Spectre-mitigating micro-jitter added',
+            'Clipboard Read': 'Silent rejection (NotAllowedError returned)',
+            'DRM Access': 'Proprietary KeySystems blocked to conceal OS',
+            'ClientRects': 'Sub-pixel bounding box layout jitter added'
+          };
+          window.dispatchEvent(new CustomEvent('morph-threat-detected', { 
+            detail: { 
+              type, 
+              domain: window.location.hostname || 'localhost',
+              actionTaken: actionMap[type] || 'Protected by MorphAgent Stealth Matrix',
+              details: details || '',
+              timestamp: Date.now()
+            } 
+          }));
         } catch (e) {}
       };
 
@@ -187,9 +207,38 @@
           } catch(e) {}
         }
 
-        // Spoof Hardware Details
-        Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => 8, configurable: true });
-        Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => 8, configurable: true });
+        // Hardware & Memory Harmonization Engine
+        let cores = s.hardwareConcurrency;
+        let memory = s.deviceMemory;
+
+        if (!cores || s.hardwareHarmonize !== false) {
+          if (ua.includes('iPhone') || ua.includes('iPad')) {
+            cores = 6; // Apple Silicon mobile A/M chip
+            memory = 8;
+          } else if (ua.includes('Android')) {
+            cores = 8; // Modern Octa-core Android
+            memory = 8;
+          } else if (ua.includes('PlayStation') || ua.includes('Xbox')) {
+            cores = 8;
+            memory = 16;
+          } else if (ua.includes('Macintosh') || ua.includes('Mac OS X')) {
+            cores = 8; // Apple Silicon M2/M3 base
+            memory = 16;
+          } else {
+            cores = 8; // Modern Desktop PC
+            memory = 16;
+          }
+        }
+        
+        if (s.customHardwareCores && s.customHardwareCores !== 'auto') {
+          cores = Number(s.customHardwareCores) || cores;
+        }
+        if (s.customDeviceMemory && s.customDeviceMemory !== 'auto') {
+          memory = Number(s.customDeviceMemory) || memory;
+        }
+
+        Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => cores, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => memory, configurable: true });
 
         // Spoof Screen Metrics
         if (window.Screen) {
@@ -439,19 +488,158 @@
         }
       }
 
-      // Timezone Spoofing (tied to Location Spoofing)
-      if (s.geoSpoofEnabled && !window.__MORPH_TZ_PROTECTED) {
-        window.__MORPH_TZ_PROTECTED = true;
-        Date.prototype.getTimezoneOffset = function() { return 0; };
+      // Timezone & Locale Auto-Harmonizer Engine
+      if (s.geoSpoofEnabled) {
+        const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
+        const lat = parseFloat(coords.lat) || 40.7128;
+        const lng = parseFloat(coords.lng) || -74.0060;
+        
+        const tzInfo = resolveTimezoneAndLocale(lat, lng, s.geoTimezone, s.geoLocale);
+
+        Date.prototype.getTimezoneOffset = function() { 
+          return tzInfo.offset; 
+        };
+
         if (window.Intl && Intl.DateTimeFormat) {
           const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
           Intl.DateTimeFormat.prototype.resolvedOptions = function() {
             const options = originalResolvedOptions.apply(this, arguments);
-            options.timeZone = 'UTC';
+            options.timeZone = tzInfo.timeZone;
+            if (options.locale && tzInfo.locale) {
+              options.locale = tzInfo.locale;
+            }
             return options;
           };
         }
+
+        // Harmonize navigator.languages and navigator.language
+        if (tzInfo.languages && tzInfo.languages.length > 0) {
+          Object.defineProperty(Navigator.prototype, 'language', { get: () => tzInfo.languages[0], configurable: true });
+          Object.defineProperty(Navigator.prototype, 'languages', { get: () => tzInfo.languages, configurable: true });
+        }
       }
+    }
+
+    // Timezone & Locale Resolver Helpers
+    function resolveTimezoneAndLocale(lat, lng, explicitTz, explicitLocale) {
+      if (explicitTz && explicitTz !== 'auto') {
+        return {
+          timeZone: explicitTz,
+          offset: getTimezoneOffsetForName(explicitTz),
+          locale: explicitLocale || getLocaleForTimezone(explicitTz),
+          languages: getLanguagesForTimezone(explicitTz)
+        };
+      }
+
+      // Geospatial lookup for major regions & cities
+      // US East (NY, Boston, DC, Miami)
+      if (lat >= 24 && lat <= 48 && lng >= -85 && lng <= -65) {
+        return { timeZone: 'America/New_York', offset: isDSTInUS() ? 240 : 300, locale: 'en-US', languages: ['en-US', 'en'] };
+      }
+      // US West (LA, SF, Seattle)
+      if (lat >= 30 && lat <= 50 && lng >= -125 && lng <= -115) {
+        return { timeZone: 'America/Los_Angeles', offset: isDSTInUS() ? 420 : 480, locale: 'en-US', languages: ['en-US', 'en'] };
+      }
+      // US Central (Chicago, Dallas)
+      if (lat >= 26 && lat <= 50 && lng >= -105 && lng < -85) {
+        return { timeZone: 'America/Chicago', offset: isDSTInUS() ? 300 : 360, locale: 'en-US', languages: ['en-US', 'en'] };
+      }
+      // UK (London)
+      if (lat >= 49 && lat <= 60 && lng >= -8 && lng <= 2) {
+        return { timeZone: 'Europe/London', offset: isDSTInEurope() ? -60 : 0, locale: 'en-GB', languages: ['en-GB', 'en'] };
+      }
+      // France (Paris)
+      if (lat >= 42 && lat <= 52 && lng >= -5 && lng <= 9) {
+        return { timeZone: 'Europe/Paris', offset: isDSTInEurope() ? -120 : -60, locale: 'fr-FR', languages: ['fr-FR', 'fr', 'en-US'] };
+      }
+      // Germany (Berlin, Frankfurt)
+      if (lat >= 47 && lat <= 55 && lng >= 6 && lng <= 15) {
+        return { timeZone: 'Europe/Berlin', offset: isDSTInEurope() ? -120 : -60, locale: 'de-DE', languages: ['de-DE', 'de', 'en-US'] };
+      }
+      // Japan (Tokyo)
+      if (lat >= 30 && lat <= 46 && lng >= 128 && lng <= 146) {
+        return { timeZone: 'Asia/Tokyo', offset: -540, locale: 'ja-JP', languages: ['ja-JP', 'ja', 'en-US'] };
+      }
+      // Singapore
+      if (lat >= 1 && lat <= 2 && lng >= 103 && lng <= 105) {
+        return { timeZone: 'Asia/Singapore', offset: -480, locale: 'en-SG', languages: ['en-SG', 'zh-SG', 'en'] };
+      }
+      // Australia (Sydney)
+      if (lat >= -40 && lat <= -25 && lng >= 140 && lng <= 155) {
+        return { timeZone: 'Australia/Sydney', offset: isDSTInAustralia() ? -660 : -600, locale: 'en-AU', languages: ['en-AU', 'en'] };
+      }
+      // UAE (Dubai)
+      if (lat >= 22 && lat <= 27 && lng >= 51 && lng <= 57) {
+        return { timeZone: 'Asia/Dubai', offset: -240, locale: 'ar-AE', languages: ['ar-AE', 'en-US'] };
+      }
+      // India
+      if (lat >= 8 && lat <= 36 && lng >= 68 && lng <= 90) {
+        return { timeZone: 'Asia/Kolkata', offset: -330, locale: 'en-IN', languages: ['en-IN', 'hi', 'en-GB'] };
+      }
+
+      // Mathematical approximation based on longitude
+      const hours = Math.round(lng / 15);
+      const offsetMin = -hours * 60;
+      let tzName = 'UTC';
+      try {
+        if (hours === 0) tzName = 'UTC';
+        else if (hours > 0) tzName = `Etc/GMT-${hours}`;
+        else tzName = `Etc/GMT+${Math.abs(hours)}`;
+      } catch (e) {
+        tzName = 'UTC';
+      }
+      return { timeZone: tzName, offset: offsetMin, locale: 'en-US', languages: ['en-US', 'en'] };
+    }
+
+    function isDSTInUS() {
+      const now = new Date();
+      const month = now.getUTCMonth();
+      return month >= 2 && month < 10;
+    }
+
+    function isDSTInEurope() {
+      const now = new Date();
+      const month = now.getUTCMonth();
+      return month >= 2 && month < 9;
+    }
+
+    function isDSTInAustralia() {
+      const now = new Date();
+      const month = now.getUTCMonth();
+      return month >= 9 || month < 3;
+    }
+
+    function getTimezoneOffsetForName(name) {
+      try {
+        const now = new Date();
+        const str = now.toLocaleString('en-US', { timeZone: name });
+        const targetDate = new Date(str);
+        return Math.round((now.getTime() - targetDate.getTime()) / 60000);
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    function getLocaleForTimezone(tz) {
+      if (tz.includes('Tokyo')) return 'ja-JP';
+      if (tz.includes('London')) return 'en-GB';
+      if (tz.includes('Paris')) return 'fr-FR';
+      if (tz.includes('Berlin')) return 'de-DE';
+      if (tz.includes('Sydney')) return 'en-AU';
+      if (tz.includes('Dubai')) return 'ar-AE';
+      if (tz.includes('Kolkata')) return 'en-IN';
+      return 'en-US';
+    }
+
+    function getLanguagesForTimezone(tz) {
+      if (tz.includes('Tokyo')) return ['ja-JP', 'ja', 'en-US'];
+      if (tz.includes('London')) return ['en-GB', 'en'];
+      if (tz.includes('Paris')) return ['fr-FR', 'fr', 'en-US'];
+      if (tz.includes('Berlin')) return ['de-DE', 'de', 'en-US'];
+      if (tz.includes('Sydney')) return ['en-AU', 'en'];
+      if (tz.includes('Dubai')) return ['ar-AE', 'en-US'];
+      if (tz.includes('Kolkata')) return ['en-IN', 'hi', 'en-GB'];
+      return ['en-US', 'en'];
     }
 
     // Apply cached settings synchronously before any page scripts run
