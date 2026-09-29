@@ -1,6 +1,6 @@
 {
   "name": "MorphAgent",
-  "version": "4.2.0",
+  "version": "4.5.0",
   "description": "Modern User Agent & Anti-Fingerprinting Suite",
   "icons": {
     "16": "icons/icon.png",
@@ -14,10 +14,13 @@
     "webRequestBlocking",
     "tabs",
     "contextMenus",
+    "alarms",
+    "proxy",
     "<all_urls>"
   ],
   "background": {
     "scripts": [
+      "js/adblock-rules.js",
       "js/background.js"
     ]
   },
@@ -51,12 +54,13 @@
     "css/advanced-settings.css",
     "js/advanced-settings.js",
     "js/profiles.js",
-    "js/inject.js"
+    "js/inject.js",
+    "js/adblock-rules.js"
   ],
   "manifest_version": 2,
   "browser_action": {
     "default_popup": "popup.html",
-    "default_title": "MorphAgent 4.0",
+    "default_title": "MorphAgent 4.5",
     "default_icon": {
       "16": "icons/icon.png",
       "48": "icons/icon.png",

@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
 > 100% Chromium (Manifest V3) & Firefox Dual Engine with 10 Ultimate Stealth Protections
 
-![Version](https://img.shields.io/badge/version-4.2.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.5.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
@@ -74,16 +74,23 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ---
 
-## What's New in Version 4.1
+## What's New in Version 4.5
 
-1. **Access Control (Blacklist & Whitelist Modes)**  
-   Full support for Blacklist Mode (disable spoofing on specified sites) and Whitelist Mode (enable spoofing ONLY on specified sites) across both HTTP headers and JS stealth injections.
+1. **Ultra-Efficiency 100% AdBlock & Tracker Engine (AdGuard / uBlock Origin Parity)**  
+   - **Zero-Latency C++ Network Interception**: 220+ top programmatic ad exchanges, tracking pixels (Meta, TikTok, Twitter, LinkedIn), telemetry engines (Hotjar, Clarity, Mixpanel), and in-browser cryptominers blocked via native MV3 DeclarativeNetRequest dynamic rules.
+   - **Cross-Browser Dual Engine**: Chrome MV3 `declarativeNetRequest` + Firefox MV2 `webRequestBlocking` real-time drop.
+   - **Scriptlet Interception**: Block patterns catching inline ad scripts (`pagead2`, `fbevents.js`, `prebid.js`, `gtm.js`).
 
-2. **Access Control UI & Segmented Controls**  
-   Modernized tab controls matching MorphAgent's dark neon red theme, dynamic context descriptions, responsive layout fixes, and updated sidebar navigation.
+2. **Advanced Anti-AdBlock Defuser & Height Probe Spoofing**  
+   - Defuses DOM probe sizing tests (`.adsbox`, `.ad-banner`, `#ad-detector`) by dynamically proxying `HTMLElement.prototype.offsetHeight` and `offsetWidth` to return rendered dimensions, preventing anti-adblock detection walls.
+   - High-fidelity stubs for `googletag`, `adsbygoogle`, `ga`, `gtag`, `_gaq`, and `fbq`.
+   - Popunder & intrusive redirect blocker intercepting unprompted `window.open` spawners.
 
-3. **In-App Protections & Usage Guide**  
-   Embedded reference guide in Advanced Settings covering all 10+ stealth protections with recommended configurations for privacy, compatibility, and evasion.
+3. **100% YouTube & HTML5 Video Ad Fast-Forward & Auto-Skipper**  
+   - High-frequency 100ms loop coupled with a MutationObserver automatically muting, accelerating (16x rate), fast-forwarding, and clicking skip buttons on pre-roll/mid-roll video ads.
+
+4. **Bi-Directional Secure DNS Resolver Switcher**  
+   - Real-time synchronized one-click switching between encrypted DNS-over-HTTPS (DoH) providers (AdGuard DNS, Cloudflare 1.1.1.1, Quad9, NextDNS, CleanBrowsing, Direct OS, Custom) across Popup and Advanced Settings.
 
 ---
 

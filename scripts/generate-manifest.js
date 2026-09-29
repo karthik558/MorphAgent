@@ -2,7 +2,7 @@ const fs = require('fs');
 
 const baseManifest = {
   name: "MorphAgent",
-  version: "4.2.0",
+  version: "4.5.0",
   description: "Modern User Agent & Anti-Fingerprinting Suite",
   icons: {
     "16": "icons/icon.png",
@@ -16,7 +16,9 @@ const baseManifest = {
     "declarativeNetRequestWithHostAccess",
     "tabs",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "alarms",
+    "proxy"
   ],
   host_permissions: ["<all_urls>"],
   background: {
@@ -25,7 +27,7 @@ const baseManifest = {
   },
   action: {
     default_popup: "popup.html",
-    default_title: "MorphAgent 4.0",
+    default_title: "MorphAgent 4.5",
     default_icon: {
       "16": "icons/icon.png",
       "48": "icons/icon.png",
@@ -56,7 +58,8 @@ const baseManifest = {
         "css/advanced-settings.css",
         "js/advanced-settings.js",
         "js/profiles.js",
-        "js/inject.js"
+        "js/inject.js",
+        "js/adblock-rules.js"
       ],
       matches: ["<all_urls>"]
     }
@@ -77,10 +80,12 @@ const v2Manifest = {
     "webRequestBlocking",
     "tabs",
     "contextMenus",
+    "alarms",
+    "proxy",
     "<all_urls>"
   ],
   background: {
-    scripts: ["js/background.js"]
+    scripts: ["js/adblock-rules.js", "js/background.js"]
   },
   browser_action: baseManifest.action,
   web_accessible_resources: [
@@ -88,7 +93,8 @@ const v2Manifest = {
     "css/advanced-settings.css",
     "js/advanced-settings.js",
     "js/profiles.js",
-    "js/inject.js"
+    "js/inject.js",
+    "js/adblock-rules.js"
   ],
   browser_specific_settings: {
     gecko: {

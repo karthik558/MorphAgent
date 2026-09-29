@@ -1,7 +1,8 @@
-// background.js - MorphAgent 4.0.2
+// background.js - MorphAgent 4.5.0
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
+import './adblock-rules.js';
 
-const api = typeof browser !== 'undefined' ? browser : chrome;
+const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : {});
 
 const UA_HEADER = 'User-Agent';
 let cachedUA = typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
@@ -15,7 +16,20 @@ let jsProtectEnabled = true;
 let uaSpoofEnabled = true;
 let activeCategory = 'desktop';
 
-console.log('[MorphAgent 4.0] Background engine starting...');
+// AdBlock & Secure DNS Engine State
+let adBlockEnabled = true;
+let dnsProvider = 'adguard';
+let dnsCustomEndpoint = '';
+let adBlockCosmeticEnabled = true;
+let adBlockAntiAdblockEnabled = true;
+let adBlockStats = {
+  totalBlocked: 0,
+  adsBlocked: 0,
+  trackersBlocked: 0,
+  perDomain: {}
+};
+
+console.log('[MorphAgent 4.5] Background engine with 100% AdBlock & Secure DNS starting...');
 
 // Helper: Extract Client Hints headers from UA string
 function getClientHintsHeaders(ua) {
@@ -68,42 +82,54 @@ async function updateDeclarativeNetRequestRules(targetUA) {
   if (!api.declarativeNetRequest || !api.declarativeNetRequest.updateDynamicRules) return;
 
   try {
-    if (!uaSpoofEnabled) {
-      await api.declarativeNetRequest.updateDynamicRules({ removeRuleIds: [1] });
-      console.log('[MorphAgent 4.0] UA Spoofing disabled; DNR rules cleared.');
-      return;
+    const existingRules = await api.declarativeNetRequest.getDynamicRules();
+    const removeRuleIds = existingRules.map(r => r.id);
+    const addRules = [];
+
+    // 1. User Agent & Client Hints header spoofing (Rule ID: 1)
+    if (uaSpoofEnabled && targetUA) {
+      const ch = getClientHintsHeaders(targetUA);
+      addRules.push({
+        id: 1,
+        priority: 1,
+        action: {
+          type: 'modifyHeaders',
+          requestHeaders: [
+            { header: 'User-Agent', operation: 'set', value: targetUA },
+            { header: 'Sec-CH-UA', operation: 'set', value: ch.secChUa },
+            { header: 'Sec-CH-UA-Mobile', operation: 'set', value: ch.secChUaMobile },
+            { header: 'Sec-CH-UA-Platform', operation: 'set', value: ch.secChUaPlatform },
+            { header: 'Accept-Language', operation: 'set', value: 'en-US,en;q=0.9' }
+          ]
+        },
+        condition: {
+          urlFilter: '*',
+          resourceTypes: [
+            'main_frame', 'sub_frame', 'stylesheet', 'script',
+            'image', 'font', 'object', 'xmlhttprequest', 'ping', 'other'
+          ]
+        }
+      });
     }
 
-    const ch = getClientHintsHeaders(targetUA);
-    const rules = [{
-      id: 1,
-      priority: 1,
-      action: {
-        type: 'modifyHeaders',
-        requestHeaders: [
-          { header: 'User-Agent', operation: 'set', value: targetUA },
-          { header: 'Sec-CH-UA', operation: 'set', value: ch.secChUa },
-          { header: 'Sec-CH-UA-Mobile', operation: 'set', value: ch.secChUaMobile },
-          { header: 'Sec-CH-UA-Platform', operation: 'set', value: ch.secChUaPlatform },
-          { header: 'Accept-Language', operation: 'set', value: 'en-US,en;q=0.9' }
-        ]
-      },
-      condition: {
-        urlFilter: '*',
-        resourceTypes: [
-          'main_frame', 'sub_frame', 'stylesheet', 'script',
-          'image', 'font', 'object', 'xmlhttprequest', 'ping', 'other'
-        ]
+    // 2. AdGuard Ad & Tracker Blocker Engine (Rules starting at ID: 1000)
+    if (adBlockEnabled) {
+      const adBlockEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) 
+        ? globalThis.MorphAgentAdBlock 
+        : null;
+      if (adBlockEngine && typeof adBlockEngine.generateDNRAdBlockRules === 'function') {
+        const adRules = adBlockEngine.generateDNRAdBlockRules(1000);
+        addRules.push(...adRules);
       }
-    }];
+    }
 
     await api.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [1],
-      addRules: rules
+      removeRuleIds,
+      addRules
     });
-    console.log('[MorphAgent 4.0] DNR rules updated for UA & Headers:', targetUA);
+    console.log(`[MorphAgent 4.5] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
   } catch (e) {
-    console.warn('[MorphAgent 4.0] DNR update failed:', e);
+    console.warn('[MorphAgent 4.5] DNR update failed:', e);
   }
 }
 
@@ -133,7 +159,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function loadSettings() {
   try {
     const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode']);
-    const localData = await api.storage.local.get(['selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory']);
+    const localData = await api.storage.local.get([
+      'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
+      'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
+    ]);
 
     websiteRules = syncData.websiteRules || [];
     blockList = syncData.blockList || [];
@@ -144,6 +173,13 @@ async function loadSettings() {
     uaSpoofEnabled = localData.uaSpoofEnabled !== undefined ? !!localData.uaSpoofEnabled : true;
     activeCategory = localData.activeCategory || 'desktop';
 
+    if (localData.adBlockEnabled !== undefined) adBlockEnabled = !!localData.adBlockEnabled;
+    if (localData.dnsProvider !== undefined) dnsProvider = localData.dnsProvider;
+    if (localData.dnsCustomEndpoint !== undefined) dnsCustomEndpoint = localData.dnsCustomEndpoint;
+    if (localData.adBlockCosmeticEnabled !== undefined) adBlockCosmeticEnabled = !!localData.adBlockCosmeticEnabled;
+    if (localData.adBlockAntiAdblockEnabled !== undefined) adBlockAntiAdblockEnabled = !!localData.adBlockAntiAdblockEnabled;
+    if (localData.adBlockStats) adBlockStats = localData.adBlockStats;
+
     jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
 
     if (localData.selectedUA) {
@@ -153,7 +189,7 @@ async function loadSettings() {
     updateBadge(cachedUA, activeCategory);
     updateDeclarativeNetRequestRules(cachedUA);
 
-    console.log('[MorphAgent 4.0] Settings loaded:', {
+    console.log('[MorphAgent 4.5] Settings loaded:', {
       rulesCount: websiteRules.length,
       blockListCount: blockList.length,
       jsBlock: jsBlockEnabled,
@@ -161,7 +197,7 @@ async function loadSettings() {
       activeCategory
     });
   } catch (error) {
-    console.error('[MorphAgent 4.0] Settings load error:', error);
+    console.error('[MorphAgent 4.5] Settings load error:', error);
   }
 }
 
@@ -207,6 +243,10 @@ api.storage.onChanged.addListener((changes, areaName) => {
       uaSpoofEnabled = !!changes.uaSpoofEnabled.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
+    }
+    if (changes.adBlockEnabled !== undefined) {
+      adBlockEnabled = !!changes.adBlockEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
     }
   }
 });
@@ -294,8 +334,30 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
       })
     );
   } catch (e) {
-    console.log('[MorphAgent 4.0] webRequest blocking listener skipped or MV3 active');
+    console.log('[MorphAgent 4.5] webRequest blocking listener skipped or MV3 active');
   }
+}
+
+// Firefox MV2 / Chrome webRequest blocking network fallback for ad & tracker domains
+if (api.webRequest && api.webRequest.onBeforeRequest) {
+  try {
+    api.webRequest.onBeforeRequest.addListener(
+      function(details) {
+        if (!adBlockEnabled) return { cancel: false };
+        const url = (details.url || '').toLowerCase();
+        const adEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) ? globalThis.MorphAgentAdBlock : null;
+        const domains = adEngine ? adEngine.AD_TRACKER_DOMAINS : [];
+        for (let i = 0; i < domains.length; i++) {
+          if (url.includes(domains[i])) {
+            return { cancel: true };
+          }
+        }
+        return { cancel: false };
+      },
+      { urls: ["<all_urls>"] },
+      ["blocking"]
+    );
+  } catch (e) {}
 }
 
 // Messaging Interface
@@ -315,9 +377,22 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       'geoPresetValue',
       'geoCoords',
       'activeCategory',
-      'uiState'
-    ]).then(res => sendResponse(res))
-      .catch(() => sendResponse({}));
+      'uiState',
+      'adBlockEnabled',
+      'dnsProvider',
+      'dnsCustomEndpoint',
+      'adBlockCosmeticEnabled',
+      'adBlockAntiAdblockEnabled',
+      'adBlockStats'
+    ]).then(res => {
+      res.adBlockEnabled = res.adBlockEnabled !== undefined ? res.adBlockEnabled : adBlockEnabled;
+      res.dnsProvider = res.dnsProvider || dnsProvider;
+      res.dnsCustomEndpoint = res.dnsCustomEndpoint || dnsCustomEndpoint;
+      res.adBlockCosmeticEnabled = res.adBlockCosmeticEnabled !== undefined ? res.adBlockCosmeticEnabled : adBlockCosmeticEnabled;
+      res.adBlockAntiAdblockEnabled = res.adBlockAntiAdblockEnabled !== undefined ? res.adBlockAntiAdblockEnabled : adBlockAntiAdblockEnabled;
+      res.adBlockStats = res.adBlockStats || adBlockStats;
+      sendResponse(res);
+    }).catch(() => sendResponse({}));
     return true;
   } else if (message.type === 'set-settings') {
     api.storage.local.set(message.data).then(() => {
@@ -329,6 +404,21 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       if (message.data.activeCategory) {
         activeCategory = message.data.activeCategory;
+      }
+      if (message.data.adBlockEnabled !== undefined) {
+        adBlockEnabled = !!message.data.adBlockEnabled;
+      }
+      if (message.data.dnsProvider !== undefined) {
+        dnsProvider = message.data.dnsProvider;
+      }
+      if (message.data.dnsCustomEndpoint !== undefined) {
+        dnsCustomEndpoint = message.data.dnsCustomEndpoint;
+      }
+      if (message.data.adBlockCosmeticEnabled !== undefined) {
+        adBlockCosmeticEnabled = !!message.data.adBlockCosmeticEnabled;
+      }
+      if (message.data.adBlockAntiAdblockEnabled !== undefined) {
+        adBlockAntiAdblockEnabled = !!message.data.adBlockAntiAdblockEnabled;
       }
       if (message.data.ghostModeEnabled !== undefined && api.alarms) {
         if (message.data.ghostModeEnabled) {
@@ -342,6 +432,34 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       updateBadge(cachedUA, activeCategory);
       sendResponse({ success: true });
     });
+    return true;
+  } else if (message.type === 'log-ad-blocked' && message.data) {
+    const domain = message.data.domain || 'unknown';
+    const count = Number(message.data.count) || 1;
+    const isTracker = !!message.data.isTracker;
+
+    adBlockStats.totalBlocked += count;
+    if (isTracker) {
+      adBlockStats.trackersBlocked += count;
+    } else {
+      adBlockStats.adsBlocked += count;
+    }
+    adBlockStats.perDomain[domain] = (adBlockStats.perDomain[domain] || 0) + count;
+    api.storage.local.set({ adBlockStats });
+    sendResponse({ success: true, stats: adBlockStats });
+    return true;
+  } else if (message.type === 'get-adblock-stats') {
+    sendResponse(adBlockStats);
+    return true;
+  } else if (message.type === 'clear-adblock-stats') {
+    adBlockStats = {
+      totalBlocked: 0,
+      adsBlocked: 0,
+      trackersBlocked: 0,
+      perDomain: {}
+    };
+    api.storage.local.set({ adBlockStats });
+    sendResponse({ success: true });
     return true;
   } else if (message.type === 'get-tab-settings') {
     api.tabs.query({}).then(tabs => {
@@ -430,7 +548,7 @@ function setupContextMenus() {
     api.contextMenus.removeAll(() => {
       api.contextMenus.create({
         id: 'morph-agent-root',
-        title: 'MorphAgent 4.0 Stealth',
+        title: 'MorphAgent 4.5 Stealth',
         contexts: ['all']
       });
 
@@ -540,7 +658,7 @@ function setupContextMenus() {
       });
     });
   } catch (e) {
-    console.warn('[MorphAgent 4.0] Context menu setup skipped:', e);
+    console.warn('[MorphAgent 4.5] Context menu setup skipped:', e);
   }
 }
 
@@ -675,7 +793,7 @@ if (api.alarms && api.alarms.onAlarm) {
         activeCategory = randomUA.category;
         updateDeclarativeNetRequestRules(cachedUA);
         updateBadge(cachedUA, activeCategory);
-        console.log('[MorphAgent 4.0 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
+        console.log('[MorphAgent 4.5 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
       });
     }
   });

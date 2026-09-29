@@ -1,4 +1,4 @@
-// content.js - MorphAgent 4.2.0
+// content.js - MorphAgent 4.5.0
 // Inject stealth scripts into the page context immediately to override native methods.
 
 (function () {
@@ -20,7 +20,11 @@
     'customDeviceMemory',
     'autoHarmonizeTzEnabled',
     'geoTimezone',
-    'geoLocale'
+    'geoLocale',
+    'adBlockEnabled',
+    'adBlockCosmeticEnabled',
+    'adBlockAntiAdblockEnabled',
+    'adBlockWhitelist'
   ]).then((settings) => {
     api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
@@ -82,6 +86,16 @@
         }
       }
 
+      // Check AdBlock Whitelist
+      const adBlockWhitelist = settings.adBlockWhitelist || [];
+      const isAdWhitelisted = adBlockWhitelist.some(site => currentHostname.includes(site.replace(/\*/g, '')));
+      const isAdBlockActive = (settings.adBlockEnabled !== false) && !isAdWhitelisted;
+
+      if (isAdBlockActive && settings.adBlockCosmeticEnabled !== false) {
+        injectCosmeticAdBlocker();
+        monitorAndCleanAdElements();
+      }
+
       // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
       window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(settings) }));
 
@@ -90,8 +104,100 @@
       }
     });
   }).catch(err => {
-    console.warn('[MorphAgent 4.0] Storage access error:', err);
+    console.warn('[MorphAgent 4.5] Storage access error:', err);
   });
+
+  function injectCosmeticAdBlocker() {
+    if (document.getElementById('morph-adblock-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'morph-adblock-styles';
+    style.textContent = `
+      /* Standard Google / AdSense / DFP */
+      ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], [id*="google_ads"],
+      .google-ad, div[data-google-query-id], div[id^="dfp-ad-"],
+
+      /* General Ad Containers, Banners & Slots */
+      .ad-banner, .ad-container, .adsbox, .ad-slot, .ad-wrapper, .ad_slot,
+      .ad-placeholder, .advertisement, .sponsored-post, .sponsor-badge,
+      [data-ad-slot], [data-ad-client], [data-ad-unit], [data-ad-name], [data-native-ad],
+      .ad_unit, .ad_container, .ad-header, .ad-sidebar, .ad-footer, .ads-holder, .advert, .ad-zone,
+
+      /* Recommendation & Native Widgets */
+      .taboola-ad, .outbrain-ad, #rc-widget, .revcontent-ad, .mgid-widget,
+      div[class*="sponsored-content"], div[class*="promoted-content"],
+      aside[class*="ad-"], section[class*="advert"],
+
+      /* Video & YouTube Ads */
+      ytd-promoted-video-renderer, ytd-display-ad-renderer, ytd-banner-promo-renderer,
+      ytd-statement-banner-renderer, ytd-in-feed-ad-layout-renderer, ytd-ad-slot-renderer,
+      ytd-promoted-sparkles-web-renderer, ytd-merch-shelf-renderer, ytd-companion-ad-renderer,
+      ytd-brand-video-singleton-renderer,
+      ytd-rich-item-renderer:has(.ytd-ad-slot-renderer),
+      ytd-rich-item-renderer:has(#ad-badge),
+      ytd-rich-section-renderer:has(.ytd-ad-slot-renderer),
+      .ytp-ad-overlay-container, .ytp-ad-message-container, .ytp-ad-text, .ytp-ad-preview-container,
+      #player-ads, .video-ads, .ytp-ad-module,
+
+      /* Sticky, Floating & Popup Units */
+      .popup-ad, .floating-ad, .bottom-ad, .sticky-ad,
+      [class*="floating-banner"], [class*="bottom-sticky-ad"],
+
+      /* Third-Party Ad Iframes */
+      iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
+      iframe[src*="adnxs"], iframe[src*="criteo"],
+      iframe[src*="amazon-adsystem"], iframe[src*="taboola"], iframe[src*="outbrain"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function monitorAndCleanAdElements() {
+    let loggedCount = 0;
+    const querySelectors = 'ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], .ad-banner, .ad-container, .adsbox, .ad-slot, iframe[src*="doubleclick"], iframe[src*="googlesyndication"], ytd-ad-slot-renderer, .taboola-ad, .outbrain-ad';
+    
+    const countAds = () => {
+      try {
+        const found = document.querySelectorAll(querySelectors);
+        if (found.length > loggedCount) {
+          const delta = found.length - loggedCount;
+          loggedCount = found.length;
+          api.runtime.sendMessage({
+            type: 'log-ad-blocked',
+            data: { domain: window.location.hostname, count: delta, isTracker: false }
+          });
+        }
+      } catch(e) {}
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', countAds);
+    } else {
+      countAds();
+    }
+    setTimeout(countAds, 1000);
+    setTimeout(countAds, 2500);
+
+    // Watch DOM mutations to catch dynamic ad insertions immediately
+    try {
+      const observer = new MutationObserver(() => {
+        countAds();
+      });
+      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+    } catch(e) {}
+  }
 
   if (api.runtime && api.runtime.onMessage) {
     api.runtime.onMessage.addListener((message) => {

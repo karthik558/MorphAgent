@@ -17,7 +17,7 @@
         </div>
         <div class="title-group">
           <h1 class="title">MorphAgent</h1>
-          <span class="version-badge" id="version-badge">V4.2.0</span>
+          <span class="version-badge" id="version-badge">V4.5.0</span>
         </div>
       </div>
       <div class="header-actions">
@@ -301,6 +301,59 @@
                 <div class="inline-input-group">
                   <span class="mini-label">Rotation Interval (minutes)</span>
                   <input type="number" id="ghost-interval" class="number-input" min="1" max="1440" value="15">
+                </div>
+              </div>
+            </div>
+
+            <!-- Ad & Tracker Shield -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                </div>
+                <div class="feature-text">
+                  <div class="feature-title-row">
+                    <span class="feature-title">Ad & Tracker Shield</span>
+                  </div>
+                  <span class="feature-desc" id="adblock-status-desc">Block banners, video popups & telemetry</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="adblock-toggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <!-- Secure DNS Switcher -->
+            <div class="feature-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
+                <div class="feature-left">
+                  <div class="feature-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <div class="feature-title-row">
+                      <span class="feature-title">Secure DNS Switcher</span>
+                    </div>
+                    <span class="feature-desc" id="dns-current-label">AdGuard DNS · Ad & Threat Shield</span>
+                  </div>
+                </div>
+              </div>
+              <div id="dns-controls" style="width:100%;">
+                <div class="select-wrapper">
+                  <select id="dns-provider-select" class="custom-select" style="font-size: 11px; width: 100%;">
+                    <option value="adguard">AdGuard DNS (Ad & Threat Shield)</option>
+                    <option value="cloudflare">Cloudflare 1.1.1.1 (Ultra-Fast Privacy)</option>
+                    <option value="quad9">Quad9 (Malware & Botnet Shield)</option>
+                    <option value="nextdns">NextDNS (Cloud Firewall)</option>
+                    <option value="cleanbrowsing">CleanBrowsing (Family Safe)</option>
+                    <option value="direct">System Default (Direct)</option>
+                    <option value="custom">Custom DoH Endpoint...</option>
+                  </select>
+                  <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div id="dns-custom-input-wrap" style="display:none; margin-top:6px;">
+                  <input type="text" id="dns-custom-endpoint" class="number-input" placeholder="https://your-dns-server/dns-query" style="width:100%; font-size:11px; padding:6px 10px;">
                 </div>
               </div>
             </div>

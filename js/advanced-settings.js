@@ -97,7 +97,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const auditTableBody = document.getElementById('auditTableBody');
   const auditConsoleLog = document.getElementById('auditConsoleLog');
   const auditTimestamp = document.getElementById('auditTimestamp');
-  const auditEngineBadge = document.getElementById('auditEngineBadge');
+
+  // Secure DNS & AdBlock Engine Elements
+  const statAdsBlocked = document.getElementById('statAdsBlocked');
+  const statTrackersBlocked = document.getElementById('statTrackersBlocked');
+  const statDataSaved = document.getElementById('statDataSaved');
+  const statDnsActive = document.getElementById('statDnsActive');
+  const statDnsTag = document.getElementById('statDnsTag');
+  const advDnsSelect = document.getElementById('advDnsSelect');
+  const advDnsCustomWrap = document.getElementById('advDnsCustomWrap');
+  const advDnsCustom = document.getElementById('advDnsCustom');
+  const dnsStatusTag = document.getElementById('dnsStatusTag');
+  const advDohUrlPreview = document.getElementById('advDohUrlPreview');
+  const advDnsIpPreview = document.getElementById('advDnsIpPreview');
+  const advAdBlockMasterToggle = document.getElementById('advAdBlockMasterToggle');
+  const advAdBlockDnrToggle = document.getElementById('advAdBlockDnrToggle');
+  const advAdBlockCosmeticToggle = document.getElementById('advAdBlockCosmeticToggle');
+  const advAdBlockAntiAdblockToggle = document.getElementById('advAdBlockAntiAdblockToggle');
+  const advClearAdBlockStatsBtn = document.getElementById('advClearAdBlockStatsBtn');
 
   // State
   let websiteRules = [];
@@ -139,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLocations();
     loadHarmonizationSettings();
     loadTimezoneHarmonizationSettings();
+    loadDnsAndAdBlockSettings();
     setupEventListeners();
     loadTabSettings();
     renderAnalytics();
@@ -301,6 +319,100 @@ document.addEventListener('DOMContentLoaded', () => {
     tzPreviewTimezone.textContent = tz;
     tzPreviewLanguages.textContent = langs;
     tzPreviewHeader.textContent = header;
+  }
+
+  // ==========================================
+  // Secure DNS & AdBlock Engine Logic
+  // ==========================================
+  function loadDnsAndAdBlockSettings() {
+    const browser = window.browser || window.chrome;
+    browser.storage.local.get([
+      'adBlockEnabled',
+      'dnsProvider',
+      'dnsCustomEndpoint',
+      'adBlockCosmeticEnabled',
+      'adBlockAntiAdblockEnabled',
+      'adBlockStats'
+    ], (result) => {
+      const adBlockEnabled = result.adBlockEnabled !== false;
+      const dnsProvider = result.dnsProvider || 'adguard';
+      const dnsCustomEndpoint = result.dnsCustomEndpoint || '';
+      const adBlockCosmeticEnabled = result.adBlockCosmeticEnabled !== false;
+      const adBlockAntiAdblockEnabled = result.adBlockAntiAdblockEnabled !== false;
+      const adBlockStats = result.adBlockStats || { totalBlocked: 0, adsBlocked: 0, trackersBlocked: 0, perDomain: {} };
+
+      // Update Toggles
+      if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = adBlockEnabled;
+      if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = adBlockEnabled;
+      if (advAdBlockCosmeticToggle) advAdBlockCosmeticToggle.checked = adBlockCosmeticEnabled;
+      if (advAdBlockAntiAdblockToggle) advAdBlockAntiAdblockToggle.checked = adBlockAntiAdblockEnabled;
+
+      // Update DNS Dropdown
+      if (advDnsSelect) advDnsSelect.value = dnsProvider;
+      if (advDnsCustom) advDnsCustom.value = dnsCustomEndpoint;
+
+      updateDnsAndStatsUI(dnsProvider, dnsCustomEndpoint, adBlockStats, adBlockEnabled);
+    });
+
+    // Also request latest real-time stats from background if active
+    if (browser.runtime && browser.runtime.sendMessage) {
+      browser.runtime.sendMessage({ type: 'get-adblock-stats' }, (stats) => {
+        if (browser.runtime.lastError || !stats) return;
+        updateAdBlockCountersUI(stats);
+      });
+    }
+  }
+
+  function updateAdBlockCountersUI(stats) {
+    if (!stats) return;
+    const ads = stats.adsBlocked || 0;
+    const trackers = stats.trackersBlocked || 0;
+    const total = (stats.totalBlocked !== undefined) ? stats.totalBlocked : (ads + trackers);
+    const dataSavedMb = (total * 0.42).toFixed(1);
+
+    if (statAdsBlocked) statAdsBlocked.textContent = ads.toLocaleString();
+    if (statTrackersBlocked) statTrackersBlocked.textContent = trackers.toLocaleString();
+    if (statDataSaved) statDataSaved.textContent = `${dataSavedMb} MB`;
+  }
+
+  function updateDnsAndStatsUI(providerId, customEndpoint, stats, adBlockEnabled) {
+    updateAdBlockCountersUI(stats);
+
+    // Provider details
+    const providerList = (typeof DNS_PROVIDERS !== 'undefined') ? DNS_PROVIDERS : {};
+    const provider = providerList[providerId] || providerList['adguard'] || {
+      name: 'AdGuard DNS',
+      doh: 'https://dns.adguard-dns.com/dns-query',
+      ips: ['94.140.14.14', '94.140.15.15'],
+      tag: 'Ad & Phishing Shield'
+    };
+
+    if (advDnsCustomWrap) {
+      advDnsCustomWrap.style.display = providerId === 'custom' ? 'block' : 'none';
+    }
+
+    if (statDnsActive) {
+      statDnsActive.textContent = (providerId === 'custom' && customEndpoint) ? 'Custom DoH Resolver' : provider.name.split(' (')[0];
+    }
+    if (statDnsTag) {
+      if (providerId === 'custom') {
+        statDnsTag.textContent = customEndpoint ? `Secure DoH · ${customEndpoint.slice(0, 30)}` : 'Custom Encrypted Endpoint';
+      } else if (providerId === 'direct') {
+        statDnsTag.textContent = 'Unencrypted OS Default';
+      } else {
+        statDnsTag.textContent = `DoH Encrypted · ${(provider.ips || []).join(', ')}`;
+      }
+    }
+
+    if (advDohUrlPreview) {
+      advDohUrlPreview.textContent = providerId === 'custom' ? (customEndpoint || 'https://your-server.com/dns-query') : provider.doh;
+    }
+    if (advDnsIpPreview) {
+      advDnsIpPreview.textContent = (provider.ips && provider.ips.length) ? provider.ips.join(', ') : 'Direct OS Gateway';
+    }
+    if (dnsStatusTag) {
+      dnsStatusTag.textContent = providerId === 'direct' ? 'System Default (Direct)' : `DNS-over-HTTPS (${provider.tag || 'Active'})`;
+    }
   }
 
   // ==========================================
@@ -477,9 +589,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function runStealthAudit() {
     if (!auditTableBody && !auditScoreVal) return;
 
-    if (auditEngineBadge) {
-      auditEngineBadge.innerHTML = '<span class="live-pulse"></span><span>Running Diagnostics...</span>';
-    }
     if (runAuditBtn) {
       runAuditBtn.disabled = true;
       runAuditBtn.innerHTML = `
@@ -499,7 +608,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'customUA',
         'jsProtect',
         'timingShield',
-        'mediaQueryProtect'
+        'mediaQueryProtect',
+        'adBlockEnabled',
+        'dnsProvider'
       ], (localRes) => {
         const hwHarmonize = localRes.hardwareHarmonizeEnabled !== false;
         const autoTz = localRes.autoHarmonizeTzEnabled !== false;
@@ -629,6 +740,21 @@ document.addEventListener('DOMContentLoaded', () => {
             mitigation: 'Automation markers neutralized. Puppeteer, Playwright, and CDP runtime wrappers undetectable.',
             logCode: 'AUTOMATION_CDP',
             logDetail: `navigator.webdriver = ${navigator.webdriver ? 'true (EXPOSED)' : 'false (PASS)'}`
+          },
+          {
+            vector: 'AdGuard Ad & Tracker Shield',
+            targetSub: 'Network DNR & Telemetry Interception',
+            icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>`,
+            api: 'DeclarativeNetRequest / DoH Resolver',
+            value: localRes.adBlockEnabled !== false ? `Active (${localRes.dnsProvider || 'AdGuard'})` : 'Shield Disabled',
+            risk: 'High',
+            passed: localRes.adBlockEnabled !== false,
+            statusText: localRes.adBlockEnabled !== false ? 'Protected' : 'Exposed',
+            mitigation: localRes.adBlockEnabled !== false
+              ? 'Ad networks, fingerprinting beacons, and tracking pixels blocked before transmission.'
+              : 'Tracking endpoints and advertising beacons active. Enable AdGuard Shield.',
+            logCode: 'ADGUARD_SHIELD',
+            logDetail: `AdBlock: ${localRes.adBlockEnabled !== false ? 'ENABLED' : 'DISABLED'}. DNS: ${localRes.dnsProvider || 'adguard'}`
           }
         ];
 
@@ -684,9 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (auditProfileSyncSub) {
           auditProfileSyncSub.textContent = `${cores} Cores · ${mem} GB · ${autoTz ? 'TZ Synced' : 'TZ Native'}`;
         }
-        if (auditEngineBadge) {
-          auditEngineBadge.innerHTML = `<span class="live-pulse"></span><span>${score >= 90 ? 'Verified Clean' : 'Needs Tuning'}</span>`;
-        }
 
         // Render Diagnostic Table Rows
         if (auditTableBody) {
@@ -724,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Terminal Diagnostic Trace Log
         if (auditConsoleLog) {
           const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.2.0</span>\n`;
+          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.5.0</span>\n`;
           tests.forEach(t => {
             logHtml += `<span class="${t.passed ? 'log-pass' : 'log-warn'}">[${t.passed ? 'PASS' : 'WARN'}] ${t.logCode.padEnd(16)}</span> :: ${escapeHtml(t.logDetail)}\n`;
           });
@@ -758,12 +881,17 @@ document.addEventListener('DOMContentLoaded', () => {
       autoHarmonizeTzEnabled: true,
       jsProtect: true,
       timingShield: true,
-      mediaQueryProtect: true
+      mediaQueryProtect: true,
+      adBlockEnabled: true,
+      adBlockCosmeticEnabled: true,
+      adBlockAntiAdblockEnabled: true,
+      dnsProvider: 'adguard'
     }, () => {
       loadHarmonizationSettings();
       loadTimezoneHarmonizationSettings();
+      loadDnsAndAdBlockSettings();
       runStealthAudit();
-      showStatus('All fingerprinting vectors harmonized to optimal stealth state', 'success');
+      showStatus('All fingerprinting vectors & AdGuard shield harmonized to optimal stealth state', 'success');
     });
   }
 
@@ -904,6 +1032,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         if (areaName === 'local') {
+          if (changes.theme) {
+            applyTheme(changes.theme.newValue || 'dark');
+          }
           if (changes.threatLogs) {
             renderAnalytics();
           }
@@ -912,6 +1043,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           if (changes.autoHarmonizeTzEnabled || changes.geoTimezone || changes.geoLocale) {
             loadTimezoneHarmonizationSettings();
+          }
+          if (changes.adBlockEnabled || changes.dnsProvider || changes.dnsCustomEndpoint || changes.adBlockCosmeticEnabled || changes.adBlockAntiAdblockEnabled || changes.adBlockStats) {
+            loadDnsAndAdBlockSettings();
           }
         }
       });
@@ -1025,6 +1159,104 @@ document.addEventListener('DOMContentLoaded', () => {
       if (copyAuditReportBtn) {
         copyAuditReportBtn.addEventListener('click', copyAuditReport);
       }
+
+      // Feature 5: Secure DNS & AdBlock Engine listeners
+      if (advDnsSelect) {
+        advDnsSelect.addEventListener('change', () => {
+          const provider = advDnsSelect.value;
+          browser.storage.local.set({ dnsProvider: provider }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { dnsProvider: provider }
+            }).catch(() => {});
+            loadDnsAndAdBlockSettings();
+            showStatus(`Secure DNS resolver set to ${advDnsSelect.options[advDnsSelect.selectedIndex].text.split(' (')[0]}`);
+          });
+        });
+      }
+
+      if (advDnsCustom) {
+        advDnsCustom.addEventListener('change', () => {
+          const customUrl = advDnsCustom.value.trim();
+          browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { dnsCustomEndpoint: customUrl }
+            }).catch(() => {});
+            loadDnsAndAdBlockSettings();
+            showStatus('Custom DoH endpoint updated');
+          });
+        });
+      }
+
+      if (advAdBlockMasterToggle) {
+        advAdBlockMasterToggle.addEventListener('change', () => {
+          const active = advAdBlockMasterToggle.checked;
+          if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = active;
+          browser.storage.local.set({ adBlockEnabled: active }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { adBlockEnabled: active }
+            }).catch(() => {});
+            loadDnsAndAdBlockSettings();
+            showStatus(active ? 'AdGuard AdBlock & Tracker Shield activated' : 'AdGuard AdBlock Shield paused', active ? 'success' : 'info');
+          });
+        });
+      }
+
+      if (advAdBlockDnrToggle) {
+        advAdBlockDnrToggle.addEventListener('change', () => {
+          const active = advAdBlockDnrToggle.checked;
+          if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = active;
+          browser.storage.local.set({ adBlockEnabled: active }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { adBlockEnabled: active }
+            }).catch(() => {});
+            loadDnsAndAdBlockSettings();
+            showStatus(`Network DNR ad filtering ${active ? 'enabled' : 'disabled'}`);
+          });
+        });
+      }
+
+      if (advAdBlockCosmeticToggle) {
+        advAdBlockCosmeticToggle.addEventListener('change', () => {
+          const active = advAdBlockCosmeticToggle.checked;
+          browser.storage.local.set({ adBlockCosmeticEnabled: active }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { adBlockCosmeticEnabled: active }
+            }).catch(() => {});
+            showStatus(`Cosmetic element collapse ${active ? 'enabled' : 'disabled'}`);
+          });
+        });
+      }
+
+      if (advAdBlockAntiAdblockToggle) {
+        advAdBlockAntiAdblockToggle.addEventListener('change', () => {
+          const active = advAdBlockAntiAdblockToggle.checked;
+          browser.storage.local.set({ adBlockAntiAdblockEnabled: active }, () => {
+            browser.runtime.sendMessage({
+              type: 'update-global-settings',
+              data: { adBlockAntiAdblockEnabled: active }
+            }).catch(() => {});
+            showStatus(`Anti-adblock defuser & video skip ${active ? 'enabled' : 'disabled'}`);
+          });
+        });
+      }
+
+      if (advClearAdBlockStatsBtn) {
+        advClearAdBlockStatsBtn.addEventListener('click', () => {
+          if (confirm('Reset blocked ads, tracking pixels, and bandwidth telemetry statistics to zero?')) {
+            browser.runtime.sendMessage({ type: 'clear-adblock-stats' }, () => {
+              if (statAdsBlocked) statAdsBlocked.textContent = '0';
+              if (statTrackersBlocked) statTrackersBlocked.textContent = '0';
+              if (statDataSaved) statDataSaved.textContent = '0 MB';
+              showStatus('AdBlock and DNS telemetry statistics reset');
+            });
+          }
+        });
+      }
     }
 
     function loadSettings() {
@@ -1057,21 +1289,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupTheme() {
       const browser = window.browser || window.chrome;
       browser.storage.local.get(['theme'], (result) => {
-        const theme = result.theme || 'light';
+        const theme = (result && result.theme) ? result.theme : 'dark';
         applyTheme(theme);
       });
     }
 
     function applyTheme(theme) {
+      document.documentElement.classList.remove('dark-mode', 'light-mode');
       document.body.classList.remove('dark-mode', 'light-mode');
-      const lightIcon = themeToggle.querySelector('.light-icon');
-      const darkIcon = themeToggle.querySelector('.dark-icon');
+      const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
+      const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
 
       if (theme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
         document.body.classList.add('dark-mode');
         if (lightIcon) lightIcon.style.display = 'none';
         if (darkIcon) darkIcon.style.display = 'block';
       } else {
+        document.documentElement.classList.add('light-mode');
         document.body.classList.add('light-mode');
         if (lightIcon) lightIcon.style.display = 'block';
         if (darkIcon) darkIcon.style.display = 'none';
@@ -1080,11 +1315,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleTheme() {
       const browser = window.browser || window.chrome;
-      const isDark = document.body.classList.contains('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode') || !document.body.classList.contains('light-mode');
       const newTheme = isDark ? 'light' : 'dark';
 
+      applyTheme(newTheme);
       browser.storage.local.set({ theme: newTheme }, () => {
-        applyTheme(newTheme);
+        browser.runtime.sendMessage({
+          type: 'set-settings',
+          data: { theme: newTheme }
+        }).catch(() => {});
       });
     }
 
@@ -1863,7 +2102,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const localKeys = [
         'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled', 
         'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue', 
-        'geoCoords', 'activeCategory', 'uiState', 'theme'
+        'geoCoords', 'activeCategory', 'uiState', 'theme',
+        'hardwareHarmonizeEnabled', 'customHardwareCores', 'customDeviceMemory',
+        'autoHarmonizeTzEnabled', 'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint',
+        'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
       ];
 
       browser.storage.local.get(localKeys, (localResult) => {
@@ -1987,6 +2229,22 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
         renderRules();
         renderBlockList();
+
+        browser.storage.local.set({
+          adBlockEnabled: true,
+          dnsProvider: 'adguard',
+          dnsCustomEndpoint: '',
+          adBlockCosmeticEnabled: true,
+          adBlockAntiAdblockEnabled: true,
+          adBlockStats: { totalBlocked: 0, adsBlocked: 0, trackersBlocked: 0, perDomain: {} }
+        }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockEnabled: true, dnsProvider: 'adguard' }
+          }).catch(() => {});
+          loadDnsAndAdBlockSettings();
+        });
+
         showStatus('All settings have been reset');
       }
     }

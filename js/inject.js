@@ -26,6 +26,201 @@
       const ua = s.selectedUA || '';
       const isMobile = ua ? /Android|iPhone|iPad|iPod|Mobile/i.test(ua) : false;
 
+      // Anti-Adblock Defuser, Scriptlet Traps & Height Probe Spoofing
+      if (s.adBlockEnabled !== false && s.adBlockAntiAdblockEnabled !== false) {
+        try {
+          window.canRunAds = true;
+          window.isAdBlockActive = false;
+          window.google_ad_client = window.google_ad_client || 'ca-pub-0000000000000000';
+
+          // Defuse Anti-Adblock DOM probe sizing checks (.adsbox, .ad-banner, etc.)
+          if (!window.__MORPH_AAB_DEFUSED__) {
+            window.__MORPH_AAB_DEFUSED__ = true;
+            const origOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+            const origOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+            const origClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+            const origClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+
+            const isAdProbeEl = (el) => {
+              if (!el) return false;
+              const cls = (el.className || '').toString().toLowerCase();
+              const id = (el.id || '').toString().toLowerCase();
+              return cls.includes('adsbox') || cls.includes('ad-banner') || cls.includes('ad-unit') ||
+                     cls.includes('ad_unit') || cls.includes('ad-detector') || cls.includes('pub_300') ||
+                     id.includes('ad-detector') || id.includes('ad_banner') || id.includes('ad-banner') ||
+                     cls.includes('ad-slot') || cls.includes('advertisement');
+            };
+
+            if (origOffsetHeight && origOffsetHeight.get) {
+              Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+                get() {
+                  const val = origOffsetHeight.get.call(this);
+                  return (val === 0 && isAdProbeEl(this)) ? 250 : val;
+                },
+                configurable: true
+              });
+            }
+            if (origOffsetWidth && origOffsetWidth.get) {
+              Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+                get() {
+                  const val = origOffsetWidth.get.call(this);
+                  return (val === 0 && isAdProbeEl(this)) ? 300 : val;
+                },
+                configurable: true
+              });
+            }
+            if (origClientHeight && origClientHeight.get) {
+              Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+                get() {
+                  const val = origClientHeight.get.call(this);
+                  return (val === 0 && isAdProbeEl(this)) ? 250 : val;
+                },
+                configurable: true
+              });
+            }
+            if (origClientWidth && origClientWidth.get) {
+              Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+                get() {
+                  const val = origClientWidth.get.call(this);
+                  return (val === 0 && isAdProbeEl(this)) ? 300 : val;
+                },
+                configurable: true
+              });
+            }
+          }
+
+          // Google Tag Manager / Analytics / AdSense Stubs
+          if (!window.adsbygoogle) {
+            window.adsbygoogle = [];
+            window.adsbygoogle.push = function() { return 1; };
+            window.adsbygoogle.loaded = true;
+          }
+
+          if (!window.googletag) {
+            const emptyFn = function() { return this; };
+            const emptyObj = { addService: emptyFn, setTargeting: emptyFn, defineSizeMapping: emptyFn, build: emptyFn };
+            window.googletag = {
+              cmd: [],
+              display: emptyFn,
+              defineSlot: function() { return emptyObj; },
+              defineOutOfPageSlot: function() { return emptyObj; },
+              enableServices: emptyFn,
+              pubads: function() {
+                return {
+                  enableSingleRequest: emptyFn,
+                  collapseEmptyDivs: emptyFn,
+                  addEventListener: emptyFn,
+                  clear: emptyFn,
+                  refresh: emptyFn,
+                  setTargeting: emptyFn
+                };
+              },
+              sizeMapping: function() { return { addSize: emptyFn, build: emptyFn }; }
+            };
+            window.googletag.cmd.push = function(fn) {
+              if (typeof fn === 'function') { try { fn(); } catch(e){} }
+              return 1;
+            };
+          }
+
+          if (!window.ga) {
+            window.ga = function() {
+              if (arguments.length > 0 && typeof arguments[arguments.length - 1] === 'function') {
+                try { arguments[arguments.length - 1](); } catch(e){}
+              }
+            };
+            window.ga.loaded = true;
+          }
+          if (!window.gtag) {
+            window.gtag = function() {};
+          }
+          if (!window._gaq) {
+            window._gaq = { push: function() {} };
+          }
+          if (!window.fbq) {
+            window.fbq = function() {};
+            window.fbq.loaded = true;
+          }
+
+          // Block Intrusive Popup / Popunder Spawners
+          if (!window.__MORPH_POPUP_HOOKED__) {
+            window.__MORPH_POPUP_HOOKED__ = true;
+            const origOpen = window.open;
+            window.open = function(url) {
+              if (typeof url === 'string') {
+                const lower = url.toLowerCase();
+                if (lower.includes('popads') || lower.includes('exoclick') || lower.includes('trafficjunky') ||
+                    lower.includes('propellerads') || lower.includes('popcash') || lower.includes('adsterra') ||
+                    lower.includes('clickadu') || lower.includes('ad-maven') || lower.includes('juicyads') ||
+                    lower.includes('yllix') || lower.includes('bidvertiser')) {
+                  console.log('[MorphAgent 4.5] Intrusive ad popunder blocked:', url);
+                  return null;
+                }
+              }
+              return origOpen.apply(this, arguments);
+            };
+          }
+        } catch(e) {}
+      }
+
+      // 100% Video Ad Auto-Skipper & Fast-Forwarder for YouTube and HTML5 Players
+      if (s.adBlockEnabled !== false && !window.__MORPH_VIDEO_SKIPPER__) {
+        window.__MORPH_VIDEO_SKIPPER__ = true;
+        const triggerSkip = () => {
+          try {
+            // Click skip buttons immediately
+            const skipSelectors = [
+              '.ytp-ad-skip-button',
+              '.ytp-ad-skip-button-modern',
+              '.ytp-skip-ad-button',
+              '.ytp-ad-skip-button-slot button',
+              'button.ytp-ad-skip-button',
+              '.videoAdUiSkipButton',
+              '.ytp-ad-overlay-close-button'
+            ];
+            for (const sel of skipSelectors) {
+              const btn = document.querySelector(sel);
+              if (btn && typeof btn.click === 'function') {
+                btn.click();
+              }
+            }
+
+            // Fast-forward & mute video ad streams
+            const adIndicators = [
+              '.ad-showing',
+              '.ad-interrupting',
+              '.html5-video-player.ad-showing',
+              '.video-ads:not(:empty)'
+            ];
+            const isAdPlaying = adIndicators.some(sel => !!document.querySelector(sel));
+            if (isAdPlaying) {
+              const videos = document.querySelectorAll('video');
+              videos.forEach(video => {
+                if (video && isFinite(video.duration) && video.duration > 0) {
+                  video.muted = true;
+                  video.playbackRate = 16.0;
+                  video.currentTime = video.duration;
+                }
+              });
+            }
+          } catch(e) {}
+        };
+
+        // Run on high-frequency interval for instantaneous zero-latency skipping
+        setInterval(triggerSkip, 100);
+
+        // Also observe DOM changes in player container for zero-latency reaction
+        const setupObserver = () => {
+          const player = document.querySelector('#movie_player, .html5-video-player, video');
+          if (player && !player.__morph_observed) {
+            player.__morph_observed = true;
+            const obs = new MutationObserver(triggerSkip);
+            obs.observe(player, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'src'] });
+          }
+        };
+        setInterval(setupObserver, 1000);
+      }
+
       // User Agent & Navigator Platform Spoofing
       if (uaSpoofEnabled && ua) {
         const getPlatform = (str) => {

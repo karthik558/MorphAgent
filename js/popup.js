@@ -4,6 +4,9 @@ if (window.innerWidth !== 400 || window.innerHeight > 600) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Cross-browser API adapter
+  const browser = window.browser || window.chrome;
+
   // DOM Elements
   const themeToggle = document.getElementById('theme-toggle');
   const deviceCards = document.querySelectorAll('.device-card');
@@ -31,6 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const ghostModeToggle = document.getElementById('ghost-mode-toggle');
   const ghostControls = document.getElementById('ghost-controls');
   const ghostInterval = document.getElementById('ghost-interval');
+
+  // AdBlock & Secure DNS Elements
+  const adblockToggle = document.getElementById('adblock-toggle');
+  const dnsProviderSelect = document.getElementById('dns-provider-select');
+  const dnsCustomInputWrap = document.getElementById('dns-custom-input-wrap');
+  const dnsCustomEndpoint = document.getElementById('dns-custom-endpoint');
+  const dnsCurrentLabel = document.getElementById('dns-current-label');
 
   // New buttons
   const btnCurrentTab = document.getElementById('btn-current-tab');
@@ -145,6 +155,84 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // AdBlock & DNS Event Listeners & Helpers
+  function updateDnsUI(providerId) {
+    if (dnsCustomInputWrap) {
+      dnsCustomInputWrap.style.display = providerId === 'custom' ? 'block' : 'none';
+    }
+    if (dnsCurrentLabel) {
+      if (providerId === 'adguard') {
+        dnsCurrentLabel.textContent = 'AdGuard DNS · Ad & Threat Shield';
+      } else if (providerId === 'cloudflare') {
+        dnsCurrentLabel.textContent = 'Cloudflare 1.1.1.1 · Ultra-Fast Privacy';
+      } else if (providerId === 'quad9') {
+        dnsCurrentLabel.textContent = 'Quad9 · Malware & Threat Shield';
+      } else if (providerId === 'nextdns') {
+        dnsCurrentLabel.textContent = 'NextDNS · Cloud Firewall';
+      } else if (providerId === 'cleanbrowsing') {
+        dnsCurrentLabel.textContent = 'CleanBrowsing · Family Protected';
+      } else if (providerId === 'custom') {
+        dnsCurrentLabel.textContent = 'Custom DoH Resolver';
+      } else {
+        dnsCurrentLabel.textContent = 'System Default (Direct OS)';
+      }
+    }
+  }
+
+  // Load DNS and AdBlock settings on popup startup from storage.local
+  browser.storage.local.get(['adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint'], (res) => {
+    if (adblockToggle) {
+      adblockToggle.checked = res.adBlockEnabled !== false;
+    }
+    const provider = res.dnsProvider || 'adguard';
+    if (dnsProviderSelect) {
+      dnsProviderSelect.value = provider;
+      updateDnsUI(provider);
+    }
+    if (dnsCustomEndpoint && res.dnsCustomEndpoint) {
+      dnsCustomEndpoint.value = res.dnsCustomEndpoint;
+    }
+  });
+
+  if (adblockToggle) {
+    adblockToggle.addEventListener('change', () => {
+      const active = adblockToggle.checked;
+      browser.storage.local.set({ adBlockEnabled: active }, () => {
+        browser.runtime.sendMessage({
+          type: 'update-global-settings',
+          data: { adBlockEnabled: active }
+        }).catch(() => {});
+        showStatus(active ? 'Ad & Tracker Shield enabled' : 'Ad & Tracker Shield paused');
+      });
+    });
+  }
+
+  if (dnsProviderSelect) {
+    dnsProviderSelect.addEventListener('change', () => {
+      const provider = dnsProviderSelect.value;
+      updateDnsUI(provider);
+      browser.storage.local.set({ dnsProvider: provider }, () => {
+        browser.runtime.sendMessage({
+          type: 'update-global-settings',
+          data: { dnsProvider: provider }
+        }).catch(() => {});
+        showStatus(`DNS switched to ${dnsProviderSelect.options[dnsProviderSelect.selectedIndex].text.split(' (')[0]}`);
+      });
+    });
+  }
+
+  if (dnsCustomEndpoint) {
+    dnsCustomEndpoint.addEventListener('input', () => {
+      const customUrl = dnsCustomEndpoint.value.trim();
+      browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {
+        browser.runtime.sendMessage({
+          type: 'update-global-settings',
+          data: { dnsCustomEndpoint: customUrl }
+        }).catch(() => {});
+      });
+    });
+  }
+
   // State
   let currentCategory = null;
   let currentBrowser = null;
@@ -152,11 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedProfile = null;
   let isInitialized = false;
 
-  // Browser compatibility
-  const browser = window.browser || window.chrome;
-
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.2.0' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.5.0' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
@@ -188,13 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Theme Management
   function initTheme() {
-    browser.storage.local.get(['theme']).then((data) => {
-      const theme = data.theme || 'light';
+    browser.storage.local.get(['theme'], (data) => {
+      const theme = (data && data.theme) ? data.theme : 'light';
       applyTheme(theme);
-      loadCustomLocations();
-      isInitialized = true;
-    }).catch(() => {
-      applyTheme('light');
       loadCustomLocations();
       isInitialized = true;
     });
@@ -202,8 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadCustomLocations() {
     if (!geoPreset) return;
-    browser.storage.sync.get(['customLocations']).then((data) => {
-      const customLocs = data.customLocations || [];
+    browser.storage.sync.get(['customLocations'], (data) => {
+      const customLocs = (data && data.customLocations) ? data.customLocations : [];
       customLocs.forEach(loc => {
         const option = document.createElement('option');
         option.value = `${loc.lat},${loc.lng}`;
@@ -211,35 +292,61 @@ document.addEventListener('DOMContentLoaded', () => {
         // Insert before the 'custom' option (which is the last one)
         geoPreset.insertBefore(option, geoPreset.lastElementChild);
       });
-    }).catch(console.error);
+    });
   }
 
   function applyTheme(theme) {
     document.documentElement.classList.remove('dark-mode', 'light-mode');
     document.body.classList.remove('dark-mode', 'light-mode');
+    const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
+    const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
     if (theme === 'dark') {
       document.documentElement.classList.add('dark-mode');
       document.body.classList.add('dark-mode');
-      themeToggle.querySelector('.light-icon').style.display = 'none';
-      themeToggle.querySelector('.dark-icon').style.display = 'block';
+      if (lightIcon) lightIcon.style.display = 'none';
+      if (darkIcon) darkIcon.style.display = 'block';
     } else {
       document.documentElement.classList.add('light-mode');
       document.body.classList.add('light-mode');
-      themeToggle.querySelector('.light-icon').style.display = 'block';
-      themeToggle.querySelector('.dark-icon').style.display = 'none';
+      if (lightIcon) lightIcon.style.display = 'block';
+      if (darkIcon) darkIcon.style.display = 'none';
     }
   }
 
-  themeToggle.addEventListener('click', () => {
-    if (!isInitialized) return;
-
-    const isDark = document.body.classList.contains('dark-mode');
-    const newTheme = isDark ? 'light' : 'dark';
-
-    browser.storage.local.set({ theme: newTheme }).then(() => {
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+      const newTheme = isDark ? 'light' : 'dark';
       applyTheme(newTheme);
-    }).catch(console.error);
-  });
+      browser.storage.local.set({ theme: newTheme }, () => {
+        browser.runtime.sendMessage({
+          type: 'set-settings',
+          data: { theme: newTheme }
+        }).catch(() => {});
+      });
+    });
+  }
+
+  // Real-time synchronization across popup and open pages
+  if (browser && browser.storage && browser.storage.onChanged) {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local') {
+        if (changes.theme) {
+          applyTheme(changes.theme.newValue || 'light');
+        }
+        if (changes.dnsProvider && dnsProviderSelect) {
+          dnsProviderSelect.value = changes.dnsProvider.newValue;
+          updateDnsUI(changes.dnsProvider.newValue);
+        }
+        if (changes.dnsCustomEndpoint && dnsCustomEndpoint) {
+          dnsCustomEndpoint.value = changes.dnsCustomEndpoint.newValue || '';
+        }
+        if (changes.adBlockEnabled && adblockToggle) {
+          adblockToggle.checked = changes.adBlockEnabled.newValue !== false;
+        }
+      }
+    });
+  }
 
 
 
@@ -717,6 +824,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        if (adblockToggle) {
+          adblockToggle.checked = settings.adBlockEnabled !== false;
+        }
+        if (dnsProviderSelect && settings.dnsProvider) {
+          dnsProviderSelect.value = settings.dnsProvider;
+          updateDnsUI(settings.dnsProvider);
+        }
+        if (dnsCustomEndpoint && settings.dnsCustomEndpoint) {
+          dnsCustomEndpoint.value = settings.dnsCustomEndpoint;
+        }
+
         currentScope = 'all';
         btnAllTabs.classList.add('btn-solid');
         btnAllTabs.classList.remove('btn-ghost');
@@ -886,6 +1004,9 @@ document.addEventListener('DOMContentLoaded', () => {
         geoPresetValue,
         geoCoords,
         applyScope,
+        adBlockEnabled: adblockToggle ? adblockToggle.checked : true,
+        dnsProvider: dnsProviderSelect ? dnsProviderSelect.value : 'adguard',
+        dnsCustomEndpoint: dnsCustomEndpoint ? dnsCustomEndpoint.value.trim() : '',
         uiState: {
           category: currentCategory,
           platform: currentPlatform,
