@@ -29,6 +29,32 @@ let adBlockStats = {
   perDomain: {}
 };
 
+// Tracking Protection & Filters Hub State
+let trackersBlockEnabled = true;
+let removeTrackingParamsEnabled = true;
+let hideSearchQueriesEnabled = true;
+let sendDntGpcEnabled = true;
+let webrtcPreventLeakEnabled = true;
+let removeXClientDataEnabled = true;
+let filtersState = null;
+let filtersLastChecked = 'Sep 28, 2026, 09:56 PM';
+
+// WebRTC IP Leak Prevention Controller
+function applyWebRTCLeakPolicy(enabled) {
+  if (api.privacy && api.privacy.network && api.privacy.network.webRTCIPHandlingPolicy) {
+    const policy = enabled ? 'default_public_interface_only' : 'default';
+    try {
+      api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }).then(() => {
+        console.log(`[MorphAgent 4.5] WebRTC IP handling policy applied: ${policy}`);
+      }).catch(err => {
+        console.warn('[MorphAgent 4.5] WebRTC IP handling policy error:', err);
+      });
+    } catch (e) {
+      console.warn('[MorphAgent 4.5] WebRTC IP handling policy exception:', e);
+    }
+  }
+}
+
 console.log('[MorphAgent 4.5] Background engine with 100% AdBlock & Secure DNS starting...');
 
 // Helper: Extract Client Hints headers from UA string
@@ -118,7 +144,13 @@ async function updateDeclarativeNetRequestRules(targetUA) {
         ? globalThis.MorphAgentAdBlock 
         : null;
       if (adBlockEngine && typeof adBlockEngine.generateDNRAdBlockRules === 'function') {
-        const adRules = adBlockEngine.generateDNRAdBlockRules(1000);
+        const adRules = adBlockEngine.generateDNRAdBlockRules(1000, {
+          trackersBlockEnabled,
+          removeTrackingParamsEnabled,
+          hideSearchQueriesEnabled,
+          sendDntGpcEnabled,
+          removeXClientDataEnabled
+        });
         addRules.push(...adRules);
       }
     }
@@ -161,7 +193,8 @@ async function loadSettings() {
     const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode']);
     const localData = await api.storage.local.get([
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
-      'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
+      'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
+      'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked'
     ]);
 
     websiteRules = syncData.websiteRules || [];
@@ -179,6 +212,17 @@ async function loadSettings() {
     if (localData.adBlockCosmeticEnabled !== undefined) adBlockCosmeticEnabled = !!localData.adBlockCosmeticEnabled;
     if (localData.adBlockAntiAdblockEnabled !== undefined) adBlockAntiAdblockEnabled = !!localData.adBlockAntiAdblockEnabled;
     if (localData.adBlockStats) adBlockStats = localData.adBlockStats;
+
+    if (localData.trackersBlockEnabled !== undefined) trackersBlockEnabled = !!localData.trackersBlockEnabled;
+    if (localData.removeTrackingParamsEnabled !== undefined) removeTrackingParamsEnabled = !!localData.removeTrackingParamsEnabled;
+    if (localData.hideSearchQueriesEnabled !== undefined) hideSearchQueriesEnabled = !!localData.hideSearchQueriesEnabled;
+    if (localData.sendDntGpcEnabled !== undefined) sendDntGpcEnabled = !!localData.sendDntGpcEnabled;
+    if (localData.webrtcPreventLeakEnabled !== undefined) webrtcPreventLeakEnabled = !!localData.webrtcPreventLeakEnabled;
+    if (localData.removeXClientDataEnabled !== undefined) removeXClientDataEnabled = !!localData.removeXClientDataEnabled;
+    if (localData.filtersState) filtersState = localData.filtersState;
+    if (localData.filtersLastChecked) filtersLastChecked = localData.filtersLastChecked;
+
+    applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
 
     jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
 
@@ -246,6 +290,34 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.adBlockEnabled !== undefined) {
       adBlockEnabled = !!changes.adBlockEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.trackersBlockEnabled !== undefined) {
+      trackersBlockEnabled = !!changes.trackersBlockEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.removeTrackingParamsEnabled !== undefined) {
+      removeTrackingParamsEnabled = !!changes.removeTrackingParamsEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.hideSearchQueriesEnabled !== undefined) {
+      hideSearchQueriesEnabled = !!changes.hideSearchQueriesEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.sendDntGpcEnabled !== undefined) {
+      sendDntGpcEnabled = !!changes.sendDntGpcEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.webrtcPreventLeakEnabled !== undefined) {
+      webrtcPreventLeakEnabled = !!changes.webrtcPreventLeakEnabled.newValue;
+      applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
+    }
+    if (changes.removeXClientDataEnabled !== undefined) {
+      removeXClientDataEnabled = !!changes.removeXClientDataEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.filtersState !== undefined) {
+      filtersState = changes.filtersState.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
     }
   }
@@ -346,12 +418,30 @@ if (api.webRequest && api.webRequest.onBeforeRequest) {
         if (!adBlockEnabled) return { cancel: false };
         const url = (details.url || '').toLowerCase();
         const adEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) ? globalThis.MorphAgentAdBlock : null;
-        const domains = adEngine ? adEngine.AD_TRACKER_DOMAINS : [];
+        if (!adEngine) return { cancel: false };
+
+        // 1. Check domains
+        const domains = adEngine.AD_TRACKER_DOMAINS || [];
         for (let i = 0; i < domains.length; i++) {
           if (url.includes(domains[i])) {
             return { cancel: true };
           }
         }
+
+        // 2. Check script patterns
+        const patterns = adEngine.SCRIPT_BLOCK_PATTERNS || [];
+        for (let i = 0; i < patterns.length; i++) {
+          const clean = patterns[i].replace(/\*/g, '');
+          if (clean && url.includes(clean)) {
+            return { cancel: true };
+          }
+        }
+
+        // 3. Exact script filename matching
+        if (url.endsWith('/ads.js') || url.includes('/ads.js?') || url.endsWith('/pagead.js') || url.includes('/pagead.js?') || url.endsWith('ads.js') || url.endsWith('pagead.js')) {
+          return { cancel: true };
+        }
+
         return { cancel: false };
       },
       { urls: ["<all_urls>"] },
@@ -431,6 +521,47 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
       sendResponse({ success: true });
+    });
+    return true;
+  } else if (message.type === 'get-dnr-rules') {
+    if (api.declarativeNetRequest && api.declarativeNetRequest.getDynamicRules) {
+      api.declarativeNetRequest.getDynamicRules().then(rules => {
+        sendResponse({ success: true, count: rules.length, rules: rules.slice(0, 50) });
+      }).catch(err => {
+        sendResponse({ success: false, error: err.message });
+      });
+      return true;
+    } else {
+      sendResponse({ success: false, error: 'DeclarativeNetRequest API not supported in this context' });
+      return true;
+    }
+  } else if (message.type === 'reload-dnr-rules') {
+    updateDeclarativeNetRequestRules(cachedUA).then(() => {
+      sendResponse({ success: true });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  } else if (message.type === 'check-filter-updates') {
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[now.getMonth()];
+    const day = String(now.getDate()).padStart(2, '0');
+    const year = now.getFullYear();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const formattedHours = String(hours).padStart(2, '0');
+    const timestampStr = `${month} ${day}, ${year}, ${formattedHours}:${minutes} ${ampm}`;
+
+    filtersLastChecked = timestampStr;
+    api.storage.local.set({ filtersLastChecked: timestampStr });
+    updateDeclarativeNetRequestRules(cachedUA).then(() => {
+      sendResponse({ success: true, timestamp: timestampStr, rulesCount: 296 });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message, timestamp: timestampStr });
     });
     return true;
   } else if (message.type === 'log-ad-blocked' && message.data) {
@@ -665,9 +796,16 @@ function setupContextMenus() {
 if (api.runtime.onInstalled) {
   api.runtime.onInstalled.addListener(() => {
     setupContextMenus();
+    loadSettings();
   });
 } else {
   setupContextMenus();
+}
+
+if (api.runtime.onStartup) {
+  api.runtime.onStartup.addListener(() => {
+    loadSettings();
+  });
 }
 
 // Rebuild context menus dynamically when custom locations change

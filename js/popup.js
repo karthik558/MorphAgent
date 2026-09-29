@@ -157,21 +157,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // AdBlock & DNS Event Listeners & Helpers
   function updateDnsUI(providerId) {
+    const pid = providerId || 'adguard';
     if (dnsCustomInputWrap) {
-      dnsCustomInputWrap.style.display = providerId === 'custom' ? 'block' : 'none';
+      dnsCustomInputWrap.style.display = pid === 'custom' ? 'block' : 'none';
     }
     if (dnsCurrentLabel) {
-      if (providerId === 'adguard') {
+      if (pid === 'adguard') {
         dnsCurrentLabel.textContent = 'AdGuard DNS · Ad & Threat Shield';
-      } else if (providerId === 'cloudflare') {
+      } else if (pid === 'cloudflare') {
         dnsCurrentLabel.textContent = 'Cloudflare 1.1.1.1 · Ultra-Fast Privacy';
-      } else if (providerId === 'quad9') {
+      } else if (pid === 'quad9') {
         dnsCurrentLabel.textContent = 'Quad9 · Malware & Threat Shield';
-      } else if (providerId === 'nextdns') {
+      } else if (pid === 'nextdns') {
         dnsCurrentLabel.textContent = 'NextDNS · Cloud Firewall';
-      } else if (providerId === 'cleanbrowsing') {
+      } else if (pid === 'cleanbrowsing') {
         dnsCurrentLabel.textContent = 'CleanBrowsing · Family Protected';
-      } else if (providerId === 'custom') {
+      } else if (pid === 'custom') {
         dnsCurrentLabel.textContent = 'Custom DoH Resolver';
       } else {
         dnsCurrentLabel.textContent = 'System Default (Direct OS)';
@@ -179,57 +180,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load DNS and AdBlock settings on popup startup from storage.local
-  browser.storage.local.get(['adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint'], (res) => {
+  function applyDnsAndAdblockData(res) {
+    const data = res || {};
     if (adblockToggle) {
-      adblockToggle.checked = res.adBlockEnabled !== false;
+      adblockToggle.checked = data.adBlockEnabled !== false;
     }
-    const provider = res.dnsProvider || 'adguard';
+    const provider = data.dnsProvider || 'adguard';
     if (dnsProviderSelect) {
       dnsProviderSelect.value = provider;
       updateDnsUI(provider);
     }
-    if (dnsCustomEndpoint && res.dnsCustomEndpoint) {
-      dnsCustomEndpoint.value = res.dnsCustomEndpoint;
+    if (dnsCustomEndpoint && data.dnsCustomEndpoint) {
+      dnsCustomEndpoint.value = data.dnsCustomEndpoint;
     }
-  });
+  }
+
+  // Load DNS and AdBlock settings on popup startup from storage.local safely
+  try {
+    if (browser && browser.storage && browser.storage.local) {
+      const getReq = browser.storage.local.get(['adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint'], (res) => {
+        if (browser.runtime && browser.runtime.lastError) return;
+        applyDnsAndAdblockData(res);
+      });
+      if (getReq && typeof getReq.then === 'function') {
+        getReq.then(applyDnsAndAdblockData).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('Error loading DNS and AdBlock settings in popup:', err);
+  }
 
   if (adblockToggle) {
     adblockToggle.addEventListener('change', () => {
       const active = adblockToggle.checked;
-      browser.storage.local.set({ adBlockEnabled: active }, () => {
-        browser.runtime.sendMessage({
-          type: 'update-global-settings',
-          data: { adBlockEnabled: active }
-        }).catch(() => {});
-        showStatus(active ? 'Ad & Tracker Shield enabled' : 'Ad & Tracker Shield paused');
-      });
+      try {
+        if (browser && browser.storage && browser.storage.local) {
+          browser.storage.local.set({ adBlockEnabled: active }, () => {});
+        }
+        if (browser && browser.runtime && browser.runtime.sendMessage) {
+          const p = browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockEnabled: active }
+          });
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        }
+        if (typeof showStatus === 'function') {
+          showStatus(active ? 'Ad & Tracker Shield enabled' : 'Ad & Tracker Shield paused');
+        }
+      } catch (e) {
+        console.warn('Failed to update adBlock toggle:', e);
+      }
     });
   }
 
   if (dnsProviderSelect) {
     dnsProviderSelect.addEventListener('change', () => {
-      const provider = dnsProviderSelect.value;
+      const provider = dnsProviderSelect.value || 'adguard';
       updateDnsUI(provider);
-      browser.storage.local.set({ dnsProvider: provider }, () => {
-        browser.runtime.sendMessage({
-          type: 'update-global-settings',
-          data: { dnsProvider: provider }
-        }).catch(() => {});
-        showStatus(`DNS switched to ${dnsProviderSelect.options[dnsProviderSelect.selectedIndex].text.split(' (')[0]}`);
-      });
+      try {
+        if (browser && browser.storage && browser.storage.local) {
+          browser.storage.local.set({ dnsProvider: provider }, () => {});
+        }
+        if (browser && browser.runtime && browser.runtime.sendMessage) {
+          const p = browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { dnsProvider: provider }
+          });
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        }
+        const optText = (dnsProviderSelect.selectedIndex >= 0 && dnsProviderSelect.options[dnsProviderSelect.selectedIndex])
+          ? dnsProviderSelect.options[dnsProviderSelect.selectedIndex].text.split(' (')[0]
+          : provider;
+        if (typeof showStatus === 'function') {
+          showStatus(`DNS switched to ${optText}`);
+        }
+      } catch (e) {
+        console.warn('Failed to update dnsProvider select:', e);
+      }
     });
   }
 
   if (dnsCustomEndpoint) {
     dnsCustomEndpoint.addEventListener('input', () => {
       const customUrl = dnsCustomEndpoint.value.trim();
-      browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {
-        browser.runtime.sendMessage({
-          type: 'update-global-settings',
-          data: { dnsCustomEndpoint: customUrl }
-        }).catch(() => {});
-      });
+      try {
+        if (browser && browser.storage && browser.storage.local) {
+          browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {});
+        }
+        if (browser && browser.runtime && browser.runtime.sendMessage) {
+          const p = browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { dnsCustomEndpoint: customUrl }
+          });
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        }
+      } catch (e) {}
     });
   }
 

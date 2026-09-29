@@ -18,7 +18,8 @@ const baseManifest = {
     "scripting",
     "contextMenus",
     "alarms",
-    "proxy"
+    "proxy",
+    "privacy"
   ],
   host_permissions: ["<all_urls>"],
   background: {

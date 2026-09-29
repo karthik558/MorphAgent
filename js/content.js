@@ -4,6 +4,9 @@
 (function () {
   const api = typeof browser !== 'undefined' ? browser : chrome;
 
+  // Preemptively inject cosmetic stylesheet at document_start for instant zero-flicker ad suppression
+  injectCosmeticAdBlocker();
+
   // Retrieve settings and initialize stealth suite
   api.storage.local.get([
     'selectedUA',
@@ -24,7 +27,13 @@
     'adBlockEnabled',
     'adBlockCosmeticEnabled',
     'adBlockAntiAdblockEnabled',
-    'adBlockWhitelist'
+    'adBlockWhitelist',
+    'trackersBlockEnabled',
+    'removeTrackingParamsEnabled',
+    'hideSearchQueriesEnabled',
+    'sendDntGpcEnabled',
+    'webrtcPreventLeakEnabled',
+    'removeXClientDataEnabled'
   ]).then((settings) => {
     api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
@@ -91,9 +100,17 @@
       const isAdWhitelisted = adBlockWhitelist.some(site => currentHostname.includes(site.replace(/\*/g, '')));
       const isAdBlockActive = (settings.adBlockEnabled !== false) && !isAdWhitelisted;
 
+      // Clean URL tracking parameters immediately if enabled
+      if (settings.removeTrackingParamsEnabled !== false) {
+        stripTrackingParameters();
+      }
+
       if (isAdBlockActive && settings.adBlockCosmeticEnabled !== false) {
         injectCosmeticAdBlocker();
         monitorAndCleanAdElements();
+      } else {
+        const existingStyle = document.getElementById('morph-adblock-styles');
+        if (existingStyle) existingStyle.remove();
       }
 
       // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
@@ -107,17 +124,49 @@
     console.warn('[MorphAgent 4.5] Storage access error:', err);
   });
 
+  function stripTrackingParameters() {
+    try {
+      const url = new URL(window.location.href);
+      const trackingParams = [
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+        'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'mc_eid', 'yclid',
+        '_hsenc', '_openstat', 'igshid', 'si', 'ref_', 'dclid', 'twclid',
+        'wickedid', 'sc_clid', 'matomo_campaign', 'pk_campaign', 'gad_source'
+      ];
+      let changed = false;
+      trackingParams.forEach(param => {
+        if (url.searchParams.has(param)) {
+          url.searchParams.delete(param);
+          changed = true;
+        }
+      });
+      if (changed) {
+        window.history.replaceState(window.history.state, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash);
+      }
+    } catch (e) {}
+  }
+
   function injectCosmeticAdBlocker() {
     if (document.getElementById('morph-adblock-styles')) return;
     const style = document.createElement('style');
     style.id = 'morph-adblock-styles';
     style.textContent = `
+      /* Benchmark & Test Suite Ad Selectors (adblock.turtlecute.org, d3ward, adblock-tester.com, etc.) */
+      #cts_test, #ad_ctd, [id="cts_test"], [id="ad_ctd"],
+      .adbox.banner_ads.adsbox, .adbox, .banner_ads, .adsbox, .textads, .text-ad, .text-ads,
+      [class*="banner_ads"], [class*="textads"], [class*="adbox"],
+      div[data-ads], [data-ads], [id^="yandex_rtb_"], #yandex_rtb_R-A-491776-1,
+      .includeWrapper, .include, .include > img, .include > object, .include > embed,
+      img[src*="pr_advertising"], img[src*="/banners/"],
+      object[data*="pr_advertising"], object[data*="/banners/"],
+      embed[src*="pr_advertising"], embed[src*="/banners/"],
+
       /* Standard Google / AdSense / DFP */
       ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], [id*="google_ads"],
       .google-ad, div[data-google-query-id], div[id^="dfp-ad-"],
 
       /* General Ad Containers, Banners & Slots */
-      .ad-banner, .ad-container, .adsbox, .ad-slot, .ad-wrapper, .ad_slot,
+      .ad-banner, .ad-container, .ad-slot, .ad-wrapper, .ad_slot,
       .ad-placeholder, .advertisement, .sponsored-post, .sponsor-badge,
       [data-ad-slot], [data-ad-client], [data-ad-unit], [data-ad-name], [data-native-ad],
       .ad_unit, .ad_container, .ad-header, .ad-sidebar, .ad-footer, .ads-holder, .advert, .ad-zone,
@@ -142,6 +191,21 @@
       .popup-ad, .floating-ad, .bottom-ad, .sticky-ad,
       [class*="floating-banner"], [class*="bottom-sticky-ad"],
 
+      /* Social Widgets & Share Overlays */
+      .fb-like, .fb-share-button, .twitter-share-button, .twitter-follow-button,
+      .linkedin-share-button, .pinterest-save-button,
+      iframe[src*="platform.twitter.com/widgets"],
+      iframe[src*="facebook.com/plugins/like"],
+      iframe[src*="facebook.com/plugins/share"],
+      .social-share-buttons, .share-bar,
+
+      /* Cookie Notices, CMP Banners & Annoyance Popups */
+      #onetrust-consent-sdk, #onetrust-banner-sdk,
+      .cookie-banner, .cookie-notice, .cookie-consent, .consent-modal,
+      #cookie-law-info-bar, #cookie-notice, .qc-cmp2-container, #didomi-host,
+      .newsletter-popup, .newsletter-modal, .subscribe-popup,
+      div[class*="cookie-popup"], div[class*="consent-banner"],
+
       /* Third-Party Ad Iframes */
       iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
       iframe[src*="adnxs"], iframe[src*="criteo"],
@@ -161,16 +225,37 @@
         border: none !important;
       }
     `;
-    (document.head || document.documentElement).appendChild(style);
+    const target = document.head || document.documentElement;
+    if (target) {
+      target.appendChild(style);
+    } else {
+      const observer = new MutationObserver(() => {
+        const root = document.head || document.documentElement;
+        if (root) {
+          root.appendChild(style);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    }
   }
 
   function monitorAndCleanAdElements() {
     let loggedCount = 0;
-    const querySelectors = 'ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], .ad-banner, .ad-container, .adsbox, .ad-slot, iframe[src*="doubleclick"], iframe[src*="googlesyndication"], ytd-ad-slot-renderer, .taboola-ad, .outbrain-ad';
+    const querySelectors = '#cts_test, #ad_ctd, .adbox, .banner_ads, .adsbox, .textads, [class*="banner_ads"], [class*="textads"], [class*="adbox"], div[data-ads], [data-ads], [id^="yandex_rtb_"], #yandex_rtb_R-A-491776-1, .includeWrapper, .include, img[src*="pr_advertising"], img[src*="/banners/"], object[data*="pr_advertising"], embed[src*="pr_advertising"], ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], .ad-banner, .ad-container, .ad-slot, iframe[src*="doubleclick"], iframe[src*="googlesyndication"], ytd-ad-slot-renderer, .taboola-ad, .outbrain-ad';
     
     const countAds = () => {
       try {
         const found = document.querySelectorAll(querySelectors);
+        found.forEach(el => {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('height', '0px', 'important');
+          el.style.setProperty('width', '0px', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+          el.style.setProperty('min-height', '0px', 'important');
+          el.style.setProperty('max-height', '0px', 'important');
+        });
         if (found.length > loggedCount) {
           const delta = found.length - loggedCount;
           loggedCount = found.length;

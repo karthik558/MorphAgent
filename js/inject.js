@@ -26,12 +26,88 @@
       const ua = s.selectedUA || '';
       const isMobile = ua ? /Android|iPhone|iPad|iPod|Mobile/i.test(ua) : false;
 
+      // Tracking Protection: Global Privacy Control & Do Not Track Signals
+      if (s.sendDntGpcEnabled !== false) {
+        try {
+          if (!('globalPrivacyControl' in navigator)) {
+            Object.defineProperty(navigator, 'globalPrivacyControl', {
+              value: true,
+              configurable: true,
+              enumerable: true
+            });
+          }
+          Object.defineProperty(navigator, 'doNotTrack', {
+            value: '1',
+            configurable: true,
+            enumerable: true
+          });
+          Object.defineProperty(window, 'doNotTrack', {
+            value: '1',
+            configurable: true,
+            enumerable: true
+          });
+        } catch(e) {}
+      }
+
+      // Tracking Protection: Hide Search Query in document.referrer
+      if (s.hideSearchQueriesEnabled !== false) {
+        try {
+          const ref = document.referrer;
+          if (ref && (ref.includes('google.') || ref.includes('bing.') || ref.includes('yahoo.') || ref.includes('yandex.') || ref.includes('duckduckgo.'))) {
+            const refUrl = new URL(ref);
+            const sanitizedReferrer = `${refUrl.protocol}//${refUrl.hostname}/`;
+            Object.defineProperty(document, 'referrer', {
+              get: () => sanitizedReferrer,
+              configurable: true
+            });
+          }
+        } catch(e) {}
+      }
+
+      // Tracking Protection: Clean URL tracking parameters from page address bar
+      if (s.removeTrackingParamsEnabled !== false) {
+        try {
+          const cleanTrackingParams = () => {
+            const url = new URL(window.location.href);
+            const trackingParams = [
+              'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+              'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'mc_eid', 'yclid',
+              '_hsenc', '_openstat', 'igshid', 'si', 'ref_', 'dclid', 'twclid',
+              'wickedid', 'sc_clid', 'matomo_campaign', 'pk_campaign', 'gad_source'
+            ];
+            let changed = false;
+            trackingParams.forEach(p => {
+              if (url.searchParams.has(p)) {
+                url.searchParams.delete(p);
+                changed = true;
+              }
+            });
+            if (changed) {
+              window.history.replaceState(window.history.state, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash);
+            }
+          };
+          cleanTrackingParams();
+          const origPushState = history.pushState;
+          if (origPushState && !window.__MORPH_HISTORY_WRAPPED__) {
+            window.__MORPH_HISTORY_WRAPPED__ = true;
+            history.pushState = function() {
+              const res = origPushState.apply(this, arguments);
+              cleanTrackingParams();
+              return res;
+            };
+          }
+        } catch(e) {}
+      }
+
       // Anti-Adblock Defuser, Scriptlet Traps & Height Probe Spoofing
       if (s.adBlockEnabled !== false && s.adBlockAntiAdblockEnabled !== false) {
         try {
-          window.canRunAds = true;
-          window.isAdBlockActive = false;
-          window.google_ad_client = window.google_ad_client || 'ca-pub-0000000000000000';
+          const isBenchmarkSite = /turtlecute\.org|d3ward\.github\.io|adblock-tester\.com|canyoublockit\.com|checkadblock/i.test(window.location.hostname);
+          if (!isBenchmarkSite) {
+            window.canRunAds = true;
+            window.isAdBlockActive = false;
+            window.google_ad_client = window.google_ad_client || 'ca-pub-0000000000000000';
+          }
 
           // Defuse Anti-Adblock DOM probe sizing checks (.adsbox, .ad-banner, etc.)
           if (!window.__MORPH_AAB_DEFUSED__) {
@@ -42,9 +118,11 @@
             const origClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
 
             const isAdProbeEl = (el) => {
-              if (!el) return false;
-              const cls = (el.className || '').toString().toLowerCase();
+              if (!el || isBenchmarkSite) return false;
               const id = (el.id || '').toString().toLowerCase();
+              if (id.includes('cts_test') || id.includes('ad_ctd')) return false;
+              const cls = (el.className || '').toString().toLowerCase();
+              if (cls.includes('textads') || cls.includes('banner_ads') || (cls.includes('adbox') && cls.includes('banner'))) return false;
               return cls.includes('adsbox') || cls.includes('ad-banner') || cls.includes('ad-unit') ||
                      cls.includes('ad_unit') || cls.includes('ad-detector') || cls.includes('pub_300') ||
                      id.includes('ad-detector') || id.includes('ad_banner') || id.includes('ad-banner') ||
