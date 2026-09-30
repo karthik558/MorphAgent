@@ -1811,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveSettings() {
       const browser = window.browser || window.chrome;
       browser.storage.sync.set({
-        websiteRules: websiteRules,
+        websiteRules: (websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com')),
         blockList: blockList,
         whiteList: whiteList,
         customLocations: customLocations,
@@ -2060,6 +2060,7 @@ document.addEventListener('DOMContentLoaded', () => {
         website: website,
         userAgent: userAgent,
         touchPoints: touchPoints,
+        touchSpoofEnabled: touchPoints > 0,
         jsBlocked: jsBlockRuleCheckbox.checked,
         jsProtected: jsProtectRuleCheckbox.checked,
         mediaQuerySpoofEnabled: mediaQueryRuleCheckbox ? mediaQueryRuleCheckbox.checked : false,
@@ -2998,6 +2999,9 @@ document.addEventListener('DOMContentLoaded', () => {
       advLaunchProxyiumBtn.addEventListener('click', () => {
         const rawUrl = advProxyiumUrl ? advProxyiumUrl.value.trim() : '';
         const country = advProxyiumCountry ? advProxyiumCountry.value : 'pl';
+        if (browser && browser.storage && browser.storage.local) {
+          browser.storage.local.set({ geoSpoofEnabled: false, touchSpoofEnabled: false });
+        }
         showStatus('Launching Proxyium anonymous session...', 'success');
         browser.runtime.sendMessage({
           type: 'launch-proxyium',
@@ -3019,6 +3023,9 @@ document.addEventListener('DOMContentLoaded', () => {
             targetUrl = 'https://duckduckgo.com';
           }
           const country = advProxyiumCountry ? advProxyiumCountry.value : 'pl';
+          if (browser && browser.storage && browser.storage.local) {
+            browser.storage.local.set({ geoSpoofEnabled: false, touchSpoofEnabled: false });
+          }
           showStatus('Tunneling active tab via Proxyium...', 'success');
           browser.runtime.sendMessage({
             type: 'launch-proxyium',
@@ -3108,7 +3115,7 @@ document.addEventListener('DOMContentLoaded', () => {
           bypassList: advProxyBypass ? advProxyBypass.value.trim() : 'localhost, 127.0.0.1, <local>',
           pacUrl: advProxyPacUrl ? advProxyPacUrl.value.trim() : '',
           proxyiumCountry: advProxyiumCountry ? advProxyiumCountry.value : 'pl',
-          syncGeoWithProxyium: advProxySyncGeoToggle ? advProxySyncGeoToggle.checked : true,
+          syncGeoWithProxyium: advProxySyncGeoToggle ? advProxySyncGeoToggle.checked : false,
           enableContextMenus: advProxyContextMenuToggle ? advProxyContextMenuToggle.checked : true
         };
 
@@ -3186,7 +3193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         port: 9050,
         bypassList: 'localhost, 127.0.0.1, <local>',
         proxyiumCountry: 'pl',
-        syncGeoWithProxyium: true,
+        syncGeoWithProxyium: false,
         enableContextMenus: true
       };
 

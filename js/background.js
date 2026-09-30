@@ -65,7 +65,7 @@ let proxyConfig = {
   bypassList: 'localhost, 127.0.0.1, <local>',
   pacUrl: '',
   proxyiumCountry: 'pl',
-  syncGeoWithProxyium: true,
+  syncGeoWithProxyium: false,
   enableContextMenus: true
 };
 
@@ -90,16 +90,13 @@ async function launchProxyiumUrl(rawUrl, country = 'pl', openInNewTab = true) {
     targetUrl = 'https://duckduckgo.com';
   }
 
-  // If geo sync enabled and country is US, automatically sync coordinates
-  if (proxyConfig && proxyConfig.syncGeoWithProxyium && country === 'us') {
-    try {
-      await api.storage.local.set({
-        geoSpoofEnabled: true,
-        geoPresetValue: '40.7128,-74.0060',
-        geoCoords: { lat: 40.7128, lng: -74.0060 }
-      });
-    } catch (e) {}
-  }
+  // Explicitly ensure tunnel activation NEVER enables touch or location spoofing
+  try {
+    await api.storage.local.set({
+      geoSpoofEnabled: false,
+      touchSpoofEnabled: false
+    });
+  } catch (e) {}
 
   const normUrl = normalizeTargetUrl(targetUrl);
   const proxyiumUrl = `https://proxyium.com/?morph_url=${encodeURIComponent(normUrl)}&morph_country=${encodeURIComponent(country || 'pl')}`;
@@ -322,8 +319,10 @@ async function loadSettings() {
       'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked',
       'proxyConfig'
     ]);
-
-    websiteRules = syncData.websiteRules || [];
+    websiteRules = (syncData.websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com'));
+    if (syncData.websiteRules && syncData.websiteRules.length !== websiteRules.length) {
+      api.storage.sync.set({ websiteRules });
+    }
     blockList = syncData.blockList || [];
     whiteList = syncData.whiteList || [];
     listMode = syncData.listMode || 'blacklist';
@@ -338,6 +337,12 @@ async function loadSettings() {
     if (localData.adBlockCosmeticEnabled !== undefined) adBlockCosmeticEnabled = !!localData.adBlockCosmeticEnabled;
     if (localData.adBlockAntiAdblockEnabled !== undefined) adBlockAntiAdblockEnabled = !!localData.adBlockAntiAdblockEnabled;
     if (localData.adBlockStats) adBlockStats = localData.adBlockStats;
+
+    // Clean up legacy syncGeoWithProxyium if found in storage
+    if (localData.proxyConfig && localData.proxyConfig.syncGeoWithProxyium) {
+      localData.proxyConfig.syncGeoWithProxyium = false;
+      api.storage.local.set({ proxyConfig: localData.proxyConfig });
+    }
 
     if (localData.trackersBlockEnabled !== undefined) trackersBlockEnabled = !!localData.trackersBlockEnabled;
     if (localData.removeTrackingParamsEnabled !== undefined) removeTrackingParamsEnabled = !!localData.removeTrackingParamsEnabled;
@@ -384,7 +389,7 @@ loadSettings();
 api.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync') {
     if (changes.websiteRules) {
-      websiteRules = changes.websiteRules.newValue || [];
+      websiteRules = (changes.websiteRules.newValue || []).filter(r => r && r.website && !r.website.includes('proxyium.com'));
       jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
     }
     if (changes.blockList) {
@@ -624,6 +629,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       res.adBlockAntiAdblockEnabled = res.adBlockAntiAdblockEnabled !== undefined ? res.adBlockAntiAdblockEnabled : adBlockAntiAdblockEnabled;
       res.adBlockStats = res.adBlockStats || adBlockStats;
       res.proxyConfig = res.proxyConfig || proxyConfig;
+      if (res.proxyConfig) {
+        res.proxyConfig.syncGeoWithProxyium = false;
+      }
       sendResponse(res);
     }).catch(() => sendResponse({}));
     return true;

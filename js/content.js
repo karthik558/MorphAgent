@@ -67,7 +67,7 @@
         shouldSpoof = false;
       }
 
-      if (!shouldSpoof) {
+      if (!shouldSpoof || currentHostname.includes('proxyium.com')) {
         settings.uaSpoofEnabled = false;
         settings.touchSpoofEnabled = false;
         settings.jsBlockEnabled = false;
@@ -78,12 +78,12 @@
       } else {
         // Apply website rules if we are spoofing
         for (const rule of websiteRules) {
-          const rulePattern = rule.website.replace(/\*/g, '');
-          if (currentHostname.includes(rulePattern)) {
+          const rulePattern = (rule.website || '').replace(/\*/g, '').trim();
+          if (rulePattern && currentHostname.includes(rulePattern)) {
             settings.selectedUA = rule.userAgent || settings.selectedUA;
             settings.uaSpoofEnabled = rule.uaSpoofEnabled !== false;
             settings.maxTouchPoints = rule.touchPoints || 0;
-            settings.touchSpoofEnabled = (rule.touchPoints || 0) > 0;
+            settings.touchSpoofEnabled = rule.touchSpoofEnabled !== undefined ? !!rule.touchSpoofEnabled : false;
             settings.jsBlockEnabled = !!rule.jsBlocked;
             settings.jsProtectEnabled = !!rule.jsProtected;
             settings.mediaQuerySpoofEnabled = !!rule.mediaQuerySpoofEnabled;

@@ -406,6 +406,7 @@ function startPopup() {
   if (btnProxyiumCurrentTab) {
     btnProxyiumCurrentTab.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const country = proxyiumNodeSelect ? proxyiumNodeSelect.value : 'pl';
 
       // Visual feedback on button
@@ -416,6 +417,22 @@ function startPopup() {
           <span class="tunnel-btn-label">Connecting Tunnel...</span>
         </div>
       `;
+
+      // Instantly ensure touch and location spoofing are turned OFF
+      if (touchToggle) {
+        touchToggle.checked = false;
+        if (touchControls) touchControls.style.display = 'none';
+      }
+      if (geoToggle) {
+        geoToggle.checked = false;
+        if (geoControls) {
+          geoControls.classList.remove('visible');
+          geoControls.style.display = 'none';
+        }
+      }
+      if (browser && browser.storage && browser.storage.local) {
+        browser.storage.local.set({ geoSpoofEnabled: false, touchSpoofEnabled: false });
+      }
 
       function performTunnel(targetUrl) {
         let cleanUrl = targetUrl;
@@ -492,7 +509,8 @@ function startPopup() {
 
   // Proxyium Node Select change
   if (proxyiumNodeSelect) {
-    proxyiumNodeSelect.addEventListener('change', () => {
+    proxyiumNodeSelect.addEventListener('change', (e) => {
+      if (e) e.stopPropagation();
       const country = proxyiumNodeSelect.value;
       updateProxyiumNodeUI(country);
       if (browser && browser.storage && browser.storage.local) {
@@ -507,7 +525,8 @@ function startPopup() {
 
   // Browser Proxy Switcher Toggle
   if (browserProxyToggle) {
-    browserProxyToggle.addEventListener('change', () => {
+    browserProxyToggle.addEventListener('change', (e) => {
+      if (e) e.stopPropagation();
       const enabled = browserProxyToggle.checked;
       if (browser && browser.storage && browser.storage.local) {
         browser.storage.local.get(['proxyConfig'], (data) => {
@@ -910,6 +929,23 @@ function startPopup() {
   // Settings Management
   function loadSettings() {
     function proceedWithTab(currentTab) {
+      if (currentTab && currentTab.url && currentTab.url.includes('proxyium.com')) {
+        // Tab is inside Proxyium tunnel - guarantee touch & location spoofing are OFF
+        if (touchToggle) {
+          touchToggle.checked = false;
+          if (touchControls) touchControls.style.display = 'none';
+        }
+        if (geoToggle) {
+          geoToggle.checked = false;
+          if (geoControls) {
+            geoControls.classList.remove('visible');
+            geoControls.style.display = 'none';
+          }
+        }
+        loadGlobalSettings(true);
+        return;
+      }
+
       if (currentTab && currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('moz-extension://') && !currentTab.url.startsWith('about:')) {
         try {
           const url = new URL(currentTab.url);
@@ -918,7 +954,7 @@ function startPopup() {
           if (browser && browser.storage && browser.storage.sync) {
             browser.storage.sync.get(['websiteRules'], (result) => {
               const websiteRules = (result && result.websiteRules) ? result.websiteRules : [];
-              const currentRule = websiteRules.find(rule => rule.website === hostname);
+              const currentRule = websiteRules.find(rule => rule.website === hostname && !hostname.includes('proxyium.com'));
               if (currentRule) {
                 loadTabSpecificSettings(currentRule);
                 return;
@@ -995,7 +1031,7 @@ function startPopup() {
       }
     }
 
-    touchToggle.checked = rule.touchPoints > 0;
+    touchToggle.checked = rule.touchSpoofEnabled !== undefined ? !!rule.touchSpoofEnabled : false;
     touchPointsInput.value = rule.touchPoints || 0;
     touchControls.style.display = touchToggle.checked ? 'block' : 'none';
     jsBlockToggle.checked = !!rule.jsBlocked;
@@ -1037,9 +1073,10 @@ function startPopup() {
     btnCurrentTab.classList.remove('btn-ghost');
     btnAllTabs.classList.add('btn-ghost');
     btnAllTabs.classList.remove('btn-solid');
+    isInitialized = true;
   }
 
-  function loadGlobalSettings() {
+  function loadGlobalSettings(isTunnelTab = false) {
     function applyLoadedSettings(settings) {
       if (settings) {
         // Restore full UI state if available
@@ -1084,9 +1121,15 @@ function startPopup() {
           }
         }
 
-        touchToggle.checked = !!settings.touchSpoofEnabled;
-        touchPointsInput.value = settings.maxTouchPoints || 0;
-        touchControls.style.display = touchToggle.checked ? 'block' : 'none';
+        if (isTunnelTab) {
+          touchToggle.checked = false;
+          touchPointsInput.value = 0;
+          touchControls.style.display = 'none';
+        } else {
+          touchToggle.checked = !!settings.touchSpoofEnabled;
+          touchPointsInput.value = settings.maxTouchPoints || 0;
+          touchControls.style.display = touchToggle.checked ? 'block' : 'none';
+        }
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
 
@@ -1102,7 +1145,7 @@ function startPopup() {
         }
 
         if (geoToggle && geoControls) {
-          geoToggle.checked = !!settings.geoSpoofEnabled;
+          geoToggle.checked = isTunnelTab ? false : !!settings.geoSpoofEnabled;
           geoControls.classList.toggle('visible', geoToggle.checked);
           geoControls.style.display = geoToggle.checked ? 'block' : 'none';
           if (geoPreset && settings.geoPresetValue) {
@@ -1177,6 +1220,7 @@ function startPopup() {
         btnAllTabs.classList.add('btn-ghost');
         btnAllTabs.classList.remove('btn-solid');
       }
+      isInitialized = true;
     }
 
     if (browser && browser.runtime && browser.runtime.sendMessage) {
@@ -1241,7 +1285,7 @@ function startPopup() {
           const currentTab = tabs[0];
 
           // Validate tab URL
-          if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:')) {
+          if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:') || currentTab.url.includes('proxyium.com')) {
             showStatus('Cannot apply settings to this type of page', 'error');
             return;
           }
@@ -1267,6 +1311,7 @@ function startPopup() {
             website: hostname,
             userAgent: selectedUA,
             touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
+            touchSpoofEnabled: touchSpoofEnabled,
             jsBlocked: jsBlockEnabled,
             jsProtected: jsProtectEnabled,
             rtcProtectEnabled,
@@ -1289,8 +1334,8 @@ function startPopup() {
             browser.storage.sync.get(['websiteRules'], (result) => {
               let websiteRules = (result && result.websiteRules) ? result.websiteRules : [];
 
-              // Remove existing rule for this website
-              websiteRules = websiteRules.filter(r => r.website !== hostname);
+              // Remove existing rule for this website and clean out any bogus proxyium rules
+              websiteRules = websiteRules.filter(r => r.website !== hostname && !r.website.includes('proxyium.com'));
 
               // Add new rule
               websiteRules.push(rule);
@@ -1382,6 +1427,14 @@ function startPopup() {
     touchToggle.checked = false;
     touchPointsInput.value = 0;
     touchControls.classList.remove('visible');
+    touchControls.style.display = 'none';
+    if (geoToggle) {
+      geoToggle.checked = false;
+      if (geoControls) {
+        geoControls.classList.remove('visible');
+        geoControls.style.display = 'none';
+      }
+    }
     jsBlockToggle.checked = false;
     jsProtectToggle.checked = false;
     if (rtcProtectToggle) rtcProtectToggle.checked = true;
@@ -1401,6 +1454,9 @@ function startPopup() {
       rtcProtectEnabled: true,
       ghostModeEnabled: false,
       ghostInterval: 15,
+      geoSpoofEnabled: false,
+      geoPresetValue: '40.7128,-74.0060',
+      geoCoords: { lat: 40.7128, lng: -74.0060 },
       applyScope: 'current'
     };
 

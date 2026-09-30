@@ -22,6 +22,10 @@
 
     function applyStealthSettings(s) {
       if (!s) return;
+      if (window.location.hostname && window.location.hostname.includes('proxyium.com')) {
+        s.touchSpoofEnabled = false;
+        s.geoSpoofEnabled = false;
+      }
       const uaSpoofEnabled = s.uaSpoofEnabled !== false;
       const ua = s.selectedUA || '';
       const isMobile = ua ? /Android|iPhone|iPad|iPod|Mobile/i.test(ua) : false;
@@ -934,6 +938,10 @@
       }
 
       if (data) {
+        if (window.location.hostname && window.location.hostname.includes('proxyium.com')) {
+          data.touchSpoofEnabled = false;
+          data.geoSpoofEnabled = false;
+        }
         window.__MORPH_AGENT_SETTINGS__ = data;
         isSettingsLoaded = true;
         try {
