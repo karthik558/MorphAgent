@@ -26,6 +26,10 @@
     "service_worker": "js/background.js",
     "type": "module"
   },
+  "options_ui": {
+    "page": "advanced-settings.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "MorphAgent 4.5",

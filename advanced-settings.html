@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark-mode">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -53,6 +53,10 @@
           <button class="sidebar-link" data-target="section-dns-adblock">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
             Secure DNS & AdBlock
+          </button>
+          <button class="sidebar-link" data-target="section-proxy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Proxy & VPN Network
           </button>
           <button class="sidebar-link" data-target="section-rules">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -570,6 +574,249 @@
                   <!-- Populated dynamically via JS -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Proxy & VPN Network Section -->
+      <section id="section-proxy" class="settings-section">
+        <div class="section-header-box">
+          <div class="section-icon-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <div class="section-header-text">
+            <h2>Proxy & VPN Stealth Network</h2>
+            <p>Tunnel traffic anonymously through Proxyium isolated exit nodes or configure native browser-wide SOCKS5/HTTP proxies with WebRTC leak proofing</p>
+          </div>
+        </div>
+
+        <div class="section-body">
+          <!-- Analytics KPI Cards -->
+          <div class="analytics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="analytics-card success">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="1"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              <h3>PROXYIUM NODES</h3>
+              <div id="statProxyiumNodes" class="value" style="color: var(--accent-green);">3 Online</div>
+              <div class="subtext">Poland, US & Singapore</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/></svg>
+              <h3>BROWSER PROXY</h3>
+              <div id="statBrowserProxyMode" class="value" style="font-size: 16px; margin-top: 4px;">Direct</div>
+              <div class="subtext" id="statBrowserProxySub">No proxy active</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              <h3>WEBRTC IP SHIELD</h3>
+              <div id="statProxyWebrtc" class="value" style="font-size: 16px; margin-top: 4px; color: var(--accent-green);">Protected</div>
+              <div class="subtext">Zero public/private IP leaks</div>
+            </div>
+            <div class="analytics-card">
+              <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+              <h3>GEO-LOCATION SYNC</h3>
+              <div id="statProxyGeoSync" class="value" style="font-size: 16px; margin-top: 4px; color: var(--accent-red);">Auto-Sync</div>
+              <div class="subtext">Coupled with exit node</div>
+            </div>
+          </div>
+
+          <!-- Proxyium Web Proxy Tunnel Hub Box -->
+          <div class="harmonize-box" style="margin-top: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Proxyium Anonymous Web Proxy Tunnel</h3>
+              </div>
+              <span class="harmonize-tag" id="proxyiumActiveTag">Zero-Footprint Web Proxy</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+              Launch any webpage or search query through Proxyium's encrypted web proxy servers. Completely isolates your session outside your local IP address and browser hardware profile.
+            </p>
+
+            <div class="form-row">
+              <div class="input-group" style="flex: 2;">
+                <label for="advProxyiumUrl">TARGET WEBSITE URL OR SEARCH QUERY</label>
+                <input type="text" id="advProxyiumUrl" class="custom-input" placeholder="e.g. reddit.com, wikipedia.org, or youtube.com">
+              </div>
+              <div class="input-group" style="flex: 1;">
+                <label for="advProxyiumCountry">EXIT NODE LOCATION</label>
+                <div class="select-wrapper">
+                  <select id="advProxyiumCountry" class="custom-select">
+                    <option value="pl" selected>Poland / France (Fast)</option>
+                    <option value="us">United States (Geo-Unblock)</option>
+                    <option value="sg">Singapore (Asia-Pacific)</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-solid" id="advLaunchProxyiumBtn" style="height: 32px; font-size: 12px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Launch Stealth Session
+              </button>
+              <button type="button" class="btn btn-outline" id="advTunnelActiveTabBtn" style="height: 32px; font-size: 12px;" title="Tunnel currently active browser tab">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Tunnel Active Tab
+              </button>
+            </div>
+
+            <div style="margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 10px;">
+              <label class="settings-toggle-row" for="advProxySyncGeoToggle">
+                <div class="settings-toggle-text">
+                  <div class="settings-toggle-title">Auto-sync Geolocation with Proxyium Exit Node</div>
+                  <div class="settings-toggle-desc">Automatically synchronize GPS coordinates and timezone with selected Proxyium exit node (e.g. US node) to avoid IP-to-GPS discrepancy detection</div>
+                </div>
+                <span class="toggle-switch green">
+                  <input type="checkbox" id="advProxySyncGeoToggle" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+
+              <label class="settings-toggle-row" for="advProxyContextMenuToggle">
+                <div class="settings-toggle-text">
+                  <div class="settings-toggle-title">Enable Proxyium Context Menu Shortcuts</div>
+                  <div class="settings-toggle-desc">Adds right-click options to tunnel the active tab or any clicked link directly via Proxyium nodes</div>
+                </div>
+                <span class="toggle-switch green">
+                  <input type="checkbox" id="advProxyContextMenuToggle" checked>
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Native Browser Proxy Switcher Box -->
+          <div class="harmonize-box" style="margin-top: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                  <line x1="6" y1="6" x2="6.01" y2="6"/>
+                  <line x1="6" y1="18" x2="6.01" y2="18"/>
+                </svg>
+                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Browser-Level Proxy & SOCKS5 Switcher</h3>
+              </div>
+              <label class="toggle-switch-wrapper green" style="cursor: pointer;">
+                <span class="toggle-switch green">
+                  <input type="checkbox" id="advBrowserProxyMasterToggle">
+                  <span class="toggle-slider"></span>
+                </span>
+                <span style="font-weight: 600; color: var(--text-primary);" id="advProxyMasterLabel">Proxy Disabled (Direct)</span>
+              </label>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
+              Controls browser network proxy settings using <code>chrome.proxy</code>. Works seamlessly with local Tor daemons, SOCKS5 proxies, and HTTP proxy tunnels.
+            </p>
+
+            <!-- Mode Selector Form Row -->
+            <div class="form-row">
+              <div class="input-group" style="flex: 1;">
+                <label for="advProxyModeSelect">PROXY MODE</label>
+                <div class="select-wrapper">
+                  <select id="advProxyModeSelect" class="custom-select">
+                    <option value="manual" selected>Manual Proxy (SOCKS5 / HTTP)</option>
+                    <option value="pac_script">Automatic PAC Script URL</option>
+                    <option value="system">System Default Proxy</option>
+                    <option value="direct">Direct (Bypass All Proxies)</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div style="margin-top: 10px; margin-bottom: 14px;">
+              <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; margin-bottom: 8px;">QUICK CONFIGURATION PRESETS</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" id="presetTorBtn" style="height: 30px; font-size: 11px; padding: 4px 10px;">
+                  Tor Network (SOCKS5 127.0.0.1:9050)
+                </button>
+                <button type="button" class="btn btn-outline" id="presetLocalSocksBtn" style="height: 30px; font-size: 11px; padding: 4px 10px;">
+                  Local SOCKS5 (127.0.0.1:1080)
+                </button>
+                <button type="button" class="btn btn-outline" id="presetLocalHttpBtn" style="height: 30px; font-size: 11px; padding: 4px 10px;">
+                  Local HTTP (127.0.0.1:8080)
+                </button>
+                <button type="button" class="btn btn-outline" id="presetDirectBtn" style="height: 30px; font-size: 11px; padding: 4px 10px;">
+                  Direct Connection
+                </button>
+              </div>
+            </div>
+
+            <!-- Manual Settings Form -->
+            <div id="proxyManualConfigSection">
+              <div class="form-row">
+                <div class="input-group" style="flex: 1;">
+                  <label for="advProxyProtocol">PROTOCOL</label>
+                  <div class="select-wrapper">
+                    <select id="advProxyProtocol" class="custom-select">
+                      <option value="socks5" selected>SOCKS5 (Recommended / Tor)</option>
+                      <option value="socks4">SOCKS4</option>
+                      <option value="http">HTTP</option>
+                      <option value="https">HTTPS</option>
+                    </select>
+                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div class="input-group" style="flex: 2;">
+                  <label for="advProxyHost">SERVER HOST / IP</label>
+                  <input type="text" id="advProxyHost" class="custom-input" placeholder="127.0.0.1 or proxy.example.com" value="127.0.0.1">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                  <label for="advProxyPort">PORT</label>
+                  <input type="number" id="advProxyPort" class="custom-input" placeholder="9050" value="9050" min="1" max="65535">
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top: 10px;">
+                <div class="input-group" style="flex: 1;">
+                  <label for="advProxyBypass">BYPASS PROXY FOR THESE DOMAINS (COMMA SEPARATED)</label>
+                  <input type="text" id="advProxyBypass" class="custom-input" placeholder="localhost, 127.0.0.1, <local>" value="localhost, 127.0.0.1, <local>">
+                </div>
+              </div>
+            </div>
+
+            <!-- PAC Script Section -->
+            <div id="proxyPacConfigSection" style="display: none; margin-top: 10px;">
+              <div class="form-row">
+                <div class="input-group" style="flex: 1;">
+                  <label for="advProxyPacUrl">PAC SCRIPT URL</label>
+                  <input type="text" id="advProxyPacUrl" class="custom-input" placeholder="https://example.com/proxy.pac">
+                </div>
+              </div>
+            </div>
+
+            <!-- Save & Diagnostic Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-solid" id="advSaveProxyBtn" style="height: 32px; font-size: 12px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save & Apply Proxy Settings
+                </button>
+                <button type="button" class="btn btn-outline" id="advDisableProxyBtn" style="height: 32px; font-size: 12px;">
+                  Disconnect Proxy (Direct)
+                </button>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <a href="https://whoer.net" target="_blank" class="btn btn-outline" style="height: 32px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                  Check IP on Whoer.net
+                </a>
+                <a href="https://ipinfo.io" target="_blank" class="btn btn-outline" style="height: 32px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                  IPinfo.io
+                </a>
+              </div>
             </div>
           </div>
         </div>

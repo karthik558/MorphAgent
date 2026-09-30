@@ -323,4 +323,77 @@
 
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
+
+  // =========================================================================
+  // Proxyium Anonymous Web Tunnel Engine
+  // =========================================================================
+  if (window.location.hostname.includes('proxyium.com')) {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const morphTarget = urlParams.get('morph_url');
+      const morphCountry = urlParams.get('morph_country') || 'pl';
+
+      if (morphTarget) {
+        let attempts = 0;
+        const maxAttempts = 50;
+
+        const executeProxyiumTunnel = () => {
+          attempts++;
+          const form = document.getElementById('web_proxy_form');
+          const input = document.getElementById('unique-form-control');
+          const countrySelect = document.getElementById('proxy_country');
+          const submitBtn = document.getElementById('unique-btn-blue');
+
+          if (form && input) {
+            // Render sleek HUD notification
+            if (document.body && !document.getElementById('morph-proxy-tunnel-badge')) {
+              const badge = document.createElement('div');
+              badge.id = 'morph-proxy-tunnel-badge';
+              badge.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#181818;color:#ffffff;border:1px solid #ff0b2a;box-shadow:0 4px 20px rgba(255,11,42,0.4);border-radius:8px;padding:10px 18px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:12px;z-index:9999999;display:flex;align-items:center;gap:10px;pointer-events:none;';
+              const dot = '<span style="display:inline-block;width:8px;height:8px;background:#ff0b2a;border-radius:50%;box-shadow:0 0 8px #ff0b2a;"></span>';
+              badge.innerHTML = `${dot}<span style="font-weight:700;letter-spacing:0.5px;color:#ff0b2a;">MORPHAGENT TUNNEL:</span> Connecting anonymously to <span style="font-weight:600;color:#fff;">${morphTarget}</span> via <span style="color:#10b981;font-weight:600;">${morphCountry.toUpperCase()}</span> exit node...`;
+              document.body.appendChild(badge);
+            }
+
+            input.value = morphTarget;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+
+            if (countrySelect && morphCountry) {
+              countrySelect.value = morphCountry;
+              countrySelect.dispatchEvent(new Event('change', { bubbles: true }));
+              const niceOption = document.querySelector(`.nice-select .option[data-value="${morphCountry}"]`);
+              if (niceOption) {
+                niceOption.click();
+              }
+            }
+
+            // Clean query parameters from address bar to prevent reload loop
+            try {
+              const cleanUrl = window.location.origin + window.location.pathname;
+              window.history.replaceState({}, document.title, cleanUrl);
+            } catch (e) {}
+
+            setTimeout(() => {
+              if (submitBtn) {
+                submitBtn.click();
+              } else {
+                form.submit();
+              }
+            }, 60);
+          } else if (attempts < maxAttempts) {
+            setTimeout(executeProxyiumTunnel, 60);
+          }
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', executeProxyiumTunnel);
+        } else {
+          executeProxyiumTunnel();
+        }
+      }
+    } catch (e) {
+      console.warn('[MorphAgent] Proxyium auto-tunnel initialization failed:', e);
+    }
+  }
 })();

@@ -177,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try { loadTabSettings(); } catch (e) { console.warn('[MorphAgent] loadTabSettings error:', e); }
     try { renderAnalytics(); } catch (e) { console.warn('[MorphAgent] renderAnalytics error:', e); }
     try { runStealthAudit(); } catch (e) { console.warn('[MorphAgent] runStealthAudit error:', e); }
+    try { loadProxySettings(); } catch (e) { console.warn('[MorphAgent] loadProxySettings error:', e); }
+    try { handleHashNavigation(); } catch (e) { console.warn('[MorphAgent] handleHashNavigation error:', e); }
   }
 
   // ==========================================
@@ -1852,12 +1854,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const newTheme = isDark ? 'light' : 'dark';
 
       applyTheme(newTheme);
-      browser.storage.local.set({ theme: newTheme }, () => {
-        browser.runtime.sendMessage({
-          type: 'set-settings',
-          data: { theme: newTheme }
-        }).catch(() => {});
-      });
+      try { localStorage.setItem('morph_theme', newTheme); } catch(e) {}
+
+      if (browser && browser.storage && browser.storage.local) {
+        browser.storage.local.set({ theme: newTheme }, () => {
+          if (browser.runtime && browser.runtime.sendMessage) {
+            try {
+              const res = browser.runtime.sendMessage({
+                type: 'set-settings',
+                data: { theme: newTheme }
+              });
+              if (res && typeof res.catch === 'function') {
+                res.catch(() => {});
+              }
+            } catch(e) {}
+          }
+        });
+      }
     }
 
 
@@ -2894,7 +2907,320 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-    function showStatus(message, type = 'success') {
+  // ==========================================
+  // Proxy & VPN Stealth Network Controller
+  // ==========================================
+  function handleHashNavigation() {
+    const hash = window.location.hash;
+    if (hash) {
+      const target = hash.replace('#', '');
+      const btn = document.querySelector(`.sidebar-link[data-target="${target}"]`);
+      if (btn) {
+        btn.click();
+      }
+    }
+  }
+
+  function loadProxySettings() {
+    const browser = window.browser || window.chrome;
+    if (!browser || !browser.storage) return;
+
+    // Elements
+    const advProxyiumCountry = document.getElementById('advProxyiumCountry');
+    const advProxyiumUrl = document.getElementById('advProxyiumUrl');
+    const advLaunchProxyiumBtn = document.getElementById('advLaunchProxyiumBtn');
+    const advTunnelActiveTabBtn = document.getElementById('advTunnelActiveTabBtn');
+    const advProxySyncGeoToggle = document.getElementById('advProxySyncGeoToggle');
+    const advProxyContextMenuToggle = document.getElementById('advProxyContextMenuToggle');
+
+    // Browser Proxy Elements
+    const advBrowserProxyMasterToggle = document.getElementById('advBrowserProxyMasterToggle');
+    const advProxyMasterLabel = document.getElementById('advProxyMasterLabel');
+    const advProxyModeSelect = document.getElementById('advProxyModeSelect');
+    const proxyManualSection = document.getElementById('proxyManualConfigSection');
+    const proxyPacSection = document.getElementById('proxyPacConfigSection');
+
+    // Form inputs
+    const advProxyProtocol = document.getElementById('advProxyProtocol');
+    const advProxyHost = document.getElementById('advProxyHost');
+    const advProxyPort = document.getElementById('advProxyPort');
+    const advProxyBypass = document.getElementById('advProxyBypass');
+    const advProxyPacUrl = document.getElementById('advProxyPacUrl');
+
+    // Preset buttons
+    const presetTorBtn = document.getElementById('presetTorBtn');
+    const presetLocalSocksBtn = document.getElementById('presetLocalSocksBtn');
+    const presetLocalHttpBtn = document.getElementById('presetLocalHttpBtn');
+    const presetDirectBtn = document.getElementById('presetDirectBtn');
+
+    // Save & Action buttons
+    const advSaveProxyBtn = document.getElementById('advSaveProxyBtn');
+    const advDisableProxyBtn = document.getElementById('advDisableProxyBtn');
+
+    // KPI Elements
+    const statBrowserProxyMode = document.getElementById('statBrowserProxyMode');
+    const statBrowserProxySub = document.getElementById('statBrowserProxySub');
+    const statProxyGeoSync = document.getElementById('statProxyGeoSync');
+
+    let currentProxyMode = 'manual';
+
+    function setProxyModeUI(mode) {
+      currentProxyMode = mode;
+      if (advProxyModeSelect) {
+        advProxyModeSelect.value = mode;
+      }
+
+      if (mode === 'manual') {
+        if (proxyManualSection) proxyManualSection.style.display = 'block';
+        if (proxyPacSection) proxyPacSection.style.display = 'none';
+      } else if (mode === 'pac_script') {
+        if (proxyManualSection) proxyManualSection.style.display = 'none';
+        if (proxyPacSection) proxyPacSection.style.display = 'block';
+      } else {
+        if (proxyManualSection) proxyManualSection.style.display = 'none';
+        if (proxyPacSection) proxyPacSection.style.display = 'none';
+      }
+    }
+
+    if (advProxyiumCountry) {
+      advProxyiumCountry.addEventListener('change', () => {
+        const country = advProxyiumCountry.value;
+        browser.storage.local.get(['proxyConfig'], (res) => {
+          const cfg = (res && res.proxyConfig) ? res.proxyConfig : {};
+          cfg.proxyiumCountry = country;
+          browser.storage.local.set({ proxyConfig: cfg });
+        });
+      });
+    }
+
+    // Launch Proxyium Web Proxy Button
+    if (advLaunchProxyiumBtn) {
+      advLaunchProxyiumBtn.addEventListener('click', () => {
+        const rawUrl = advProxyiumUrl ? advProxyiumUrl.value.trim() : '';
+        const country = advProxyiumCountry ? advProxyiumCountry.value : 'pl';
+        showStatus('Launching Proxyium anonymous session...', 'success');
+        browser.runtime.sendMessage({
+          type: 'launch-proxyium',
+          url: rawUrl || 'https://duckduckgo.com',
+          country: country,
+          newTab: true
+        });
+      });
+    }
+
+    // Tunnel Active Tab Button
+    if (advTunnelActiveTabBtn) {
+      advTunnelActiveTabBtn.addEventListener('click', () => {
+        if (!browser.tabs) return;
+        browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+          const activeTab = tabs && tabs[0];
+          let targetUrl = activeTab ? activeTab.url : 'https://duckduckgo.com';
+          if (!targetUrl || targetUrl.startsWith('chrome://') || targetUrl.startsWith('about:') || targetUrl.startsWith('moz-extension://')) {
+            targetUrl = 'https://duckduckgo.com';
+          }
+          const country = advProxyiumCountry ? advProxyiumCountry.value : 'pl';
+          showStatus('Tunneling active tab via Proxyium...', 'success');
+          browser.runtime.sendMessage({
+            type: 'launch-proxyium',
+            url: targetUrl,
+            country: country,
+            newTab: false
+          });
+        });
+      });
+    }
+
+    // Mode select listener
+    if (advProxyModeSelect) {
+      advProxyModeSelect.addEventListener('change', () => {
+        setProxyModeUI(advProxyModeSelect.value);
+      });
+    }
+
+    // Presets
+    if (presetTorBtn) {
+      presetTorBtn.addEventListener('click', () => {
+        setProxyModeUI('manual');
+        if (advProxyProtocol) advProxyProtocol.value = 'socks5';
+        if (advProxyHost) advProxyHost.value = '127.0.0.1';
+        if (advProxyPort) advProxyPort.value = '9050';
+        if (advProxyBypass) advProxyBypass.value = 'localhost, 127.0.0.1, <local>';
+        showStatus('Loaded Tor Network Preset (SOCKS5 127.0.0.1:9050)', 'info');
+      });
+    }
+
+    if (presetLocalSocksBtn) {
+      presetLocalSocksBtn.addEventListener('click', () => {
+        setProxyModeUI('manual');
+        if (advProxyProtocol) advProxyProtocol.value = 'socks5';
+        if (advProxyHost) advProxyHost.value = '127.0.0.1';
+        if (advProxyPort) advProxyPort.value = '1080';
+        showStatus('Loaded Local SOCKS5 Preset (127.0.0.1:1080)', 'info');
+      });
+    }
+
+    if (presetLocalHttpBtn) {
+      presetLocalHttpBtn.addEventListener('click', () => {
+        setProxyModeUI('manual');
+        if (advProxyProtocol) advProxyProtocol.value = 'http';
+        if (advProxyHost) advProxyHost.value = '127.0.0.1';
+        if (advProxyPort) advProxyPort.value = '8080';
+        showStatus('Loaded Local HTTP Preset (127.0.0.1:8080)', 'info');
+      });
+    }
+
+    if (presetDirectBtn) {
+      presetDirectBtn.addEventListener('click', () => {
+        setProxyModeUI('direct');
+        if (advBrowserProxyMasterToggle) advBrowserProxyMasterToggle.checked = false;
+        if (advProxyMasterLabel) {
+          advProxyMasterLabel.textContent = 'Proxy Disabled (Direct)';
+          advProxyMasterLabel.style.color = 'var(--text-primary)';
+        }
+        showStatus('Direct connection selected', 'info');
+      });
+    }
+
+    // Master Toggle
+    if (advBrowserProxyMasterToggle) {
+      advBrowserProxyMasterToggle.addEventListener('change', () => {
+        const isEnabled = advBrowserProxyMasterToggle.checked;
+        if (isEnabled && currentProxyMode === 'direct') {
+          setProxyModeUI('manual');
+        }
+        if (advProxyMasterLabel) {
+          advProxyMasterLabel.textContent = isEnabled ? `Proxy Enabled (${currentProxyMode.toUpperCase()})` : 'Proxy Disabled (Direct)';
+          advProxyMasterLabel.style.color = isEnabled ? 'var(--accent-green)' : 'var(--text-primary)';
+        }
+      });
+    }
+
+    // Save & Apply Proxy Settings Button
+    if (advSaveProxyBtn) {
+      advSaveProxyBtn.addEventListener('click', () => {
+        const isEnabled = advBrowserProxyMasterToggle ? advBrowserProxyMasterToggle.checked : true;
+        const pConfig = {
+          enabled: isEnabled,
+          mode: currentProxyMode,
+          protocol: advProxyProtocol ? advProxyProtocol.value : 'socks5',
+          host: advProxyHost ? advProxyHost.value.trim() : '127.0.0.1',
+          port: advProxyPort ? parseInt(advProxyPort.value, 10) : 9050,
+          bypassList: advProxyBypass ? advProxyBypass.value.trim() : 'localhost, 127.0.0.1, <local>',
+          pacUrl: advProxyPacUrl ? advProxyPacUrl.value.trim() : '',
+          proxyiumCountry: advProxyiumCountry ? advProxyiumCountry.value : 'pl',
+          syncGeoWithProxyium: advProxySyncGeoToggle ? advProxySyncGeoToggle.checked : true,
+          enableContextMenus: advProxyContextMenuToggle ? advProxyContextMenuToggle.checked : true
+        };
+
+        if (isEnabled && advBrowserProxyMasterToggle) {
+          advBrowserProxyMasterToggle.checked = true;
+          if (advProxyMasterLabel) {
+            advProxyMasterLabel.textContent = `Proxy Enabled (${currentProxyMode.toUpperCase()})`;
+            advProxyMasterLabel.style.color = 'var(--accent-green)';
+          }
+        }
+
+        browser.runtime.sendMessage({
+          type: 'set-browser-proxy',
+          data: pConfig
+        }).then(res => {
+          if (res && res.success === false && res.error) {
+            showStatus(`Proxy applied with notice: ${res.error}`, 'info');
+          } else {
+            showStatus('Proxy & Stealth Network settings applied successfully!', 'success');
+          }
+          updateKPIs(pConfig);
+        }).catch(err => {
+          console.warn('[MorphAgent] Save proxy error:', err);
+          showStatus('Proxy settings saved to storage', 'success');
+          updateKPIs(pConfig);
+        });
+      });
+    }
+
+    // Disable / Disconnect Proxy Button
+    if (advDisableProxyBtn) {
+      advDisableProxyBtn.addEventListener('click', () => {
+        if (advBrowserProxyMasterToggle) advBrowserProxyMasterToggle.checked = false;
+        if (advProxyMasterLabel) {
+          advProxyMasterLabel.textContent = 'Proxy Disabled (Direct)';
+          advProxyMasterLabel.style.color = 'var(--text-primary)';
+        }
+        setProxyModeUI('direct');
+
+        browser.runtime.sendMessage({ type: 'clear-browser-proxy' }).then(() => {
+          showStatus('Proxy disconnected, direct connection restored', 'info');
+          updateKPIs({ enabled: false, mode: 'direct' });
+        }).catch(() => {
+          showStatus('Direct connection restored', 'info');
+          updateKPIs({ enabled: false, mode: 'direct' });
+        });
+      });
+    }
+
+    function updateKPIs(cfg) {
+      if (!statBrowserProxyMode || !statBrowserProxySub) return;
+      if (cfg && cfg.enabled && cfg.mode !== 'direct') {
+        const modeText = cfg.mode === 'pac_script' ? 'PAC Script' : (cfg.protocol || 'SOCKS5').toUpperCase();
+        statBrowserProxyMode.textContent = modeText;
+        statBrowserProxyMode.style.color = 'var(--accent-green)';
+        statBrowserProxySub.textContent = `${cfg.host || '127.0.0.1'}:${cfg.port || 9050}`;
+      } else {
+        statBrowserProxyMode.textContent = 'Direct';
+        statBrowserProxyMode.style.color = 'var(--text-primary)';
+        statBrowserProxySub.textContent = 'No proxy active';
+      }
+
+      if (statProxyGeoSync && cfg && cfg.syncGeoWithProxyium !== undefined) {
+        statProxyGeoSync.textContent = cfg.syncGeoWithProxyium ? 'Auto-Sync' : 'Independent';
+      }
+    }
+
+    // Initial Load from Storage
+    browser.storage.local.get(['proxyConfig'], (res) => {
+      const cfg = (res && res.proxyConfig) ? res.proxyConfig : {
+        enabled: false,
+        mode: 'manual',
+        protocol: 'socks5',
+        host: '127.0.0.1',
+        port: 9050,
+        bypassList: 'localhost, 127.0.0.1, <local>',
+        proxyiumCountry: 'pl',
+        syncGeoWithProxyium: true,
+        enableContextMenus: true
+      };
+
+      if (cfg.proxyiumCountry && advProxyiumCountry) {
+        advProxyiumCountry.value = cfg.proxyiumCountry;
+      }
+      if (cfg.syncGeoWithProxyium !== undefined && advProxySyncGeoToggle) {
+        advProxySyncGeoToggle.checked = !!cfg.syncGeoWithProxyium;
+      }
+      if (cfg.enableContextMenus !== undefined && advProxyContextMenuToggle) {
+        advProxyContextMenuToggle.checked = !!cfg.enableContextMenus;
+      }
+
+      if (advProxyProtocol && cfg.protocol) advProxyProtocol.value = cfg.protocol;
+      if (advProxyHost && cfg.host) advProxyHost.value = cfg.host;
+      if (advProxyPort && cfg.port) advProxyPort.value = cfg.port;
+      if (advProxyBypass && cfg.bypassList) advProxyBypass.value = cfg.bypassList;
+      if (advProxyPacUrl && cfg.pacUrl) advProxyPacUrl.value = cfg.pacUrl;
+
+      setProxyModeUI(cfg.mode || 'manual');
+
+      if (advBrowserProxyMasterToggle) {
+        advBrowserProxyMasterToggle.checked = !!cfg.enabled;
+        if (advProxyMasterLabel) {
+          advProxyMasterLabel.textContent = cfg.enabled ? `Proxy Enabled (${(cfg.mode || 'manual').toUpperCase()})` : 'Proxy Disabled (Direct)';
+          advProxyMasterLabel.style.color = cfg.enabled ? 'var(--accent-green)' : 'var(--text-primary)';
+        }
+      }
+
+      updateKPIs(cfg);
+    });
+  }
+
+  function showStatus(message, type = 'success') {
       statusText.textContent = message;
       statusMessage.className = `status-message ${type}`;
       statusMessage.style.display = 'block';

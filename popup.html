@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark-mode">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MorphAgent</title>
   <link rel="stylesheet" href="css/popup.css">
 </head>
-<body>
+<body class="dark-mode">
   <div class="extension-container">
     <div class="gradient-bar"></div>
 
@@ -25,17 +25,17 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span id="save-indicator-text">Saved</span>
         </span>
-        <button class="icon-btn" id="settings-btn" title="Advanced Settings">
+        <a href="advanced-settings.html" target="_blank" class="icon-btn" id="settings-btn" title="Advanced Settings">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-        </button>
-        <button class="icon-btn" id="theme-toggle" title="Toggle theme">
-          <svg class="theme-icon light-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        </a>
+        <button type="button" class="icon-btn" id="theme-toggle" title="Toggle theme">
+          <svg class="theme-icon light-icon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
-          <svg class="theme-icon dark-icon" style="display:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="theme-icon dark-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -356,6 +356,77 @@
                   <input type="text" id="dns-custom-endpoint" class="number-input" placeholder="https://your-dns-server/dns-query" style="width:100%; font-size:11px; padding:6px 10px;">
                 </div>
               </div>
+            </div>
+
+            <!-- Proxyium Web Proxy Tunnel -->
+            <div class="feature-row tunnel-feature-row">
+              <div class="tunnel-header-row">
+                <div class="feature-left">
+                  <div class="feature-icon-box tunnel-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                  </div>
+                  <div class="feature-text">
+                    <div class="feature-title-row">
+                      <span class="feature-title">Proxyium Web Proxy</span>
+                      <span class="badge badge-ultimate">TUNNEL</span>
+                    </div>
+                    <span class="feature-desc" id="proxyium-status-desc">Poland / France · Zero Footprint</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tunnel-sub-controls" id="proxyium-controls">
+                <div class="tunnel-node-group">
+                  <div class="select-wrapper">
+                    <select id="proxyium-node-select" class="custom-select" style="font-size: 11px; width: 100%;">
+                      <option value="pl">Poland / France (Fast)</option>
+                      <option value="us">United States (Geo-Unblock)</option>
+                      <option value="sg">Singapore (Asia-Pacific)</option>
+                    </select>
+                    <svg class="select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+
+                <button type="button" class="tunnel-action-btn" id="btn-proxyium-current-tab" title="Route active browser tab through Proxyium anonymous proxy">
+                  <div class="tunnel-btn-content">
+                    <svg class="tunnel-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span class="tunnel-btn-label">Tunnel Active Tab</span>
+                  </div>
+                  <svg class="tunnel-arrow-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Browser Proxy Switcher -->
+            <div class="feature-row">
+              <div class="feature-left">
+                <div class="feature-icon-box">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                    <line x1="6" y1="6" x2="6.01" y2="6"/>
+                    <line x1="6" y1="18" x2="6.01" y2="18"/>
+                  </svg>
+                </div>
+                <div class="feature-text">
+                  <div class="feature-title-row">
+                    <span class="feature-title">Browser Proxy Switcher</span>
+                  </div>
+                  <span class="feature-desc" id="popup-proxy-sublabel">Direct (No Proxy Active)</span>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="browser-proxy-toggle">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
 
           </div>

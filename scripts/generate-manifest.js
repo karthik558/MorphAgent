@@ -26,6 +26,10 @@ const baseManifest = {
     service_worker: "js/background.js",
     type: "module"
   },
+  options_ui: {
+    page: "advanced-settings.html",
+    open_in_tab: true
+  },
   action: {
     default_popup: "popup.html",
     default_title: "MorphAgent 4.5",
@@ -113,15 +117,11 @@ const target = process.argv[2] || 'all';
 
 if (target === 'chrome' || target === 'all') {
   fs.writeFileSync('manifest.chrome.json', JSON.stringify(v3Manifest, null, 2));
-  console.log('✓ Generated manifest.chrome.json (Manifest V3)');
+  fs.writeFileSync('manifest.json', JSON.stringify(v3Manifest, null, 2));
+  console.log('✓ Generated manifest.chrome.json and updated manifest.json (Manifest V3)');
 }
 
 if (target === 'firefox' || target === 'all') {
   fs.writeFileSync('manifest.firefox.json', JSON.stringify(v2Manifest, null, 2));
   console.log('✓ Generated manifest.firefox.json (Manifest V2)');
-}
-
-if (target === 'all') {
-  fs.writeFileSync('manifest.json', JSON.stringify(v3Manifest, null, 2));
-  console.log('✓ Set default manifest.json -> Chrome MV3');
 }

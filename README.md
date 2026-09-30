@@ -92,6 +92,12 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 4. **Bi-Directional Secure DNS Resolver Switcher**  
    - Real-time synchronized one-click switching between encrypted DNS-over-HTTPS (DoH) providers (AdGuard DNS, Cloudflare 1.1.1.1, Quad9, NextDNS, CleanBrowsing, Direct OS, Custom) across Popup and Advanced Settings.
 
+5. **Proxyium Anonymous Web Tunnel & Native Browser Proxy Switcher**  
+   - **One-Click Proxyium Web Proxy**: Route any tab or custom URL anonymously through isolated European (Poland/France Fast), United States (Geo-Unblock), and Singapore (Asia-Pacific) cloud exit nodes without leaving your browser.
+   - **Native Browser Proxy Controller (`chrome.proxy`)**: Direct connection, manual proxy switcher with SOCKS5 (Tor 127.0.0.1:9050 preset), SOCKS4, HTTP, and PAC script integration paired with strict WebRTC IP leak shielding.
+   - **Geo-Location Exit Node Synchronization**: Dynamically synchronizes GPS coordinates with the active proxy region.
+   - **Context Menu Shortcuts**: Right-click any webpage or link to instantly open it inside a clean Proxyium anonymous web proxy tunnel.
+
 ---
 
 ## Features Overview
@@ -102,37 +108,40 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 2. **Client Hints (`Sec-CH-UA`) & `navigator.userAgentData` Synchronous Engine**  
    Full spoofing of `Sec-CH-UA`, `Sec-CH-UA-Mobile`, and `Sec-CH-UA-Platform` headers paired with synchronous `navigator.userAgentData.getHighEntropyValues()` injection.
 
-3. **Cryptographic Canvas & WebGL Stealth Matrix**  
+3. **Proxyium Web Proxy & Native SOCKS5/HTTP Proxy Switcher**  
+   Instant web tunneling through Proxyium multi-region exit nodes (Poland, US, Singapore) and full native browser proxy configuration with preset profiles (Tor, Local SOCKS5, HTTP).
+
+4. **Cryptographic Canvas & WebGL Stealth Matrix**  
    Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 with cryptographic sub-pixel variation.
 
-4. **Ghost Mode (Intelligent Auto-Rotation)**  
+5. **Ghost Mode (Intelligent Auto-Rotation)**  
    When enabled, a background timer automatically rotates your entire browser identity (User Agent, Touch Points, Canvas Seed) at configurable intervals to break persistent cross-site tracking sessions.
 
-5. **ClientRects & DOM Bounding Box Spoofing**  
+6. **ClientRects & DOM Bounding Box Spoofing**  
    Intercepts `getBoundingClientRect` to inject microscopic noise, destroying OS-level font rendering and layout tracking vectors.
 
-6. **WebRTC IP Leak Shield & Network Spoofing**  
+7. **WebRTC IP Leak Shield & Network Spoofing**  
    Silently strips local IPv4/IPv6 addresses from WebRTC offers (with a dedicated toggle) and spoofs `navigator.connection` to perfectly match your selected device profile (e.g. returning a 4G cellular connection when spoofing an iPhone).
 
-7. **Battery API & Sensor Spoofing**  
+8. **Battery API & Sensor Spoofing**  
    Spoofs `navigator.getBattery()` to return a fake, slowly discharging 85% battery level across all tabs.
 
-8. **Font Enumeration Defender & Behavioral Masking**  
+9. **Font Enumeration Defender & Behavioral Masking**  
    Defeats font hashing by adding variance to `offsetWidth`/`offsetHeight`, and introduces slight jitter into mouse coordinates and typing timestamps to mask behavioral biometrics.
 
-9. **AudioContext Fingerprint Shield**  
-   Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and offline audio buffers.
+10. **AudioContext Fingerprint Shield**  
+    Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and offline audio buffers.
 
-10. **GPS Geolocation & Timezone Spoofing Engine**  
+11. **GPS Geolocation & Timezone Spoofing Engine**  
     GPS coordinate mocking (`getCurrentPosition` & `watchPosition`), city presets, custom latitude/longitude inputs, and synchronous `Intl.DateTimeFormat` timezone spoofing.
 
-11. **Screen Resolution, Orientation & Media Devices Masking**  
+12. **Screen Resolution, Orientation & Media Devices Masking**  
     Device-accurate `screen.width/height`, pixel depth, orientation, and deterministic webcam/microphone enumeration masking.
 
-12. **Custom Profile Builder Studio & Context Menu Switcher**  
-    GUI to create custom device profiles. Right-click context menus for instant profile switching (`iPhone 17`, `Chrome 145`) and quick location presets.
+13. **Custom Profile Builder Studio & Context Menu Switcher**  
+    GUI to create custom device profiles. Right-click context menus for instant profile switching (`iPhone 17`, `Chrome 145`), quick location presets, and Proxyium web proxy tunneling.
 
-13. **Real-Time Live Fingerprint Leak Inspector**  
+14. **Real-Time Live Fingerprint Leak Inspector**  
     Embedded live testing inspector (`spoof_test.html`) that evaluates Canvas noise, WebGL GPU string, WebRTC, ClientRects, Network, and Battery status in real time.
 
 ---

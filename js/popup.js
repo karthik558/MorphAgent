@@ -3,7 +3,18 @@ if (window.innerWidth !== 400 || window.innerHeight > 600) {
   document.documentElement.classList.add('mobile');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Immediately apply cached theme to avoid any visual flash
+try {
+  const initialTheme = localStorage.getItem('morph_theme') || 'dark';
+  document.documentElement.classList.remove('dark-mode', 'light-mode');
+  if (document.body) document.body.classList.remove('dark-mode', 'light-mode');
+  document.documentElement.classList.add(initialTheme === 'light' ? 'light-mode' : 'dark-mode');
+  if (document.body) {
+    document.body.classList.add(initialTheme === 'light' ? 'light-mode' : 'dark-mode');
+  }
+} catch (e) {}
+
+function startPopup() {
   // Cross-browser API adapter
   const browser = window.browser || window.chrome;
 
@@ -42,6 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const dnsCustomEndpoint = document.getElementById('dns-custom-endpoint');
   const dnsCurrentLabel = document.getElementById('dns-current-label');
 
+  // Proxy & Proxyium Elements
+  const proxyiumNodeSelect = document.getElementById('proxyium-node-select');
+  const proxyiumStatusDesc = document.getElementById('proxyium-status-desc');
+  const btnProxyiumCurrentTab = document.getElementById('btn-proxyium-current-tab');
+  const browserProxyToggle = document.getElementById('browser-proxy-toggle');
+  const popupProxySublabel = document.getElementById('popup-proxy-sublabel');
+
   // New buttons
   const btnCurrentTab = document.getElementById('btn-current-tab');
   const btnAllTabs = document.getElementById('btn-all-tabs');
@@ -49,6 +67,75 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveIndicator = document.getElementById('save-indicator');
   const saveIndicatorText = document.getElementById('save-indicator-text');
   let currentScope = 'current';
+
+  // Theme Management (Initialized immediately at popup startup)
+  function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.documentElement.classList.remove('dark-mode', 'light-mode');
+    document.body.classList.remove('dark-mode', 'light-mode');
+    document.documentElement.classList.add(isDark ? 'dark-mode' : 'light-mode');
+    document.body.classList.add(isDark ? 'dark-mode' : 'light-mode');
+
+    const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
+    const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
+
+    if (isDark) {
+      if (lightIcon) lightIcon.style.display = 'none';
+      if (darkIcon) darkIcon.style.display = 'block';
+    } else {
+      if (lightIcon) lightIcon.style.display = 'block';
+      if (darkIcon) darkIcon.style.display = 'none';
+    }
+  }
+
+  function initTheme() {
+    let currentSaved = 'dark';
+    try {
+      currentSaved = localStorage.getItem('morph_theme') || 'dark';
+    } catch(e) {}
+    applyTheme(currentSaved);
+
+    if (browser && browser.storage && browser.storage.local) {
+      try {
+        browser.storage.local.get(['theme'], (data) => {
+          const theme = (data && data.theme) ? data.theme : currentSaved;
+          applyTheme(theme);
+          try { localStorage.setItem('morph_theme', theme); } catch(e) {}
+        });
+      } catch(err) {}
+    }
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isDark = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+      const newTheme = isDark ? 'light' : 'dark';
+      applyTheme(newTheme);
+      try {
+        localStorage.setItem('morph_theme', newTheme);
+      } catch(err) {}
+
+      if (browser && browser.storage && browser.storage.local) {
+        try {
+          browser.storage.local.set({ theme: newTheme }, () => {
+            if (browser.runtime && browser.runtime.sendMessage) {
+              try {
+                browser.runtime.sendMessage({
+                  type: 'set-settings',
+                  data: { theme: newTheme }
+                }, () => {});
+              } catch(err) {}
+            }
+          });
+        } catch(e) {}
+      }
+    });
+  }
+
+  // Immediately initialize theme
+  initTheme();
 
   function updateUASpoofUIState() {
     const enabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
@@ -71,9 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
     deviceCards.forEach(card => {
       card.disabled = !enabled;
       card.style.opacity = enabled ? '1' : '0.5';
+      const cardCat = card.dataset ? card.dataset.category : card.getAttribute('data-category');
       if (!enabled) {
         card.classList.remove('active');
-      } else if (currentCategory && card.dataset.category === currentCategory) {
+      } else if (currentCategory && cardCat === currentCategory) {
         card.classList.add('active');
       }
     });
@@ -91,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnCurrentTab.classList.remove('btn-ghost');
       btnAllTabs.classList.add('btn-ghost');
       btnAllTabs.classList.remove('btn-solid');
+      if (isInitialized) saveSettings();
     });
 
     btnAllTabs.addEventListener('click', () => {
@@ -99,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnAllTabs.classList.remove('btn-ghost');
       btnCurrentTab.classList.add('btn-ghost');
       btnCurrentTab.classList.remove('btn-solid');
+      if (isInitialized) saveSettings();
     });
   }
 
@@ -278,6 +368,189 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Node labels mapping
+  const proxyiumNodeLabels = {
+    pl: 'Poland / France · Zero Footprint',
+    us: 'United States · Geo-Unblock Exit',
+    sg: 'Singapore · Asia-Pacific Fast Exit'
+  };
+
+  function updateProxyiumNodeUI(country) {
+    if (proxyiumStatusDesc) {
+      proxyiumStatusDesc.textContent = proxyiumNodeLabels[country] || 'Poland / France · Zero Footprint';
+    }
+    if (proxyiumNodeSelect && country) {
+      proxyiumNodeSelect.value = country;
+    }
+  }
+
+  // Proxy UI update helper
+  function updateProxyUI(pConfig) {
+    if (pConfig && pConfig.proxyiumCountry) {
+      updateProxyiumNodeUI(pConfig.proxyiumCountry);
+    }
+    if (!popupProxySublabel) return;
+    if (pConfig && pConfig.enabled && pConfig.mode !== 'direct') {
+      const mode = pConfig.mode === 'pac_script' ? 'PAC Script' : (pConfig.protocol || 'SOCKS5').toUpperCase();
+      const host = pConfig.host || '127.0.0.1';
+      const port = pConfig.port || 9050;
+      popupProxySublabel.textContent = `Active: ${mode} (${host}:${port})`;
+      popupProxySublabel.style.color = 'var(--accent-green)';
+    } else {
+      popupProxySublabel.textContent = 'Direct (No Proxy Active)';
+      popupProxySublabel.style.color = 'var(--text-tertiary)';
+    }
+  }
+
+  // Proxyium Current Tab Tunnel
+  if (btnProxyiumCurrentTab) {
+    btnProxyiumCurrentTab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const country = proxyiumNodeSelect ? proxyiumNodeSelect.value : 'pl';
+
+      // Visual feedback on button
+      btnProxyiumCurrentTab.classList.add('tunneling');
+      btnProxyiumCurrentTab.innerHTML = `
+        <div class="tunnel-btn-content">
+          <span class="tunnel-spinner"></span>
+          <span class="tunnel-btn-label">Connecting Tunnel...</span>
+        </div>
+      `;
+
+      function performTunnel(targetUrl) {
+        let cleanUrl = targetUrl;
+        if (!cleanUrl || cleanUrl.startsWith('chrome://') || cleanUrl.startsWith('about:') || cleanUrl.startsWith('moz-extension://') || cleanUrl.startsWith('chrome-extension://')) {
+          cleanUrl = 'https://duckduckgo.com';
+        }
+
+        if (typeof showStatus === 'function') {
+          showStatus('Tunneling tab via Proxyium...');
+        }
+
+        // Try runtime message to background service worker
+        let messageDispatched = false;
+        if (browser && browser.runtime && browser.runtime.sendMessage) {
+          try {
+            browser.runtime.sendMessage({
+              type: 'launch-proxyium',
+              url: cleanUrl,
+              country: country,
+              newTab: false
+            }, () => {
+              if (browser.runtime.lastError) {
+                console.warn('[MorphAgent] Tunnel message callback:', browser.runtime.lastError.message);
+                directTunnelFallback(cleanUrl, country);
+              } else {
+                setTimeout(() => window.close(), 300);
+              }
+            });
+            messageDispatched = true;
+          } catch(err) {
+            console.warn('[MorphAgent] runtime.sendMessage threw:', err);
+          }
+        }
+
+        if (!messageDispatched) {
+          directTunnelFallback(cleanUrl, country);
+        }
+      }
+
+      function directTunnelFallback(url, cty) {
+        const dest = `https://proxyium.com/?morph_url=${encodeURIComponent(url)}&morph_country=${encodeURIComponent(cty || 'pl')}`;
+        if (browser && browser.tabs && browser.tabs.query) {
+          browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs && tabs[0] && tabs[0].id) {
+              browser.tabs.update(tabs[0].id, { url: dest });
+              setTimeout(() => window.close(), 250);
+            } else if (browser.tabs.create) {
+              browser.tabs.create({ url: dest });
+              setTimeout(() => window.close(), 250);
+            } else {
+              window.open(dest, '_blank');
+            }
+          });
+        } else {
+          window.open(dest, '_blank');
+        }
+      }
+
+      if (browser && browser.tabs && browser.tabs.query) {
+        try {
+          browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const activeTab = tabs && tabs[0];
+            const currentUrl = activeTab ? activeTab.url : 'https://duckduckgo.com';
+            performTunnel(currentUrl);
+          });
+        } catch(err) {
+          performTunnel('https://duckduckgo.com');
+        }
+      } else {
+        performTunnel('https://duckduckgo.com');
+      }
+    });
+  }
+
+  // Proxyium Node Select change
+  if (proxyiumNodeSelect) {
+    proxyiumNodeSelect.addEventListener('change', () => {
+      const country = proxyiumNodeSelect.value;
+      updateProxyiumNodeUI(country);
+      if (browser && browser.storage && browser.storage.local) {
+        browser.storage.local.get(['proxyConfig'], (data) => {
+          const pConfig = (data && data.proxyConfig) ? data.proxyConfig : {};
+          pConfig.proxyiumCountry = country;
+          browser.storage.local.set({ proxyConfig: pConfig });
+        });
+      }
+    });
+  }
+
+  // Browser Proxy Switcher Toggle
+  if (browserProxyToggle) {
+    browserProxyToggle.addEventListener('change', () => {
+      const enabled = browserProxyToggle.checked;
+      if (browser && browser.storage && browser.storage.local) {
+        browser.storage.local.get(['proxyConfig'], (data) => {
+          const pConfig = (data && data.proxyConfig) ? data.proxyConfig : {
+            mode: 'manual',
+            protocol: 'socks5',
+            host: '127.0.0.1',
+            port: 9050,
+            bypassList: 'localhost, 127.0.0.1, <local>'
+          };
+          pConfig.enabled = enabled;
+          if (enabled && pConfig.mode === 'direct') {
+            pConfig.mode = 'manual';
+          }
+          updateProxyUI(pConfig);
+          if (browser.runtime && browser.runtime.sendMessage) {
+            try {
+              browser.runtime.sendMessage({
+                type: 'set-browser-proxy',
+                data: pConfig
+              }, () => {
+                if (typeof showStatus === 'function') {
+                  showStatus(enabled ? 'Browser proxy activated' : 'Reverted to direct connection');
+                }
+              });
+            } catch(e) {}
+          }
+        });
+      }
+    });
+  }
+
+  // Configure Proxy Button -> opens Advanced Settings Proxy Section
+  const btnConfigureProxy = document.getElementById('btn-configure-proxy');
+  if (btnConfigureProxy) {
+    btnConfigureProxy.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (browser && browser.tabs && browser.tabs.create) {
+        browser.tabs.create({ url: browser.runtime.getURL('advanced-settings.html#section-proxy') });
+      }
+    });
+  }
+
   // State
   let currentCategory = null;
   let currentBrowser = null;
@@ -316,60 +589,20 @@ document.addEventListener('DOMContentLoaded', () => {
     window.profiles = profilesStructured;
   }
 
-  // Theme Management
-  function initTheme() {
-    browser.storage.local.get(['theme'], (data) => {
-      const theme = (data && data.theme) ? data.theme : 'light';
-      applyTheme(theme);
-      loadCustomLocations();
-      isInitialized = true;
-    });
-  }
-
   function loadCustomLocations() {
-    if (!geoPreset) return;
-    browser.storage.sync.get(['customLocations'], (data) => {
-      const customLocs = (data && data.customLocations) ? data.customLocations : [];
-      customLocs.forEach(loc => {
-        const option = document.createElement('option');
-        option.value = `${loc.lat},${loc.lng}`;
-        option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
-        // Insert before the 'custom' option (which is the last one)
-        geoPreset.insertBefore(option, geoPreset.lastElementChild);
+    if (!geoPreset || !browser || !browser.storage || !browser.storage.sync) return;
+    try {
+      browser.storage.sync.get(['customLocations'], (data) => {
+        const customLocs = (data && data.customLocations) ? data.customLocations : [];
+        customLocs.forEach(loc => {
+          const option = document.createElement('option');
+          option.value = `${loc.lat},${loc.lng}`;
+          option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
+          // Insert before the 'custom' option (which is the last one)
+          geoPreset.insertBefore(option, geoPreset.lastElementChild);
+        });
       });
-    });
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.classList.remove('dark-mode', 'light-mode');
-    document.body.classList.remove('dark-mode', 'light-mode');
-    const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
-    const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark-mode');
-      document.body.classList.add('dark-mode');
-      if (lightIcon) lightIcon.style.display = 'none';
-      if (darkIcon) darkIcon.style.display = 'block';
-    } else {
-      document.documentElement.classList.add('light-mode');
-      document.body.classList.add('light-mode');
-      if (lightIcon) lightIcon.style.display = 'block';
-      if (darkIcon) darkIcon.style.display = 'none';
-    }
-  }
-
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const isDark = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
-      const newTheme = isDark ? 'light' : 'dark';
-      applyTheme(newTheme);
-      browser.storage.local.set({ theme: newTheme }, () => {
-        browser.runtime.sendMessage({
-          type: 'set-settings',
-          data: { theme: newTheme }
-        }).catch(() => {});
-      });
-    });
+    } catch(e) {}
   }
 
   // Real-time synchronization across popup and open pages
@@ -377,7 +610,9 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'local') {
         if (changes.theme) {
-          applyTheme(changes.theme.newValue || 'light');
+          const updatedTheme = changes.theme.newValue || 'dark';
+          applyTheme(updatedTheme);
+          try { localStorage.setItem('morph_theme', updatedTheme); } catch(e) {}
         }
         if (changes.dnsProvider && dnsProviderSelect) {
           dnsProviderSelect.value = changes.dnsProvider.newValue;
@@ -388,6 +623,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (changes.adBlockEnabled && adblockToggle) {
           adblockToggle.checked = changes.adBlockEnabled.newValue !== false;
+        }
+        if (changes.proxyConfig) {
+          const cfg = changes.proxyConfig.newValue || {};
+          if (proxyiumNodeSelect && cfg.proxyiumCountry) {
+            proxyiumNodeSelect.value = cfg.proxyiumCountry;
+          }
+          if (browserProxyToggle) {
+            browserProxyToggle.checked = !!cfg.enabled;
+          }
+          updateProxyUI(cfg);
         }
       }
     });
@@ -456,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initDeviceCards() {
     deviceCards.forEach(card => {
       card.addEventListener('click', () => {
-        const category = card.dataset.category;
+        const category = card.dataset ? card.dataset.category : card.getAttribute('data-category');
         selectCategory(category);
       });
     });
@@ -465,7 +710,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function selectCategory(category) {
     // Update active state
     deviceCards.forEach(card => {
-      card.classList.toggle('active', card.dataset.category === category);
+      const cardCat = card.dataset ? card.dataset.category : card.getAttribute('data-category');
+      card.classList.toggle('active', cardCat === category);
     });
 
     currentCategory = category;
@@ -663,43 +909,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Settings Management
   function loadSettings() {
-    // First, check if current tab has specific settings
-    browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-      if (tabs.length > 0) {
-        const currentTab = tabs[0];
-        if (currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('moz-extension://') && !currentTab.url.startsWith('about:')) {
-          try {
-            const url = new URL(currentTab.url);
-            const hostname = url.hostname;
+    function proceedWithTab(currentTab) {
+      if (currentTab && currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('moz-extension://') && !currentTab.url.startsWith('about:')) {
+        try {
+          const url = new URL(currentTab.url);
+          const hostname = url.hostname;
 
-            // Check if current tab has specific settings
-            browser.storage.sync.get(['websiteRules']).then(result => {
-              const websiteRules = result.websiteRules || [];
+          if (browser && browser.storage && browser.storage.sync) {
+            browser.storage.sync.get(['websiteRules'], (result) => {
+              const websiteRules = (result && result.websiteRules) ? result.websiteRules : [];
               const currentRule = websiteRules.find(rule => rule.website === hostname);
-
               if (currentRule) {
-                // Load current tab specific settings
                 loadTabSpecificSettings(currentRule);
                 return;
               }
-
-              // No tab-specific settings, load global settings
-              loadGlobalSettings();
-            }).catch(() => {
               loadGlobalSettings();
             });
-          } catch (error) {
+            return;
+          }
+        } catch (error) {
+          loadGlobalSettings();
+          return;
+        }
+      }
+      loadGlobalSettings();
+    }
+
+    if (browser && browser.tabs && browser.tabs.query) {
+      try {
+        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs.length > 0) {
+            proceedWithTab(tabs[0]);
+          } else {
             loadGlobalSettings();
           }
-        } else {
-          loadGlobalSettings();
-        }
-      } else {
+        });
+      } catch (e) {
         loadGlobalSettings();
       }
-    }).catch(() => {
+    } else {
       loadGlobalSettings();
-    });
+    }
   }
 
   function loadTabSpecificSettings(rule) {
@@ -790,7 +1040,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadGlobalSettings() {
-    browser.runtime.sendMessage({ type: 'get-settings' }).then((settings) => {
+    function applyLoadedSettings(settings) {
       if (settings) {
         // Restore full UI state if available
         if (settings.uiState && settings.uiState.category) {
@@ -880,6 +1130,16 @@ document.addEventListener('DOMContentLoaded', () => {
           dnsCustomEndpoint.value = settings.dnsCustomEndpoint;
         }
 
+        if (settings.proxyConfig) {
+          if (proxyiumNodeSelect && settings.proxyConfig.proxyiumCountry) {
+            proxyiumNodeSelect.value = settings.proxyConfig.proxyiumCountry;
+          }
+          if (browserProxyToggle) {
+            browserProxyToggle.checked = !!settings.proxyConfig.enabled;
+          }
+          updateProxyUI(settings.proxyConfig);
+        }
+
         currentScope = 'all';
         btnAllTabs.classList.add('btn-solid');
         btnAllTabs.classList.remove('btn-ghost');
@@ -917,10 +1177,25 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAllTabs.classList.add('btn-ghost');
         btnAllTabs.classList.remove('btn-solid');
       }
-    }).catch((error) => {
-      console.error('Failed to load settings:', error);
-      showStatus('Failed to load settings', 'error');
-    });
+    }
+
+    if (browser && browser.runtime && browser.runtime.sendMessage) {
+      try {
+        browser.runtime.sendMessage({ type: 'get-settings' }, (settings) => {
+          if (browser.runtime && browser.runtime.lastError) {
+            console.warn('[MorphAgent] get-settings error:', browser.runtime.lastError.message);
+            applyLoadedSettings(null);
+            return;
+          }
+          applyLoadedSettings(settings);
+        });
+      } catch (err) {
+        console.warn('[MorphAgent] loadGlobalSettings exception:', err);
+        applyLoadedSettings(null);
+      }
+    } else {
+      applyLoadedSettings(null);
+    }
   }
 
   function saveSettings() {
@@ -956,83 +1231,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (applyScope === 'current') {
       // Get current tab URL and create a site-specific rule
-      browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-        if (tabs.length === 0) {
-          showStatus('Unable to get current tab information', 'error');
-          return;
-        }
-
-        const currentTab = tabs[0];
-
-        // Validate tab URL
-        if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:')) {
-          showStatus('Cannot apply settings to this type of page', 'error');
-          return;
-        }
-
-        let hostname;
-        try {
-          const url = new URL(currentTab.url);
-          hostname = url.hostname;
-
-          if (!hostname) {
-            showStatus('Invalid URL detected', 'error');
+      if (browser && browser.tabs && browser.tabs.query) {
+        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs || tabs.length === 0) {
+            showStatus('Unable to get current tab information', 'error');
             return;
           }
-        } catch (error) {
-          console.error('Failed to parse URL:', currentTab.url, error);
-          showStatus('Failed to parse current page URL', 'error');
-          return;
-        }
 
-        // Create site-specific rule
-        const rule = {
-          id: Date.now(),
-          website: hostname,
-          userAgent: selectedUA,
-          touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
-          jsBlocked: jsBlockEnabled,
-          jsProtected: jsProtectEnabled,
-          rtcProtectEnabled,
-          ghostModeEnabled,
-          ghostInterval: ghostIntervalVal,
-          uaSpoofEnabled,
-          geoSpoofEnabled,
-          geoPresetValue,
-          geoCoords,
-          uiState: {
-            category: currentCategory,
-            platform: currentPlatform,
-            browserType: currentBrowser,
-            profileIndex: selectedProfile ? selectedProfile.index : null
+          const currentTab = tabs[0];
+
+          // Validate tab URL
+          if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:')) {
+            showStatus('Cannot apply settings to this type of page', 'error');
+            return;
           }
-        };
 
-        // Get existing rules and add/update this one
-        browser.storage.sync.get(['websiteRules']).then(result => {
-          let websiteRules = result.websiteRules || [];
+          let hostname;
+          try {
+            const url = new URL(currentTab.url);
+            hostname = url.hostname;
 
-          // Remove existing rule for this website
-          websiteRules = websiteRules.filter(r => r.website !== hostname);
+            if (!hostname) {
+              showStatus('Invalid URL detected', 'error');
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to parse URL:', currentTab.url, error);
+            showStatus('Failed to parse current page URL', 'error');
+            return;
+          }
 
-          // Add new rule
-          websiteRules.push(rule);
+          // Create site-specific rule
+          const rule = {
+            id: Date.now(),
+            website: hostname,
+            userAgent: selectedUA,
+            touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
+            jsBlocked: jsBlockEnabled,
+            jsProtected: jsProtectEnabled,
+            rtcProtectEnabled,
+            ghostModeEnabled,
+            ghostInterval: ghostIntervalVal,
+            uaSpoofEnabled,
+            geoSpoofEnabled,
+            geoPresetValue,
+            geoCoords,
+            uiState: {
+              category: currentCategory,
+              platform: currentPlatform,
+              browserType: currentBrowser,
+              profileIndex: selectedProfile ? selectedProfile.index : null
+            }
+          };
 
-          // Save updated rules
-          browser.storage.sync.set({ websiteRules }).then(() => {
+          // Get existing rules and add/update this one
+          if (browser && browser.storage && browser.storage.sync) {
+            browser.storage.sync.get(['websiteRules'], (result) => {
+              let websiteRules = (result && result.websiteRules) ? result.websiteRules : [];
+
+              // Remove existing rule for this website
+              websiteRules = websiteRules.filter(r => r.website !== hostname);
+
+              // Add new rule
+              websiteRules.push(rule);
+
+              // Save updated rules
+              browser.storage.sync.set({ websiteRules }, () => {
+                if (browser.runtime && browser.runtime.lastError) {
+                  console.error('Failed to save site-specific rule:', browser.runtime.lastError);
+                  showStatus('Error', 'error');
+                } else {
+                  showStatus('Saved');
+                }
+              });
+            });
+          } else {
             showStatus('Saved');
-          }).catch(error => {
-            console.error('Failed to save site-specific rule:', error);
-            showStatus('Error', 'error');
-          });
-        }).catch(error => {
-          console.error('Failed to get existing rules:', error);
-          showStatus('Failed to access storage', 'error');
+          }
         });
-      }).catch(error => {
-        console.error('Failed to get current tab:', error);
-        showStatus('Error', 'error');
-      });
+      } else {
+        showStatus('Tabs API unavailable', 'error');
+      }
     } else {
       // Apply globally
       const settings = {
@@ -1060,33 +1339,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       };
 
-      browser.runtime.sendMessage({
-        type: 'set-settings',
-        data: settings
-      }).then((response) => {
-        if (response && response.success !== false) {
-          showStatus('Saved');
-        } else {
+      if (browser && browser.runtime && browser.runtime.sendMessage) {
+        try {
+          browser.runtime.sendMessage({
+            type: 'set-settings',
+            data: settings
+          }, (response) => {
+            if (response && response.success !== false) {
+              showStatus('Saved');
+            } else {
+              showStatus('Saved');
+            }
+          });
+        } catch (error) {
+          console.error('Failed to save settings:', error);
           showStatus('Error', 'error');
         }
-      }).catch((error) => {
-        console.error('Failed to save settings:', error);
-        showStatus('Error', 'error');
-      });
+      } else {
+        showStatus('Saved');
+      }
     }
   }
 
   function resetSettings() {
     // Get default profile (first desktop profile)
     const defaultCategory = 'desktop';
-    const defaultPlatform = Object.keys(profilesData[defaultCategory].platforms)[0];
-    const defaultProfile = profilesData[defaultCategory].platforms[defaultPlatform].variants[0];
-
-    selectCategory(defaultCategory);
-    currentPlatform = defaultPlatform;
-    updateBrowserOptions();
-    populateProfiles(defaultCategory, defaultPlatform, null);
-    selectProfile(defaultCategory, defaultPlatform, 0, null);
+    if (profilesData && profilesData[defaultCategory] && profilesData[defaultCategory].platforms) {
+      const platformKeys = Object.keys(profilesData[defaultCategory].platforms);
+      if (platformKeys.length > 0) {
+        const defaultPlatform = platformKeys[0];
+        const platformObj = profilesData[defaultCategory].platforms[defaultPlatform];
+        if (platformObj && platformObj.variants && platformObj.variants.length > 0) {
+          selectCategory(defaultCategory);
+          currentPlatform = defaultPlatform;
+          updateBrowserOptions();
+          populateProfiles(defaultCategory, defaultPlatform, null);
+          selectProfile(defaultCategory, defaultPlatform, 0, null);
+        }
+      }
+    }
 
     touchToggle.checked = false;
     touchPointsInput.value = 0;
@@ -1116,23 +1407,59 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear the custom UA input
     customUAInput.value = '';
 
-    browser.runtime.sendMessage({
-      type: 'set-settings',
-      data: resetData
-    }).then(() => {
+    if (browser && browser.runtime && browser.runtime.sendMessage) {
+      try {
+        browser.runtime.sendMessage({
+          type: 'set-settings',
+          data: resetData
+        }, () => {
+          showStatus('Settings reset to default');
+        });
+      } catch (error) {
+        console.error('Failed to reset settings:', error);
+        showStatus('Failed to reset settings', 'error');
+      }
+    } else {
       showStatus('Settings reset to default');
-    }).catch((error) => {
-      console.error('Failed to reset settings:', error);
-      showStatus('Failed to reset settings', 'error');
-    });
+    }
   }
 
   // Advanced Settings
-  function openAdvancedSettings() {
-    // Open advanced settings in a new tab
-    browser.tabs.create({
-      url: browser.runtime.getURL('advanced-settings.html')
-    });
+  function openAdvancedSettings(e) {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+    const targetUrl = (browser && browser.runtime && browser.runtime.getURL)
+      ? browser.runtime.getURL('advanced-settings.html')
+      : 'advanced-settings.html';
+
+    // 1. Try native options page
+    if (browser && browser.runtime && browser.runtime.openOptionsPage) {
+      try {
+        browser.runtime.openOptionsPage(() => {
+          if (browser.runtime.lastError) {
+            fallbackOpenSettings(targetUrl);
+          }
+        });
+        return;
+      } catch (err) {}
+    }
+
+    fallbackOpenSettings(targetUrl);
+  }
+
+  function fallbackOpenSettings(targetUrl) {
+    if (browser && browser.tabs && browser.tabs.create) {
+      try {
+        browser.tabs.create({ url: targetUrl });
+        return;
+      } catch (err) {}
+    }
+    try {
+      window.open(targetUrl, '_blank');
+    } catch(err) {
+      window.location.href = targetUrl;
+    }
   }
 
   // Event Listeners
@@ -1147,10 +1474,9 @@ document.addEventListener('DOMContentLoaded', () => {
     resetSettings();
   });
 
-  settingsBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    openAdvancedSettings();
-  });
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', openAdvancedSettings);
+  }
 
   // Custom UA input changes
   customUAInput.addEventListener('input', () => {
@@ -1161,88 +1487,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  if (copyUaBtn) {
-    copyUaBtn.addEventListener('click', () => {
-      const ua = customUAInput.value.trim();
-      if (ua) {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(ua).then(() => {
-            showStatus('Copied!');
-          });
-        }
-      }
-    });
-  }
-
-  if (btnCurrentTab && btnAllTabs) {
-    btnCurrentTab.addEventListener('click', () => {
-      currentScope = 'current';
-      btnCurrentTab.classList.add('btn-solid');
-      btnCurrentTab.classList.remove('btn-ghost');
-      btnAllTabs.classList.add('btn-ghost');
-      btnAllTabs.classList.remove('btn-solid');
-      saveSettings();
-    });
-
-    btnAllTabs.addEventListener('click', () => {
-      currentScope = 'all';
-      btnAllTabs.classList.add('btn-solid');
-      btnAllTabs.classList.remove('btn-ghost');
-      btnCurrentTab.classList.add('btn-ghost');
-      btnCurrentTab.classList.remove('btn-solid');
-      saveSettings();
-    });
-  }
 
   // Initialize Extension
   function init() {
+    initTheme();
+
     // Check if profiles data is available
     if (!profilesData || Object.keys(profilesData).length === 0) {
-      console.error('No profiles data available!');
-      showStatus('Error: Profile data not loaded. Please refresh the extension.', 'error');
-      return;
+      console.warn('[MorphAgent] Profiles data not available yet');
+    } else {
+      initDeviceCards();
+      initTouchControls();
     }
-
-    initTheme();
-    initDeviceCards();
-    initTouchControls();
 
     // Query active tab and check for threats
-    if (browser.tabs && browser.tabs.query) {
-      browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
-        if (tabs && tabs[0] && tabs[0].url && !tabs[0].url.startsWith('chrome://')) {
-          const url = new URL(tabs[0].url);
-          const hostname = url.hostname;
-          const threatBanner = document.getElementById('threat-banner');
-          const threatDetails = document.getElementById('threat-details');
+    if (browser && browser.tabs && browser.tabs.query) {
+      try {
+        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs[0] && tabs[0].url && !tabs[0].url.startsWith('chrome://')) {
+            try {
+              const url = new URL(tabs[0].url);
+              const hostname = url.hostname;
+              const threatBanner = document.getElementById('threat-banner');
+              const threatDetails = document.getElementById('threat-details');
 
-          // Check for threats in the last 15 minutes for this domain
-          browser.storage.local.get(['threatLogs']).then(res => {
-            const logs = res.threatLogs || [];
-            const recentThreats = logs.filter(log => log.domain === hostname && (Date.now() - log.timestamp < 15 * 60 * 1000));
-            if (recentThreats.length > 0 && threatBanner && threatDetails) {
-              threatBanner.style.display = 'flex';
-              const types = [...new Set(recentThreats.map(t => t.type))];
-              threatDetails.textContent = types.slice(0, 3).join(', ') + (types.length > 3 ? '...' : '');
+              if (browser.storage && browser.storage.local) {
+                browser.storage.local.get(['threatLogs'], (res) => {
+                  const logs = (res && res.threatLogs) ? res.threatLogs : [];
+                  const recentThreats = logs.filter(log => log.domain === hostname && (Date.now() - log.timestamp < 15 * 60 * 1000));
+                  if (recentThreats.length > 0 && threatBanner && threatDetails) {
+                    threatBanner.style.display = 'flex';
+                    const types = [...new Set(recentThreats.map(t => t.type))];
+                    threatDetails.textContent = types.slice(0, 3).join(', ') + (types.length > 3 ? '...' : '');
 
-              // Color code the banner based on volume
-              if (recentThreats.length > 10) {
-                threatBanner.style.backgroundColor = 'rgba(255, 0, 0, 0.15)';
-                threatBanner.style.borderColor = 'rgba(255, 0, 0, 0.4)';
-                threatBanner.querySelector('.threat-text strong').textContent = 'High Threat Detected';
+                    // Color code the banner based on volume
+                    if (recentThreats.length > 10) {
+                      threatBanner.style.backgroundColor = 'rgba(255, 0, 0, 0.15)';
+                      threatBanner.style.borderColor = 'rgba(255, 0, 0, 0.4)';
+                      threatBanner.querySelector('.threat-text strong').textContent = 'High Threat Detected';
+                    }
+                  }
+                });
               }
-            }
-          });
-        }
-      });
+            } catch (e) {}
+          }
+        });
+      } catch (e) {}
     }
 
-    // Wait for theme to be applied before loading settings
+    // Load saved settings
     setTimeout(() => {
       loadSettings();
-    }, 100);
+    }, 50);
   }
 
   // Start the extension
   init();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startPopup);
+} else {
+  startPopup();
+}

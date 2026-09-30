@@ -20,4 +20,9 @@ try {
 } catch (e) {
   console.error('Failed to zip:', e.message);
   process.exit(1);
+} finally {
+  if (fs.existsSync('manifest.chrome.json')) {
+    fs.copyFileSync('manifest.chrome.json', 'manifest.json');
+    console.log('✓ Restored manifest.json to Chrome MV3');
+  }
 }

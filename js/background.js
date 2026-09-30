@@ -55,6 +55,131 @@ function applyWebRTCLeakPolicy(enabled) {
   }
 }
 
+// Proxy & Proxyium Anonymous Network Engine State
+let proxyConfig = {
+  enabled: false,
+  mode: 'direct',
+  protocol: 'socks5',
+  host: '127.0.0.1',
+  port: 9050,
+  bypassList: 'localhost, 127.0.0.1, <local>',
+  pacUrl: '',
+  proxyiumCountry: 'pl',
+  syncGeoWithProxyium: true,
+  enableContextMenus: true
+};
+
+// URL normalizer helper
+function normalizeTargetUrl(input) {
+  let url = (input || '').trim();
+  if (!url) return 'https://duckduckgo.com';
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    if (url.includes('.') && !url.includes(' ')) {
+      url = 'https://' + url;
+    } else {
+      url = 'https://duckduckgo.com/?q=' + encodeURIComponent(url);
+    }
+  }
+  return url;
+}
+
+// Launch Proxyium anonymous session
+async function launchProxyiumUrl(rawUrl, country = 'pl', openInNewTab = true) {
+  let targetUrl = rawUrl;
+  if (!targetUrl || targetUrl.startsWith('chrome://') || targetUrl.startsWith('about:') || targetUrl.startsWith('moz-extension://') || targetUrl.startsWith('chrome-extension://')) {
+    targetUrl = 'https://duckduckgo.com';
+  }
+
+  // If geo sync enabled and country is US, automatically sync coordinates
+  if (proxyConfig && proxyConfig.syncGeoWithProxyium && country === 'us') {
+    try {
+      await api.storage.local.set({
+        geoSpoofEnabled: true,
+        geoPresetValue: '40.7128,-74.0060',
+        geoCoords: { lat: 40.7128, lng: -74.0060 }
+      });
+    } catch (e) {}
+  }
+
+  const normUrl = normalizeTargetUrl(targetUrl);
+  const proxyiumUrl = `https://proxyium.com/?morph_url=${encodeURIComponent(normUrl)}&morph_country=${encodeURIComponent(country || 'pl')}`;
+
+  if (openInNewTab) {
+    if (api.tabs && api.tabs.create) {
+      return api.tabs.create({ url: proxyiumUrl });
+    }
+  } else {
+    if (api.tabs && api.tabs.query) {
+      const tabs = await api.tabs.query({ active: true, currentWindow: true });
+      if (tabs && tabs[0] && tabs[0].id) {
+        return api.tabs.update(tabs[0].id, { url: proxyiumUrl });
+      } else if (api.tabs && api.tabs.create) {
+        return api.tabs.create({ url: proxyiumUrl });
+      }
+    }
+  }
+}
+
+// Browser-Level Proxy Settings Controller (Chrome / Firefox proxy API)
+function applyBrowserProxy(pConfig) {
+  if (!api.proxy || !api.proxy.settings) {
+    console.log('[MorphAgent 4.5] Browser proxy API not available in this context');
+    return Promise.resolve({ success: false, reason: 'Proxy API unavailable' });
+  }
+
+  return new Promise((resolve) => {
+    let config = { mode: 'direct' };
+
+    if (pConfig && pConfig.enabled && pConfig.mode !== 'direct') {
+      if (pConfig.mode === 'system') {
+        config = { mode: 'system' };
+      } else if (pConfig.mode === 'pac_script' || pConfig.mode === 'pac') {
+        config = {
+          mode: 'pac_script',
+          pacScript: {
+            url: pConfig.pacUrl || ''
+          }
+        };
+      } else {
+        // Manual fixed servers
+        const scheme = (pConfig.protocol || 'socks5').toLowerCase();
+        const host = pConfig.host || '127.0.0.1';
+        const port = parseInt(pConfig.port, 10) || 9050;
+        const bypass = (pConfig.bypassList || 'localhost, 127.0.0.1, <local>')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        config = {
+          mode: 'fixed_servers',
+          rules: {
+            singleProxy: { scheme, host, port },
+            bypassList: bypass
+          }
+        };
+      }
+    }
+
+    try {
+      api.proxy.settings.set({ value: config, scope: 'regular' }, () => {
+        if (api.runtime.lastError) {
+          console.warn('[MorphAgent 4.5] Proxy setting error:', api.runtime.lastError);
+          resolve({ success: false, error: api.runtime.lastError.message });
+        } else {
+          console.log('[MorphAgent 4.5] Browser proxy applied:', config.mode);
+          if (pConfig && pConfig.enabled && pConfig.mode !== 'direct') {
+            applyWebRTCLeakPolicy(true);
+          }
+          resolve({ success: true, config });
+        }
+      });
+    } catch (e) {
+      console.warn('[MorphAgent 4.5] Proxy exception:', e);
+      resolve({ success: false, error: e.message });
+    }
+  });
+}
+
 console.log('[MorphAgent 4.5] Background engine with 100% AdBlock & Secure DNS starting...');
 
 // Helper: Extract Client Hints headers from UA string
@@ -194,7 +319,8 @@ async function loadSettings() {
     const localData = await api.storage.local.get([
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
       'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
-      'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked'
+      'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked',
+      'proxyConfig'
     ]);
 
     websiteRules = syncData.websiteRules || [];
@@ -221,6 +347,13 @@ async function loadSettings() {
     if (localData.removeXClientDataEnabled !== undefined) removeXClientDataEnabled = !!localData.removeXClientDataEnabled;
     if (localData.filtersState) filtersState = localData.filtersState;
     if (localData.filtersLastChecked) filtersLastChecked = localData.filtersLastChecked;
+
+    if (localData.proxyConfig) {
+      proxyConfig = Object.assign({}, proxyConfig, localData.proxyConfig);
+      if (proxyConfig.enabled && proxyConfig.mode !== 'direct') {
+        applyBrowserProxy(proxyConfig);
+      }
+    }
 
     applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
 
@@ -319,6 +452,14 @@ api.storage.onChanged.addListener((changes, areaName) => {
     if (changes.filtersState !== undefined) {
       filtersState = changes.filtersState.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
+    }
+    if (changes.proxyConfig !== undefined && changes.proxyConfig.newValue) {
+      proxyConfig = Object.assign({}, proxyConfig, changes.proxyConfig.newValue);
+      if (proxyConfig.enabled && proxyConfig.mode !== 'direct') {
+        applyBrowserProxy(proxyConfig);
+      } else {
+        applyBrowserProxy({ enabled: false, mode: 'direct' });
+      }
     }
   }
 });
@@ -473,7 +614,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       'dnsCustomEndpoint',
       'adBlockCosmeticEnabled',
       'adBlockAntiAdblockEnabled',
-      'adBlockStats'
+      'adBlockStats',
+      'proxyConfig'
     ]).then(res => {
       res.adBlockEnabled = res.adBlockEnabled !== undefined ? res.adBlockEnabled : adBlockEnabled;
       res.dnsProvider = res.dnsProvider || dnsProvider;
@@ -481,6 +623,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       res.adBlockCosmeticEnabled = res.adBlockCosmeticEnabled !== undefined ? res.adBlockCosmeticEnabled : adBlockCosmeticEnabled;
       res.adBlockAntiAdblockEnabled = res.adBlockAntiAdblockEnabled !== undefined ? res.adBlockAntiAdblockEnabled : adBlockAntiAdblockEnabled;
       res.adBlockStats = res.adBlockStats || adBlockStats;
+      res.proxyConfig = res.proxyConfig || proxyConfig;
       sendResponse(res);
     }).catch(() => sendResponse({}));
     return true;
@@ -647,6 +790,40 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       api.storage.sync.set({ websiteRules }).then(() => sendResponse({ success: true }));
     }).catch(() => sendResponse({ success: false }));
     return true;
+  } else if (message.type === 'launch-proxyium') {
+    const targetUrl = message.url || 'https://duckduckgo.com';
+    const country = message.country || proxyConfig.proxyiumCountry || 'pl';
+    const openInNewTab = message.newTab !== undefined ? !!message.newTab : true;
+    launchProxyiumUrl(targetUrl, country, openInNewTab).then(() => {
+      sendResponse({ success: true });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  } else if (message.type === 'get-proxy-status') {
+    sendResponse({ success: true, proxyConfig });
+    return true;
+  } else if (message.type === 'set-browser-proxy') {
+    proxyConfig = Object.assign({}, proxyConfig, message.data);
+    applyBrowserProxy(proxyConfig).then(res => {
+      api.storage.local.set({ proxyConfig }).then(() => {
+        sendResponse(res);
+      });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
+  } else if (message.type === 'clear-browser-proxy') {
+    proxyConfig.enabled = false;
+    proxyConfig.mode = 'direct';
+    applyBrowserProxy(proxyConfig).then(res => {
+      api.storage.local.set({ proxyConfig }).then(() => {
+        sendResponse(res);
+      });
+    }).catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    return true;
   }
 });
 
@@ -732,6 +909,69 @@ function setupContextMenus() {
         parentId: 'morph-agent-root',
         title: 'Add to Exception List (Toggle Spoofing)',
         contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-proxyium-sep',
+        parentId: 'morph-agent-root',
+        type: 'separator',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-proxyium-root',
+        parentId: 'morph-agent-root',
+        title: 'Proxyium Anonymous Web Tunnel',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-tab-pl',
+        parentId: 'morph-agent-proxyium-root',
+        title: 'Route Current Page via Poland/France (Fast)',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-tab-us',
+        parentId: 'morph-agent-proxyium-root',
+        title: 'Route Current Page via United States (Geo-Unblock)',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-tab-sg',
+        parentId: 'morph-agent-proxyium-root',
+        title: 'Route Current Page via Singapore (Asia-Pacific)',
+        contexts: ['all']
+      });
+
+      // Context menu for links
+      api.contextMenus.create({
+        id: 'morph-agent-proxyium-link-root',
+        title: 'Open Link in Proxyium Web Proxy',
+        contexts: ['link']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-link-pl',
+        parentId: 'morph-agent-proxyium-link-root',
+        title: 'Open in Poland/France Node (Fast)',
+        contexts: ['link']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-link-us',
+        parentId: 'morph-agent-proxyium-link-root',
+        title: 'Open in United States Node',
+        contexts: ['link']
+      });
+
+      api.contextMenus.create({
+        id: 'proxyium-link-sg',
+        parentId: 'morph-agent-proxyium-link-root',
+        title: 'Open in Singapore Node',
+        contexts: ['link']
       });
 
       api.contextMenus.create({
@@ -856,6 +1096,22 @@ if (api.contextMenus && api.contextMenus.onClicked) {
           });
         }
       });
+      return;
+    }
+
+    // Check if it's a Proxyium page click
+    if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith('proxyium-tab-')) {
+      const country = info.menuItemId.replace('proxyium-tab-', '');
+      const targetUrl = (tab && tab.url) ? tab.url : 'https://duckduckgo.com';
+      launchProxyiumUrl(targetUrl, country, true);
+      return;
+    }
+
+    // Check if it's a Proxyium link click
+    if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith('proxyium-link-')) {
+      const country = info.menuItemId.replace('proxyium-link-', '');
+      const targetUrl = info.linkUrl || (tab && tab.url) || 'https://duckduckgo.com';
+      launchProxyiumUrl(targetUrl, country, true);
       return;
     }
 
