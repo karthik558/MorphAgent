@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
 > 100% Chromium (Manifest V3) & Firefox Dual Engine with 10 Ultimate Stealth Protections
 
-![Version](https://img.shields.io/badge/version-4.5.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.6.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
@@ -74,7 +74,7 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ---
 
-## What's New in Version 4.5
+## What's New in Version 4.6
 
 1. **Ultra-Efficiency 100% AdBlock & Tracker Engine (AdGuard / uBlock Origin Parity)**  
    - **Zero-Latency C++ Network Interception**: 220+ top programmatic ad exchanges, tracking pixels (Meta, TikTok, Twitter, LinkedIn), telemetry engines (Hotjar, Clarity, Mixpanel), and in-browser cryptominers blocked via native MV3 DeclarativeNetRequest dynamic rules.

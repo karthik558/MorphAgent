@@ -1,4 +1,4 @@
-// adblock-rules.js - MorphAgent 4.5.0
+// adblock-rules.js - MorphAgent 4.6.0
 // Universal High-Efficiency Ad, Tracker, Telemetry & DNS Rule Engine
 // Parity with uBlock Origin / AdGuard core blocklists & MV3 DeclarativeNetRequest
 

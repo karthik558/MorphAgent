@@ -1120,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Terminal Diagnostic Trace Log
         if (auditConsoleLog) {
           const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.5.0</span>\n`;
+          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.6.0</span>\n`;
           tests.forEach(t => {
             logHtml += `<span class="${t.passed ? 'log-pass' : 'log-warn'}">[${t.passed ? 'PASS' : 'WARN'}] ${t.logCode.padEnd(16)}</span> :: ${escapeHtml(t.logDetail)}\n`;
           });

@@ -235,7 +235,7 @@
                     lower.includes('propellerads') || lower.includes('popcash') || lower.includes('adsterra') ||
                     lower.includes('clickadu') || lower.includes('ad-maven') || lower.includes('juicyads') ||
                     lower.includes('yllix') || lower.includes('bidvertiser')) {
-                  console.log('[MorphAgent 4.5] Intrusive ad popunder blocked:', url);
+                  console.log('[MorphAgent 4.6] Intrusive ad popunder blocked:', url);
                   return null;
                 }
               }
