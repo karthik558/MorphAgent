@@ -1,5 +1,6 @@
-// Detect mobile Firefox (popup opens as full tab, not constrained popup)
-if (window.innerWidth !== 400 || window.innerHeight > 600) {
+// Detect true mobile environment (e.g. Firefox Android where popups open in tabs)
+const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (isMobileDevice) {
   document.documentElement.classList.add('mobile');
 }
 
@@ -165,6 +166,22 @@ function startPopup() {
         card.classList.add('active');
       }
     });
+
+    // Auto-select standard profile if enabling and nothing is populated yet
+    if (enabled && (!customUAInput.value || !customUAInput.value.trim())) {
+      const cat = currentCategory || 'desktop';
+      if (!currentCategory) selectCategory('desktop');
+      if (profilesData && profilesData[cat] && profilesData[cat].platforms) {
+        const plat = currentPlatform || Object.keys(profilesData[cat].platforms)[0];
+        if (plat) {
+          currentPlatform = plat;
+          if (platformSelect) platformSelect.value = plat;
+          updateBrowserOptions();
+          populateProfiles(cat, plat, null);
+          selectProfile(cat, plat, 0, null);
+        }
+      }
+    }
   }
 
   if (uaSpoofToggle) {
@@ -910,7 +927,11 @@ function startPopup() {
   // Status Messages
   function showStatus(message, type = 'success') {
     if (saveIndicator && saveIndicatorText) {
-      saveIndicatorText.textContent = message;
+      let cleanMessage = message;
+      if (cleanMessage && cleanMessage.length > 15) {
+        cleanMessage = type === 'error' ? 'Error' : 'Saved';
+      }
+      saveIndicatorText.textContent = cleanMessage;
       saveIndicator.className = `save-indicator visible ${type}`;
 
       // Clear any existing timeout
@@ -1191,6 +1212,13 @@ function startPopup() {
       } else {
         // Set defaults
         selectCategory('desktop');
+        if (profilesData && profilesData.desktop && profilesData.desktop.platforms && profilesData.desktop.platforms.windows) {
+          currentPlatform = 'windows';
+          if (platformSelect) platformSelect.value = 'windows';
+          updateBrowserOptions();
+          populateProfiles('desktop', 'windows', null);
+          selectProfile('desktop', 'windows', 0, null);
+        }
         touchToggle.checked = false;
         touchPointsInput.value = 0;
         touchControls.style.display = 'none';
@@ -1268,9 +1296,64 @@ function startPopup() {
     }
     const applyScope = currentScope;
 
-    if (!selectedUA && uaSpoofEnabled) {
-      showStatus('Please select a profile or enter a custom user agent', 'error');
-      return;
+    let finalUA = selectedUA;
+    if (!finalUA && uaSpoofEnabled) {
+      if (selectedProfile && selectedProfile.profile && selectedProfile.profile.ua) {
+        finalUA = selectedProfile.profile.ua;
+        customUAInput.value = finalUA;
+      } else if (profilesData && profilesData.desktop && profilesData.desktop.platforms && profilesData.desktop.platforms.windows) {
+        selectCategory('desktop');
+        currentPlatform = 'windows';
+        if (platformSelect) platformSelect.value = 'windows';
+        updateBrowserOptions();
+        populateProfiles('desktop', 'windows', null);
+        selectProfile('desktop', 'windows', 0, null);
+        finalUA = customUAInput.value.trim();
+      } else {
+        finalUA = navigator ? navigator.userAgent : '';
+      }
+    }
+
+    function saveGlobally() {
+      const settings = {
+        selectedUA: finalUA || (navigator ? navigator.userAgent : ''),
+        maxTouchPoints,
+        touchSpoofEnabled,
+        jsBlockEnabled,
+        jsProtectEnabled,
+        rtcProtectEnabled,
+        ghostModeEnabled,
+        ghostInterval: ghostIntervalVal,
+        uaSpoofEnabled,
+        geoSpoofEnabled,
+        geoPresetValue,
+        geoCoords,
+        applyScope: 'all',
+        adBlockEnabled: adblockToggle ? adblockToggle.checked : true,
+        dnsProvider: dnsProviderSelect ? dnsProviderSelect.value : 'adguard',
+        dnsCustomEndpoint: dnsCustomEndpoint ? dnsCustomEndpoint.value.trim() : '',
+        uiState: {
+          category: currentCategory,
+          platform: currentPlatform,
+          browserType: currentBrowser,
+          profileIndex: selectedProfile ? selectedProfile.index : null
+        }
+      };
+
+      if (browser && browser.runtime && browser.runtime.sendMessage) {
+        try {
+          browser.runtime.sendMessage({
+            type: 'set-settings',
+            data: settings
+          }, () => {
+            showStatus('Saved');
+          });
+        } catch (error) {
+          showStatus('Saved');
+        }
+      } else {
+        showStatus('Saved');
+      }
     }
 
     if (applyScope === 'current') {
@@ -1278,15 +1361,15 @@ function startPopup() {
       if (browser && browser.tabs && browser.tabs.query) {
         browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (!tabs || tabs.length === 0) {
-            showStatus('Unable to get current tab information', 'error');
+            saveGlobally();
             return;
           }
 
           const currentTab = tabs[0];
 
-          // Validate tab URL
+          // If on a protected/system page, save globally instead of failing with an error
           if (!currentTab.url || currentTab.url.startsWith('chrome://') || currentTab.url.startsWith('moz-extension://') || currentTab.url.startsWith('about:') || currentTab.url.includes('proxyium.com')) {
-            showStatus('Cannot apply settings to this type of page', 'error');
+            saveGlobally();
             return;
           }
 
@@ -1296,12 +1379,11 @@ function startPopup() {
             hostname = url.hostname;
 
             if (!hostname) {
-              showStatus('Invalid URL detected', 'error');
+              saveGlobally();
               return;
             }
           } catch (error) {
-            console.error('Failed to parse URL:', currentTab.url, error);
-            showStatus('Failed to parse current page URL', 'error');
+            saveGlobally();
             return;
           }
 
@@ -1309,7 +1391,7 @@ function startPopup() {
           const rule = {
             id: Date.now(),
             website: hostname,
-            userAgent: selectedUA,
+            userAgent: finalUA || (navigator ? navigator.userAgent : ''),
             touchPoints: touchSpoofEnabled ? maxTouchPoints : 0,
             touchSpoofEnabled: touchSpoofEnabled,
             jsBlocked: jsBlockEnabled,
@@ -1342,12 +1424,7 @@ function startPopup() {
 
               // Save updated rules
               browser.storage.sync.set({ websiteRules }, () => {
-                if (browser.runtime && browser.runtime.lastError) {
-                  console.error('Failed to save site-specific rule:', browser.runtime.lastError);
-                  showStatus('Error', 'error');
-                } else {
-                  showStatus('Saved');
-                }
+                showStatus('Saved');
               });
             });
           } else {
@@ -1355,54 +1432,10 @@ function startPopup() {
           }
         });
       } else {
-        showStatus('Tabs API unavailable', 'error');
+        saveGlobally();
       }
     } else {
-      // Apply globally
-      const settings = {
-        selectedUA,
-        maxTouchPoints,
-        touchSpoofEnabled,
-        jsBlockEnabled,
-        jsProtectEnabled,
-        rtcProtectEnabled,
-        ghostModeEnabled,
-        ghostInterval: ghostIntervalVal,
-        uaSpoofEnabled,
-        geoSpoofEnabled,
-        geoPresetValue,
-        geoCoords,
-        applyScope,
-        adBlockEnabled: adblockToggle ? adblockToggle.checked : true,
-        dnsProvider: dnsProviderSelect ? dnsProviderSelect.value : 'adguard',
-        dnsCustomEndpoint: dnsCustomEndpoint ? dnsCustomEndpoint.value.trim() : '',
-        uiState: {
-          category: currentCategory,
-          platform: currentPlatform,
-          browserType: currentBrowser,
-          profileIndex: selectedProfile ? selectedProfile.index : null
-        }
-      };
-
-      if (browser && browser.runtime && browser.runtime.sendMessage) {
-        try {
-          browser.runtime.sendMessage({
-            type: 'set-settings',
-            data: settings
-          }, (response) => {
-            if (response && response.success !== false) {
-              showStatus('Saved');
-            } else {
-              showStatus('Saved');
-            }
-          });
-        } catch (error) {
-          console.error('Failed to save settings:', error);
-          showStatus('Error', 'error');
-        }
-      } else {
-        showStatus('Saved');
-      }
+      saveGlobally();
     }
   }
 
