@@ -74,7 +74,7 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ---
 
-## What's New in Version 4.6
+## What's New in Version 4.7
 
 1. **Built-in Ad & Tracker Filtering**
    - **Zero-Latency C++ Network Interception**: 220+ top programmatic ad exchanges, tracking pixels (Meta, TikTok, Twitter, LinkedIn), telemetry engines (Hotjar, Clarity, Mixpanel), and in-browser cryptominers blocked via native MV3 DeclarativeNetRequest dynamic rules.

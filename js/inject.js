@@ -1,4 +1,4 @@
-(function() {
+(function () {
   if (window.__MORPH_INJECTED__) return;
   window.__MORPH_INJECTED__ = true;
 
@@ -15,7 +15,7 @@
         cachedSettings = JSON.parse(raw);
         isSettingsLoaded = true;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     window.__MORPH_SYNC_LOADED = isSettingsLoaded;
     window.__MORPH_AGENT_SETTINGS__ = cachedSettings || window.__MORPH_AGENT_SETTINGS__ || {};
@@ -50,7 +50,7 @@
             configurable: true,
             enumerable: true
           });
-        } catch(e) {}
+        } catch (e) { }
       }
 
       // Tracking Protection: Hide Search Query in document.referrer
@@ -65,7 +65,7 @@
               configurable: true
             });
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       // Tracking Protection: Clean URL tracking parameters from page address bar
@@ -94,13 +94,13 @@
           const origPushState = history.pushState;
           if (origPushState && !window.__MORPH_HISTORY_WRAPPED__) {
             window.__MORPH_HISTORY_WRAPPED__ = true;
-            history.pushState = function() {
+            history.pushState = function () {
               const res = origPushState.apply(this, arguments);
               cleanTrackingParams();
               return res;
             };
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       // Anti-Adblock Defuser, Scriptlet Traps & Height Probe Spoofing
@@ -128,9 +128,9 @@
               const cls = (el.className || '').toString().toLowerCase();
               if (cls.includes('textads') || cls.includes('banner_ads') || (cls.includes('adbox') && cls.includes('banner'))) return false;
               return cls.includes('adsbox') || cls.includes('ad-banner') || cls.includes('ad-unit') ||
-                     cls.includes('ad_unit') || cls.includes('ad-detector') || cls.includes('pub_300') ||
-                     id.includes('ad-detector') || id.includes('ad_banner') || id.includes('ad-banner') ||
-                     cls.includes('ad-slot') || cls.includes('advertisement');
+                cls.includes('ad_unit') || cls.includes('ad-detector') || cls.includes('pub_300') ||
+                id.includes('ad-detector') || id.includes('ad_banner') || id.includes('ad-banner') ||
+                cls.includes('ad-slot') || cls.includes('advertisement');
             };
 
             if (origOffsetHeight && origOffsetHeight.get) {
@@ -174,20 +174,20 @@
           // Google Tag Manager / Analytics / AdSense Stubs
           if (!window.adsbygoogle) {
             window.adsbygoogle = [];
-            window.adsbygoogle.push = function() { return 1; };
+            window.adsbygoogle.push = function () { return 1; };
             window.adsbygoogle.loaded = true;
           }
 
           if (!window.googletag) {
-            const emptyFn = function() { return this; };
+            const emptyFn = function () { return this; };
             const emptyObj = { addService: emptyFn, setTargeting: emptyFn, defineSizeMapping: emptyFn, build: emptyFn };
             window.googletag = {
               cmd: [],
               display: emptyFn,
-              defineSlot: function() { return emptyObj; },
-              defineOutOfPageSlot: function() { return emptyObj; },
+              defineSlot: function () { return emptyObj; },
+              defineOutOfPageSlot: function () { return emptyObj; },
               enableServices: emptyFn,
-              pubads: function() {
+              pubads: function () {
                 return {
                   enableSingleRequest: emptyFn,
                   collapseEmptyDivs: emptyFn,
@@ -197,30 +197,30 @@
                   setTargeting: emptyFn
                 };
               },
-              sizeMapping: function() { return { addSize: emptyFn, build: emptyFn }; }
+              sizeMapping: function () { return { addSize: emptyFn, build: emptyFn }; }
             };
-            window.googletag.cmd.push = function(fn) {
-              if (typeof fn === 'function') { try { fn(); } catch(e){} }
+            window.googletag.cmd.push = function (fn) {
+              if (typeof fn === 'function') { try { fn(); } catch (e) { } }
               return 1;
             };
           }
 
           if (!window.ga) {
-            window.ga = function() {
+            window.ga = function () {
               if (arguments.length > 0 && typeof arguments[arguments.length - 1] === 'function') {
-                try { arguments[arguments.length - 1](); } catch(e){}
+                try { arguments[arguments.length - 1](); } catch (e) { }
               }
             };
             window.ga.loaded = true;
           }
           if (!window.gtag) {
-            window.gtag = function() {};
+            window.gtag = function () { };
           }
           if (!window._gaq) {
-            window._gaq = { push: function() {} };
+            window._gaq = { push: function () { } };
           }
           if (!window.fbq) {
-            window.fbq = function() {};
+            window.fbq = function () { };
             window.fbq.loaded = true;
           }
 
@@ -228,21 +228,21 @@
           if (!window.__MORPH_POPUP_HOOKED__) {
             window.__MORPH_POPUP_HOOKED__ = true;
             const origOpen = window.open;
-            window.open = function(url) {
+            window.open = function (url) {
               if (typeof url === 'string') {
                 const lower = url.toLowerCase();
                 if (lower.includes('popads') || lower.includes('exoclick') || lower.includes('trafficjunky') ||
-                    lower.includes('propellerads') || lower.includes('popcash') || lower.includes('adsterra') ||
-                    lower.includes('clickadu') || lower.includes('ad-maven') || lower.includes('juicyads') ||
-                    lower.includes('yllix') || lower.includes('bidvertiser')) {
-                  console.log('[MorphAgent 4.6] Intrusive ad popunder blocked:', url);
+                  lower.includes('propellerads') || lower.includes('popcash') || lower.includes('adsterra') ||
+                  lower.includes('clickadu') || lower.includes('ad-maven') || lower.includes('juicyads') ||
+                  lower.includes('yllix') || lower.includes('bidvertiser')) {
+                  console.log('[MorphAgent 4.7] Intrusive ad popunder blocked:', url);
                   return null;
                 }
               }
               return origOpen.apply(this, arguments);
             };
           }
-        } catch(e) {}
+        } catch (e) { }
       }
 
       // 100% Video Ad Auto-Skipper & Fast-Forwarder for YouTube and HTML5 Players
@@ -285,7 +285,7 @@
                 }
               });
             }
-          } catch(e) {}
+          } catch (e) { }
         };
 
         // Run on high-frequency interval for instantaneous zero-latency skipping
@@ -357,7 +357,7 @@
           brands: brands,
           mobile: isMobile,
           platform: osName,
-          getHighEntropyValues: function(hints) {
+          getHighEntropyValues: function (hints) {
             return Promise.resolve({
               brands: brands,
               mobile: isMobile,
@@ -370,7 +370,7 @@
               uaFullVersion: fullVer
             });
           },
-          toJSON: function() {
+          toJSON: function () {
             return { brands: brands, mobile: isMobile, platform: osName };
           }
         };
@@ -399,32 +399,32 @@
             'DRM Access': 'Proprietary KeySystems blocked to conceal OS',
             'ClientRects': 'Sub-pixel bounding box layout jitter added'
           };
-          window.dispatchEvent(new CustomEvent('morph-threat-detected', { 
-            detail: { 
-              type, 
+          window.dispatchEvent(new CustomEvent('morph-threat-detected', {
+            detail: {
+              type,
               domain: window.location.hostname || 'localhost',
               actionTaken: actionMap[type] || 'Protected by MorphAgent Stealth Matrix',
               details: details || '',
               timestamp: Date.now()
-            } 
+            }
           }));
-        } catch (e) {}
+        } catch (e) { }
       };
 
       // CSS Media Query Spoofing
       if (s.mediaQuerySpoofEnabled && window.matchMedia) {
         const origMatchMedia = window.matchMedia;
-        window.matchMedia = function(query) {
+        window.matchMedia = function (query) {
           if (typeof query === 'string' && query.includes('prefers-color-scheme')) {
             return {
               matches: query.includes('dark') ? false : true, // Force light mode default or whatever spoof
               media: query,
               onchange: null,
-              addListener: function() {},
-              removeListener: function() {},
-              addEventListener: function() {},
-              removeEventListener: function() {},
-              dispatchEvent: function() { return true; }
+              addListener: function () { },
+              removeListener: function () { },
+              addEventListener: function () { },
+              removeEventListener: function () { },
+              dispatchEvent: function () { return true; }
             };
           }
           return origMatchMedia.apply(this, arguments);
@@ -439,7 +439,7 @@
         if (s.timingShieldEnabled && !window.__MORPH_TIMING_PROTECTED && window.performance && performance.now) {
           window.__MORPH_TIMING_PROTECTED = true;
           const origNow = performance.now;
-          performance.now = function() {
+          performance.now = function () {
             emitThreat('Timing (performance.now)');
             const now = origNow.call(this);
             const jitter = (Math.random() * 0.1) - 0.05; // +/- 0.05ms
@@ -451,13 +451,13 @@
         if (!window.__MORPH_CLIPBOARD_PROTECTED && window.navigator && navigator.clipboard) {
           window.__MORPH_CLIPBOARD_PROTECTED = true;
           if (navigator.clipboard.readText) {
-            navigator.clipboard.readText = function() {
+            navigator.clipboard.readText = function () {
               emitThreat('Clipboard Read');
               return Promise.reject(new DOMException('Read permission denied.', 'NotAllowedError'));
             };
           }
         }
-        
+
         // Navigator Plugins & MimeTypes Spoofing
         if (window.navigator) {
           const fakePlugin = {
@@ -468,20 +468,20 @@
             0: { description: "Portable Document Format", suffixes: "pdf", type: "application/x-google-chrome-pdf" }
           };
           Object.setPrototypeOf(fakePlugin, Plugin.prototype);
-          
-          const fakePluginArray = { 0: fakePlugin, length: 1, 'Chrome PDF Plugin': fakePlugin, refresh: () => {} };
+
+          const fakePluginArray = { 0: fakePlugin, length: 1, 'Chrome PDF Plugin': fakePlugin, refresh: () => { } };
           Object.setPrototypeOf(fakePluginArray, PluginArray.prototype);
-          
+
           const fakeMime = { description: "Portable Document Format", suffixes: "pdf", type: "application/pdf", enabledPlugin: fakePlugin };
           Object.setPrototypeOf(fakeMime, MimeType.prototype);
-          
+
           const fakeMimeArray = { 0: fakeMime, length: 1, 'application/pdf': fakeMime };
           Object.setPrototypeOf(fakeMimeArray, MimeTypeArray.prototype);
 
           try {
             Object.defineProperty(Navigator.prototype, 'plugins', { get: () => fakePluginArray, configurable: true });
             Object.defineProperty(Navigator.prototype, 'mimeTypes', { get: () => fakeMimeArray, configurable: true });
-          } catch(e) {}
+          } catch (e) { }
         }
 
         // Hardware & Memory Harmonization Engine
@@ -506,7 +506,7 @@
             memory = 16;
           }
         }
-        
+
         if (s.customHardwareCores && s.customHardwareCores !== 'auto') {
           cores = Number(s.customHardwareCores) || cores;
         }
@@ -529,7 +529,7 @@
 
         // Spoof Media Devices (Webcams/Mics)
         if (window.MediaDevices && MediaDevices.prototype.enumerateDevices) {
-          MediaDevices.prototype.enumerateDevices = function() {
+          MediaDevices.prototype.enumerateDevices = function () {
             return Promise.resolve([
               { deviceId: 'default', kind: 'audioinput', label: 'Default Microphone', groupId: 'default' },
               { deviceId: 'default', kind: 'videoinput', label: 'Default Webcam', groupId: 'default' },
@@ -541,13 +541,13 @@
         // DRM (Encrypted Media Extensions) Spoofing
         if (window.Navigator && Navigator.prototype.requestMediaKeySystemAccess) {
           const originalRequestMediaKeySystemAccess = Navigator.prototype.requestMediaKeySystemAccess;
-          Navigator.prototype.requestMediaKeySystemAccess = function(keySystem, supportedConfigurations) {
+          Navigator.prototype.requestMediaKeySystemAccess = function (keySystem, supportedConfigurations) {
             emitThreat('DRM Access');
             // Block proprietary DRMs to prevent OS identification, allow Widevine
             if (keySystem === 'com.microsoft.playready' || keySystem === 'com.apple.fps.1_0') {
               return Promise.reject(new DOMException('Unsupported keySystem', 'NotSupportedError'));
             }
-            
+
             // Suppress DRM robustness warnings from Chrome
             if (supportedConfigurations && Array.isArray(supportedConfigurations)) {
               supportedConfigurations.forEach(config => {
@@ -563,16 +563,16 @@
                 }
               });
             }
-            
+
             return originalRequestMediaKeySystemAccess.call(this, keySystem, supportedConfigurations);
           };
         }
 
         if (!window.__MORPH_CANVAS_PROTECTED) {
           window.__MORPH_CANVAS_PROTECTED = true;
-          
+
           const origGetContext = HTMLCanvasElement.prototype.getContext;
-          HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+          HTMLCanvasElement.prototype.getContext = function (type, attributes) {
             if (type === '2d') {
               attributes = attributes || {};
               attributes.willReadFrequently = true; // Suppresses readback warnings
@@ -581,7 +581,7 @@
           };
 
           const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-          HTMLCanvasElement.prototype.toDataURL = function(...args) {
+          HTMLCanvasElement.prototype.toDataURL = function (...args) {
             emitThreat('Canvas DataURL');
             const ctx = origGetContext.call(this, '2d');
             if (ctx) {
@@ -595,14 +595,14 @@
                     ctx.putImageData(imgData, 0, 0); // Apply the noise so toDataURL captures it
                   }
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
             return originalToDataURL.apply(this, args);
           };
 
           if (window.CanvasRenderingContext2D) {
             const originalGetImageData = CanvasRenderingContext2D.prototype.getImageData;
-            CanvasRenderingContext2D.prototype.getImageData = function(...args) {
+            CanvasRenderingContext2D.prototype.getImageData = function (...args) {
               emitThreat('Canvas Pixel Read');
               const imageData = originalGetImageData.apply(this, args);
               // Inject microscopic, domain-specific noise (e.g. modify every 17th pixel slightly)
@@ -619,7 +619,7 @@
         if (!window.__MORPH_AUDIO_PROTECTED && window.AnalyserNode) {
           window.__MORPH_AUDIO_PROTECTED = true;
           const origGetFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
-          AnalyserNode.prototype.getFloatFrequencyData = function(array) {
+          AnalyserNode.prototype.getFloatFrequencyData = function (array) {
             emitThreat('Audio Analyser');
             origGetFloatFreq.apply(this, arguments);
             for (let i = 0; i < array.length; i += 100) {
@@ -631,7 +631,7 @@
         if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection && s.rtcProtectEnabled !== false) {
           window.__MORPH_RTC_PROTECTED = true;
           const origCreateOffer = RTCPeerConnection.prototype.createOffer;
-          RTCPeerConnection.prototype.createOffer = function(options) {
+          RTCPeerConnection.prototype.createOffer = function (options) {
             return origCreateOffer.apply(this, arguments).then(offer => {
               if (offer && offer.sdp) {
                 offer.sdp = offer.sdp.replace(/\b(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)\b/g, '0.0.0.0');
@@ -659,7 +659,7 @@
         // Offline AudioContext Spoofing
         if (window.OfflineAudioContext) {
           const originalGetChannelData = AudioBuffer.prototype.getChannelData;
-          AudioBuffer.prototype.getChannelData = function() {
+          AudioBuffer.prototype.getChannelData = function () {
             const results = originalGetChannelData.apply(this, arguments);
             for (let i = 0; i < results.length; i += 100) {
               results[i] = results[i] + ((domainHash % 10 - 5) * 0.0000001);
@@ -675,16 +675,16 @@
             if (!ctxProto) return;
             const originalGetParameter = ctxProto.getParameter;
             const originalReadPixels = ctxProto.readPixels;
-            
-            ctxProto.getParameter = function(parameter) {
+
+            ctxProto.getParameter = function (parameter) {
               emitThreat('WebGL Parameter');
               if (parameter === 37445) return 'Google Inc. (Intel)';
               if (parameter === 37446) return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
               return originalGetParameter.apply(this, arguments);
             };
-            
+
             if (originalReadPixels) {
-              ctxProto.readPixels = function(...args) {
+              ctxProto.readPixels = function (...args) {
                 emitThreat('WebGL Pixel Read');
                 originalReadPixels.apply(this, args);
                 const pixels = args[6];
@@ -716,7 +716,7 @@
             Object.setPrototypeOf(modified, DOMRect.prototype);
             return modified;
           };
-          Element.prototype.getBoundingClientRect = function() {
+          Element.prototype.getBoundingClientRect = function () {
             if (rectWarnCount++ < 5) emitThreat('ClientRects'); // Throttle telemetry to avoid spam
             return applyNoiseToRect(origGetBoundingClientRect.apply(this, arguments));
           };
@@ -729,13 +729,13 @@
           const origOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
           if (origOffsetWidth && origOffsetHeight) {
             Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
-              get: function() {
+              get: function () {
                 const val = origOffsetWidth.get.call(this);
                 return val + (domainHash % 3 === 0 && val > 10 ? 1 : 0);
               }, configurable: true
             });
             Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-              get: function() {
+              get: function () {
                 const val = origOffsetHeight.get.call(this);
                 return val + (domainHash % 2 === 0 && val > 10 ? 1 : 0);
               }, configurable: true
@@ -750,13 +750,13 @@
           const origClientY = Object.getOwnPropertyDescriptor(MouseEvent.prototype, 'clientY');
           if (origClientX && origClientY) {
             Object.defineProperty(MouseEvent.prototype, 'clientX', {
-              get: function() {
+              get: function () {
                 const val = origClientX.get.call(this);
                 return this.isTrusted ? val + (domainHash % 3) : val;
               }, configurable: true
             });
             Object.defineProperty(MouseEvent.prototype, 'clientY', {
-              get: function() {
+              get: function () {
                 const val = origClientY.get.call(this);
                 return this.isTrusted ? val + (domainHash % 3) : val;
               }, configurable: true
@@ -770,16 +770,16 @@
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
         const lat = parseFloat(coords.lat) || 40.7128;
         const lng = parseFloat(coords.lng) || -74.0060;
-        
+
         const tzInfo = resolveTimezoneAndLocale(lat, lng, s.geoTimezone, s.geoLocale);
 
-        Date.prototype.getTimezoneOffset = function() { 
-          return tzInfo.offset; 
+        Date.prototype.getTimezoneOffset = function () {
+          return tzInfo.offset;
         };
 
         if (window.Intl && Intl.DateTimeFormat) {
           const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-          Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+          Intl.DateTimeFormat.prototype.resolvedOptions = function () {
             const options = originalResolvedOptions.apply(this, arguments);
             options.timeZone = tzInfo.timeZone;
             if (options.locale && tzInfo.locale) {
@@ -925,16 +925,16 @@
     window.addEventListener('morph-agent-update', (evt) => {
       let data = null;
       if (typeof evt.detail === 'string') {
-        try { data = JSON.parse(evt.detail); } catch(e) {}
+        try { data = JSON.parse(evt.detail); } catch (e) { }
       } else if (evt.detail && typeof evt.detail === 'object' && Object.keys(evt.detail).length > 0) {
         data = evt.detail;
       }
-      
+
       if (!data) {
         try {
           const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
           if (raw) data = JSON.parse(raw);
-        } catch(e) {}
+        } catch (e) { }
       }
 
       if (data) {
@@ -947,10 +947,10 @@
         try {
           sessionStorage.setItem('morph_agent_settings', JSON.stringify(data));
           localStorage.setItem('morph_agent_settings', JSON.stringify(data));
-        } catch (e) {}
-        
+        } catch (e) { }
+
         applyStealthSettings(data);
-        
+
         while (pendingCalls.length > 0) pendingCalls.shift()();
         while (pendingWatches.length > 0) pendingWatches.shift()();
       }
@@ -963,7 +963,7 @@
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
         const lat = parseFloat(coords.lat) || 40.7128;
         const lng = parseFloat(coords.lng) || -74.0060;
-        
+
         const pos = {
           coords: {
             latitude: lat,
@@ -976,7 +976,7 @@
           },
           timestamp: Date.now()
         };
-        
+
         try {
           if (typeof GeolocationPosition !== 'undefined') {
             Object.setPrototypeOf(pos, GeolocationPosition.prototype);
@@ -984,8 +984,8 @@
           if (typeof GeolocationCoordinates !== 'undefined') {
             Object.setPrototypeOf(pos.coords, GeolocationCoordinates.prototype);
           }
-        } catch (e) {}
-        
+        } catch (e) { }
+
         return pos;
       }
 
@@ -994,7 +994,7 @@
           const success = args[0];
           const error = args[1];
           const options = args[2];
-          
+
           const run = () => {
             const s = window.__MORPH_AGENT_SETTINGS__ || {};
             if (s.geoSpoofEnabled) {
@@ -1030,7 +1030,7 @@
           const error = args[1];
           const options = args[2];
           const id = watchCounter++;
-          
+
           const run = () => {
             const s = window.__MORPH_AGENT_SETTINGS__ || {};
             if (s.geoSpoofEnabled) {
@@ -1092,14 +1092,14 @@
                 state: 'granted',
                 name: 'geolocation',
                 onchange: null,
-                addEventListener: function() {},
-                removeEventListener: function() {},
-                dispatchEvent: function() { return true; }
+                addEventListener: function () { },
+                removeEventListener: function () { },
+                dispatchEvent: function () { return true; }
               });
             }
             return Reflect.apply(target, thisArg, args);
           };
-          
+
           if (isSettingsLoaded) {
             return run();
           } else {
@@ -1118,14 +1118,14 @@
         }
       });
     }
-    
+
     // Function Cloaking
     const nativeToString = Function.prototype.toString;
     const spoofedFuncs = new Set();
     if (HTMLCanvasElement.prototype.toDataURL) spoofedFuncs.add(HTMLCanvasElement.prototype.toDataURL);
     if (typeof Geolocation !== 'undefined' && Geolocation.prototype.getCurrentPosition) spoofedFuncs.add(Geolocation.prototype.getCurrentPosition);
 
-    Function.prototype.toString = function() {
+    Function.prototype.toString = function () {
       if (spoofedFuncs.has(this)) {
         return 'function ' + (this.name || '') + '() { [native code] }';
       }
@@ -1140,7 +1140,7 @@
       else if (window.navigator.getBattery) origGetBattery = window.navigator.getBattery;
 
       if (origGetBattery) {
-        const spoofBattery = function(...args) {
+        const spoofBattery = function (...args) {
           emitThreat('Battery API');
           return new Promise((resolve, reject) => {
             const checkAndResolve = () => {
@@ -1177,17 +1177,17 @@
           });
         };
 
-        try { 
-          Object.defineProperty(Navigator.prototype, 'getBattery', { value: spoofBattery, configurable: true }); 
+        try {
+          Object.defineProperty(Navigator.prototype, 'getBattery', { value: spoofBattery, configurable: true });
         } catch (e) {
           window.__MORPH_BATTERY_ERROR = 'NavProto Error: ' + e.message;
         }
-        try { 
-          Object.defineProperty(window.navigator, 'getBattery', { value: spoofBattery, configurable: true }); 
+        try {
+          Object.defineProperty(window.navigator, 'getBattery', { value: spoofBattery, configurable: true });
         } catch (e) {
           window.__MORPH_BATTERY_ERROR = (window.__MORPH_BATTERY_ERROR ? window.__MORPH_BATTERY_ERROR + ' | ' : '') + 'WinNav Error: ' + e.message;
         }
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 })();

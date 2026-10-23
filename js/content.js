@@ -129,7 +129,7 @@
       }
     });
   }).catch(err => {
-    console.warn('[MorphAgent 4.6] Storage access error:', err);
+    console.warn('[MorphAgent 4.7] Storage access error:', err);
   });
 
   function stripTrackingParameters() {

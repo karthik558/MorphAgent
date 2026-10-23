@@ -46,12 +46,12 @@ function applyWebRTCLeakPolicy(enabled) {
     const policy = enabled ? 'disable_non_proxied_udp' : 'default';
     try {
       api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }).then(() => {
-        console.log(`[MorphAgent 4.6] WebRTC IP handling policy applied: ${policy}`);
+        console.log(`[MorphAgent 4.7] WebRTC IP handling policy applied: ${policy}`);
       }).catch(err => {
-        console.warn('[MorphAgent 4.6] WebRTC IP handling policy error:', err);
+        console.warn('[MorphAgent 4.7] WebRTC IP handling policy error:', err);
       });
     } catch (e) {
-      console.warn('[MorphAgent 4.6] WebRTC IP handling policy exception:', e);
+      console.warn('[MorphAgent 4.7] WebRTC IP handling policy exception:', e);
     }
   }
 }
@@ -121,7 +121,7 @@ async function launchProxyiumUrl(rawUrl, country = 'pl', openInNewTab = true) {
 // Browser-Level Proxy Settings Controller (Chrome / Firefox proxy API)
 function applyBrowserProxy(pConfig) {
   if (!api.proxy || !api.proxy.settings) {
-    console.log('[MorphAgent 4.6] Browser proxy API not available in this context');
+    console.log('[MorphAgent 4.7] Browser proxy API not available in this context');
     return Promise.resolve({ success: false, reason: 'Proxy API unavailable' });
   }
 
@@ -259,9 +259,9 @@ async function synchronizeRules(targetUA) {
       removeRuleIds,
       addRules
     });
-    console.log(`[MorphAgent 4.6] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
+    console.log(`[MorphAgent 4.7] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
   } catch (e) {
-    console.warn('[MorphAgent 4.6] DNR update failed:', e);
+    console.warn('[MorphAgent 4.7] DNR update failed:', e);
   }
 }
 
@@ -358,7 +358,7 @@ async function loadSettings() {
     updateBadge(cachedUA, activeCategory);
     updateDeclarativeNetRequestRules(cachedUA);
 
-    console.log('[MorphAgent 4.6] Settings loaded:', {
+    console.log('[MorphAgent 4.7] Settings loaded:', {
       rulesCount: websiteRules.length,
       blockListCount: blockList.length,
       jsBlock: jsBlockEnabled,
@@ -366,7 +366,7 @@ async function loadSettings() {
       activeCategory
     });
   } catch (error) {
-    console.error('[MorphAgent 4.6] Settings load error:', error);
+    console.error('[MorphAgent 4.7] Settings load error:', error);
   }
 }
 
@@ -541,7 +541,7 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
       })
     );
   } catch (e) {
-    console.log('[MorphAgent 4.6] webRequest blocking listener skipped or MV3 active');
+    console.log('[MorphAgent 4.7] webRequest blocking listener skipped or MV3 active');
   }
 }
 
@@ -853,7 +853,7 @@ function setupContextMenus() {
     api.contextMenus.removeAll(() => {
       api.contextMenus.create({
         id: 'morph-agent-root',
-        title: 'MorphAgent 4.6 Stealth',
+        title: 'MorphAgent 4.7 Stealth',
         contexts: ['all']
       });
 
@@ -1026,7 +1026,7 @@ function setupContextMenus() {
       });
     });
   } catch (e) {
-    console.warn('[MorphAgent 4.6] Context menu setup skipped:', e);
+    console.warn('[MorphAgent 4.7] Context menu setup skipped:', e);
   }
 }
 
@@ -1184,7 +1184,7 @@ if (api.alarms && api.alarms.onAlarm) {
         activeCategory = randomUA.category;
         updateDeclarativeNetRequestRules(cachedUA);
         updateBadge(cachedUA, activeCategory);
-        console.log('[MorphAgent 4.6 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
+        console.log('[MorphAgent 4.7 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
       });
     }
   });
