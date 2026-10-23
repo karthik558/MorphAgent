@@ -1,0 +1,16 @@
+/* Native elements retain the data model; only these custom menus are shown. */
+.enhanced-select > select, .enhanced-select > .select-chevron { display: none !important; }
+.select-trigger { width: 100%; min-width: 0; min-height: 38px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--border-light); border-radius: 7px; background: var(--bg-card); color: var(--text-primary); cursor: pointer; text-align: left; font-size: 12px; }
+.select-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-trigger:hover:not(:disabled) { border-color: var(--border-focus); background: var(--bg-hover); }
+.select-trigger[aria-expanded="true"] { border-color: var(--accent-red); }
+.select-trigger:disabled { cursor: not-allowed; color: var(--text-secondary); background: var(--bg-hover); }
+.menu-chevron { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-2px) rotate(45deg); flex-shrink: 0; color: var(--text-secondary); }
+.select-trigger[aria-expanded="true"] .menu-chevron { transform: translateY(2px) rotate(225deg); }
+.select-menu { position: fixed; z-index: 1000; padding: 4px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-focus); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.16); }
+.select-menu[hidden] { display: none; }
+.select-option { position: relative; min-height: 36px; padding: 9px 28px 9px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.select-option.highlighted { background: var(--bg-hover); color: var(--text-primary); }
+.select-option[aria-selected="true"] { color: var(--accent-red); font-weight: 600; }
+.select-option[aria-selected="true"]::after { content: ''; position: absolute; right: 12px; top: 13px; width: 5px; height: 9px; border-bottom: 1.5px solid currentColor; border-right: 1.5px solid currentColor; transform: rotate(45deg); }
+.select-option[aria-disabled="true"] { color: var(--text-tertiary); cursor: not-allowed; }

@@ -1,0 +1,12 @@
+/* One compact device selector with consistent, unboxed line icons. */
+.device-grid { gap: 4px; padding: 4px; border: 1px solid var(--border-light); border-radius: 10px; background: var(--bg-card); }
+.device-card { position: relative; gap: 7px; padding: 11px 2px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-secondary); }
+.device-card span { font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.device-card .device-card-icon { width: 24px; height: 24px; background: transparent; border-radius: 0; }
+.device-card svg { width: 24px; height: 24px; stroke-width: 1.6; filter: none; }
+.device-card:hover { background: var(--bg-hover); border-color: transparent; color: var(--text-primary); }
+.device-card.active { background: var(--accent-red-soft); border-color: var(--border-danger); color: var(--accent-red); }
+.device-card.active .device-card-icon { background: transparent; }
+.device-card.active svg { filter: none; }
+.device-card.active span { font-weight: 650; }
+.device-card:disabled { opacity: .65; cursor: not-allowed; }
