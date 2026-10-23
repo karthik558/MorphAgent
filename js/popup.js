@@ -884,8 +884,8 @@ function startPopup() {
     currentPlatform = platform;
 
     if (platform && currentCategory) {
-      // Update browser options immediately when platform is selected
       updateBrowserOptions();
+      populateProfiles(currentCategory, platform, currentBrowser || null);
     } else {
       browserSelect.innerHTML = '<option value="">Select browser...</option>';
       profileSelect.innerHTML = '<option value="">Select profile...</option>';
