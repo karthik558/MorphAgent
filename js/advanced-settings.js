@@ -1061,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update Executive Cards
         if (auditScoreVal) {
           auditScoreVal.textContent = `${score}%`;
-          auditScoreVal.style.color = score >= 90 ? 'var(--accent-green)' : '#f59e0b';
+          auditScoreVal.style.color = score >= 90 ? 'var(--accent-green)' : 'var(--status-warning)';
         }
         if (auditRatingText) {
           auditRatingText.textContent = score >= 90 ? 'Optimal · Zero Critical Leaks' : 'Warning · Leaks Detected';
@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (auditLeakRiskVal) {
           auditLeakRiskVal.textContent = score >= 90 ? 'Low Risk' : 'Elevated Risk';
-          auditLeakRiskVal.style.color = score >= 90 ? 'var(--accent-green)' : '#f59e0b';
+          auditLeakRiskVal.style.color = score >= 90 ? 'var(--accent-green)' : 'var(--status-warning)';
         }
         if (auditLeakRiskSub) {
           const anomalies = tests.length - passedCount;
@@ -1758,9 +1758,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (statusCell) {
             if (blocked) {
-              statusCell.innerHTML = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); font-size: 10px;">BLOCKED (${durationMs}ms)</span>`;
+              statusCell.innerHTML = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); font-size: 10px;">BLOCKED (${durationMs}ms)</span>`;
             } else {
-              statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 10px;">UNBLOCKED</span>`;
+              statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--status-danger); border: 1px solid rgba(239, 68, 68, 0.3); font-size: 10px;">UNBLOCKED</span>`;
             }
           }
         }
@@ -2568,8 +2568,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const badgeStyle = isWhite
-        ? 'background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.3);'
-        : 'background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);';
+        ? 'background: rgba(34,197,94,0.12); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3);'
+        : 'background: rgba(239,68,68,0.12); color: var(--status-danger); border: 1px solid rgba(239,68,68,0.3);';
 
       const badgeLabel = isWhite ? 'Whitelisted' : 'Blacklisted';
 

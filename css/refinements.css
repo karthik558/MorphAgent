@@ -1,8 +1,16 @@
 /* Shared, restrained surfaces and accessible interaction states. */
 :root, html.light-mode, body.light-mode {
-  --accent-red: #a43830;
-  --accent-red-hover: #872e28;
-  --accent-red-soft: rgba(164, 56, 48, .08);
+  --brand-red: #ff0905;
+  --accent-red: #bf0805;
+  --button-bg: #dc0000;
+  --button-hover: #b80000;
+  --accent-green: #087344;
+  --status-warning: #875000;
+  --status-danger: #bf0805;
+  --status-info: #075985;
+  --status-orange: #9a3412;
+  --accent-red-hover: #990603;
+  --accent-red-soft: rgba(255, 9, 5, .06);
   --accent-red-glow: none;
   --radius-md: 8px;
   --radius-lg: 10px;
@@ -15,9 +23,16 @@ html.dark-mode, body.dark-mode {
   --text-secondary: #b9bdb9;
   --text-tertiary: #a0a6a1;
   --border-light: #373c3b;
-  --accent-red: #e29185;
-  --accent-red-hover: #edaca2;
-  --accent-red-soft: rgba(226, 145, 133, .1);
+  --accent-red: #ff6b66;
+  --button-bg: #dc0000;
+  --button-hover: #b80000;
+  --accent-green: #4ade80;
+  --status-warning: #facc15;
+  --status-danger: #ff6b66;
+  --status-info: #7dd3fc;
+  --status-orange: #fdba74;
+  --accent-red-hover: #ff8b86;
+  --accent-red-soft: rgba(255, 9, 5, .08);
   color-scheme: dark;
 }
 html.light-mode { color-scheme: light; }
@@ -41,7 +56,12 @@ button, a, input, select, textarea, [role="button"] { touch-action: manipulation
 .sidebar-link { min-height: 42px; border-radius: 6px; }
 .sidebar-link.active { box-shadow: none; }
 .btn, .apply-btn { box-shadow: none; }
-.btn-primary, .apply-btn { background: #a43830; color: #fff; }
+.btn-solid, .btn-primary, .apply-btn {
+  background: var(--button-bg); color: #fff; box-shadow: none;
+}
+.btn-solid:hover, .btn-primary:hover, .apply-btn:hover {
+  background: var(--button-hover); color: #fff; box-shadow: none;
+}
 .save-indicator { font-size: 12px; }
 input:disabled, button:disabled, select:disabled { opacity: .55; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
@@ -55,3 +75,37 @@ input:disabled, button:disabled, select:disabled { opacity: .55; cursor: not-all
   .sidebar-link { width: auto; }
   .content-area { min-width: 0; padding: 16px; }
 }
+
+/* Preserve the actual logo instead of tinting it white over an unrelated accent. */
+.logo-box { background: transparent; box-shadow: none; }
+.logo-box img { width: 30px; height: 30px; filter: none; }
+.device-card.active { border-color: var(--brand-red); color: var(--accent-red); }
+.device-card.active .device-card-icon, .feature-icon-box svg { filter: none; }
+input:checked + .toggle-slider { background-color: var(--button-bg); }
+input:focus-visible + .toggle-slider { outline: 2px solid var(--accent-red); outline-offset: 3px; }
+.tunnel-action-btn:hover, .tunnel-action-btn:focus-visible, .tunnel-action-btn.tunneling {
+  background: var(--button-bg); border-color: var(--button-bg); color: #fff; box-shadow: none;
+}
+.tunnel-action-btn::before { display: none; }
+button:disabled, select:disabled, textarea:disabled {
+  color: var(--text-secondary); background: var(--bg-hover); opacity: 1;
+}
+input::placeholder, textarea::placeholder { color: var(--text-tertiary); opacity: 1; }
+select option { color: var(--text-primary); background: var(--bg-card); }
+.audit-console-box { background: var(--bg-main); }
+.audit-console-log { color: var(--text-secondary); }
+.audit-console-log .log-pass { color: var(--accent-green); }
+.audit-console-log .log-warn { color: var(--status-warning); }
+.filter-enabled-pill.active { color: var(--accent-green); }
+.filter-notice-banner { color: var(--status-warning); }
+html.light-mode .feed-badge.canvas { color: #6b21a8; }
+html.light-mode .feed-badge.webgl { color: #1e40af; }
+html.light-mode .feed-badge.audio { color: #9d174d; }
+html.light-mode .feed-badge.battery { color: #713f12; }
+html.light-mode .feed-badge.timing { color: #115e59; }
+html.light-mode .feed-badge.clientrects { color: #9a3412; }
+html.light-mode .feed-badge.drm { color: #991b1b; }
+html.light-mode .feed-badge.clipboard { color: #334155; }
+html.light-mode, body.light-mode { --text-tertiary: #566477; }
+html.light-mode .harmonize-tag { color: var(--accent-green); }
+html.light-mode .audit-console-box { background: var(--bg-main); border-color: var(--border-light); }
