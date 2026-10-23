@@ -13,7 +13,7 @@ try {
   if (document.body) {
     document.body.classList.add(initialTheme === 'light' ? 'light-mode' : 'dark-mode');
   }
-} catch (e) {}
+} catch (e) { }
 
 function startPopup() {
   // Cross-browser API adapter
@@ -93,7 +93,7 @@ function startPopup() {
     let currentSaved = 'dark';
     try {
       currentSaved = localStorage.getItem('morph_theme') || 'dark';
-    } catch(e) {}
+    } catch (e) { }
     applyTheme(currentSaved);
 
     if (browser && browser.storage && browser.storage.local) {
@@ -101,9 +101,9 @@ function startPopup() {
         browser.storage.local.get(['theme'], (data) => {
           const theme = (data && data.theme) ? data.theme : currentSaved;
           applyTheme(theme);
-          try { localStorage.setItem('morph_theme', theme); } catch(e) {}
+          try { localStorage.setItem('morph_theme', theme); } catch (e) { }
         });
-      } catch(err) {}
+      } catch (err) { }
     }
   }
 
@@ -116,7 +116,7 @@ function startPopup() {
       applyTheme(newTheme);
       try {
         localStorage.setItem('morph_theme', newTheme);
-      } catch(err) {}
+      } catch (err) { }
 
       if (browser && browser.storage && browser.storage.local) {
         try {
@@ -126,11 +126,11 @@ function startPopup() {
                 browser.runtime.sendMessage({
                   type: 'set-settings',
                   data: { theme: newTheme }
-                }, () => {});
-              } catch(err) {}
+                }, () => { });
+              } catch (err) { }
             }
           });
-        } catch(e) {}
+        } catch (e) { }
       }
     });
   }
@@ -311,7 +311,7 @@ function startPopup() {
         applyDnsAndAdblockData(res);
       });
       if (getReq && typeof getReq.then === 'function') {
-        getReq.then(applyDnsAndAdblockData).catch(() => {});
+        getReq.then(applyDnsAndAdblockData).catch(() => { });
       }
     }
   } catch (err) {
@@ -323,14 +323,14 @@ function startPopup() {
       const active = adblockToggle.checked;
       try {
         if (browser && browser.storage && browser.storage.local) {
-          browser.storage.local.set({ adBlockEnabled: active }, () => {});
+          browser.storage.local.set({ adBlockEnabled: active }, () => { });
         }
         if (browser && browser.runtime && browser.runtime.sendMessage) {
           const p = browser.runtime.sendMessage({
             type: 'update-global-settings',
             data: { adBlockEnabled: active }
           });
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function') p.catch(() => { });
         }
         if (typeof showStatus === 'function') {
           showStatus(active ? 'Ad & Tracker Shield enabled' : 'Ad & Tracker Shield paused');
@@ -347,14 +347,14 @@ function startPopup() {
       updateDnsUI(provider);
       try {
         if (browser && browser.storage && browser.storage.local) {
-          browser.storage.local.set({ dnsProvider: provider }, () => {});
+          browser.storage.local.set({ dnsProvider: provider }, () => { });
         }
         if (browser && browser.runtime && browser.runtime.sendMessage) {
           const p = browser.runtime.sendMessage({
             type: 'update-global-settings',
             data: { dnsProvider: provider }
           });
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function') p.catch(() => { });
         }
         const optText = (dnsProviderSelect.selectedIndex >= 0 && dnsProviderSelect.options[dnsProviderSelect.selectedIndex])
           ? dnsProviderSelect.options[dnsProviderSelect.selectedIndex].text.split(' (')[0]
@@ -373,16 +373,16 @@ function startPopup() {
       const customUrl = dnsCustomEndpoint.value.trim();
       try {
         if (browser && browser.storage && browser.storage.local) {
-          browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {});
+          browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => { });
         }
         if (browser && browser.runtime && browser.runtime.sendMessage) {
           const p = browser.runtime.sendMessage({
             type: 'update-global-settings',
             data: { dnsCustomEndpoint: customUrl }
           });
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function') p.catch(() => { });
         }
-      } catch (e) {}
+      } catch (e) { }
     });
   }
 
@@ -480,7 +480,7 @@ function startPopup() {
               }
             });
             messageDispatched = true;
-          } catch(err) {
+          } catch (err) {
             console.warn('[MorphAgent] runtime.sendMessage threw:', err);
           }
         }
@@ -516,7 +516,7 @@ function startPopup() {
             const currentUrl = activeTab ? activeTab.url : 'https://duckduckgo.com';
             performTunnel(currentUrl);
           });
-        } catch(err) {
+        } catch (err) {
           performTunnel('https://duckduckgo.com');
         }
       } else {
@@ -570,7 +570,7 @@ function startPopup() {
                   showStatus(enabled ? 'Browser proxy activated' : 'Reverted to direct connection');
                 }
               });
-            } catch(e) {}
+            } catch (e) { }
           }
         });
       }
@@ -596,7 +596,7 @@ function startPopup() {
   let isInitialized = false;
 
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.6.0' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.7.0' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
@@ -639,7 +639,7 @@ function startPopup() {
           geoPreset.insertBefore(option, geoPreset.lastElementChild);
         });
       });
-    } catch(e) {}
+    } catch (e) { }
   }
 
   // Real-time synchronization across popup and open pages
@@ -649,7 +649,7 @@ function startPopup() {
         if (changes.theme) {
           const updatedTheme = changes.theme.newValue || 'dark';
           applyTheme(updatedTheme);
-          try { localStorage.setItem('morph_theme', updatedTheme); } catch(e) {}
+          try { localStorage.setItem('morph_theme', updatedTheme); } catch (e) { }
         }
         if (changes.dnsProvider && dnsProviderSelect) {
           dnsProviderSelect.value = changes.dnsProvider.newValue;
@@ -1541,7 +1541,7 @@ function startPopup() {
           }
         });
         return;
-      } catch (err) {}
+      } catch (err) { }
     }
 
     fallbackOpenSettings(targetUrl);
@@ -1552,11 +1552,11 @@ function startPopup() {
       try {
         browser.tabs.create({ url: targetUrl });
         return;
-      } catch (err) {}
+      } catch (err) { }
     }
     try {
       window.open(targetUrl, '_blank');
-    } catch(err) {
+    } catch (err) {
       window.location.href = targetUrl;
     }
   }
@@ -1628,10 +1628,10 @@ function startPopup() {
                   }
                 });
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         });
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Load saved settings

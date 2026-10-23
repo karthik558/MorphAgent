@@ -476,10 +476,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let filterSearchQuery = '';
 
   function initFiltersState(savedState) {
-    const defaultCats = (typeof DEFAULT_FILTER_CATEGORIES !== 'undefined') 
-      ? DEFAULT_FILTER_CATEGORIES 
+    const defaultCats = (typeof DEFAULT_FILTER_CATEGORIES !== 'undefined')
+      ? DEFAULT_FILTER_CATEGORIES
       : ((typeof MorphAgentAdBlock !== 'undefined' && MorphAgentAdBlock.DEFAULT_FILTER_CATEGORIES) ? MorphAgentAdBlock.DEFAULT_FILTER_CATEGORIES : []);
-    
+
     if (!savedState || !Array.isArray(savedState)) {
       userFiltersState = JSON.parse(JSON.stringify(defaultCats));
       return;
@@ -614,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
               browser.runtime.sendMessage({
                 type: 'update-global-settings',
                 data: { filtersState: userFiltersState }
-              }).catch(() => {});
+              }).catch(() => { });
               showStatus(`${sub.name} ${active ? 'enabled' : 'disabled'}`);
               const card = chk.closest('.filter-category-card');
               if (card) {
@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
             browser.runtime.sendMessage({
               type: 'update-global-settings',
               data: { filtersState: userFiltersState }
-            }).catch(() => {});
+            }).catch(() => { });
             showStatus(`All filters in ${cat.name} ${active ? 'enabled' : 'disabled'}`);
             renderFilterCategories(filterSearchQuery);
           });
@@ -825,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
     threatFeedList.innerHTML = sorted.slice(0, 100).map(log => {
       const date = log.timestamp ? new Date(log.timestamp) : new Date();
       const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      
+
       const typeLower = (log.type || '').toLowerCase();
       let badgeClass = 'canvas';
       if (typeLower.includes('webgl')) badgeClass = 'webgl';
@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
               detectedGpu = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || detectedGpu;
             }
           }
-        } catch (e) {}
+        } catch (e) { }
 
         const tests = [
           {
@@ -915,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
             risk: 'High',
             passed: hwHarmonize && cores >= 4,
             statusText: hwHarmonize ? 'Harmonized' : 'Native',
-            mitigation: hwHarmonize 
+            mitigation: hwHarmonize
               ? 'Core count aligned with genuine hardware profile. Cloud container virtualization flags absent.'
               : 'Reporting host native CPU cores without profile cloaking.',
             logCode: 'CPU_CONCURRENCY',
@@ -1120,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Terminal Diagnostic Trace Log
         if (auditConsoleLog) {
           const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.6.0</span>\n`;
+          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.7.0</span>\n`;
           tests.forEach(t => {
             logHtml += `<span class="${t.passed ? 'log-pass' : 'log-warn'}">[${t.passed ? 'PASS' : 'WARN'}] ${t.logCode.padEnd(16)}</span> :: ${escapeHtml(t.logDetail)}\n`;
           });
@@ -1186,531 +1186,531 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function populateUserAgentOptions() {
-      categorySelect.innerHTML = '<option value="">Category...</option>';
-      if (typeof profilesStructured !== 'undefined') {
-        Object.entries(profilesStructured).forEach(([catKey, cat]) => {
-          const option = document.createElement('option');
-          option.value = catKey;
-          option.textContent = cat.name;
-          categorySelect.appendChild(option);
-        });
-      }
+    categorySelect.innerHTML = '<option value="">Category...</option>';
+    if (typeof profilesStructured !== 'undefined') {
+      Object.entries(profilesStructured).forEach(([catKey, cat]) => {
+        const option = document.createElement('option');
+        option.value = catKey;
+        option.textContent = cat.name;
+        categorySelect.appendChild(option);
+      });
+    }
+  }
+
+  function setupEventListeners() {
+    // Theme toggle
+    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+
+    // Close button
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        window.close();
+      });
     }
 
-    function setupEventListeners() {
-      // Theme toggle
-      if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+    // Sidebar Navigation
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const settingsSections = document.querySelectorAll('.settings-section');
 
-      // Close button
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          window.close();
-        });
-      }
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        const btn = e.target.closest('.sidebar-link');
+        if (!btn) return;
+        sidebarLinks.forEach(l => l.classList.remove('active'));
+        settingsSections.forEach(s => s.classList.remove('active-section'));
 
-      // Sidebar Navigation
-      const sidebarLinks = document.querySelectorAll('.sidebar-link');
-      const settingsSections = document.querySelectorAll('.settings-section');
-
-      sidebarLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-          const btn = e.target.closest('.sidebar-link');
-          if (!btn) return;
-          sidebarLinks.forEach(l => l.classList.remove('active'));
-          settingsSections.forEach(s => s.classList.remove('active-section'));
-
-          btn.classList.add('active');
-          const targetId = btn.getAttribute('data-target');
-          let targetSection = document.getElementById(targetId);
-          if (!targetSection && targetId === 'section-custom-rules') {
-            targetSection = document.getElementById('section-rules');
-          }
-          if (!targetSection && targetId === 'section-rules') {
-            targetSection = document.getElementById('section-custom-rules');
-          }
-          if (targetSection) {
-            targetSection.classList.add('active-section');
-          }
-        });
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-target');
+        let targetSection = document.getElementById(targetId);
+        if (!targetSection && targetId === 'section-custom-rules') {
+          targetSection = document.getElementById('section-rules');
+        }
+        if (!targetSection && targetId === 'section-rules') {
+          targetSection = document.getElementById('section-custom-rules');
+        }
+        if (targetSection) {
+          targetSection.classList.add('active-section');
+        }
       });
+    });
 
-      // Add rule
-      if (addRuleBtn) addRuleBtn.addEventListener('click', addOrUpdateRule);
+    // Add rule
+    if (addRuleBtn) addRuleBtn.addEventListener('click', addOrUpdateRule);
 
-      if (modeTabs.length > 0) {
-        modeTabs.forEach(tab => {
-          tab.addEventListener('click', (e) => {
-            const tabEl = e.target.closest('.mode-tab');
-            if (!tabEl) return;
-            const targetMode = tabEl.getAttribute('data-mode');
-            if (targetMode === listMode) return;
-            listMode = targetMode;
-            if (editingBlock) {
-              cancelEditBlock();
-            }
-            saveSettings();
-            renderBlockList();
-          });
-        });
-      }
-
-      if (cancelEditBlockBtn) {
-        cancelEditBlockBtn.addEventListener('click', cancelEditBlock);
-      }
-
-      // Geo Spoof logic
-      if (geoSpoofRuleCheckbox && geoCoordsGroupDiv) {
-        geoSpoofRuleCheckbox.addEventListener('change', (e) => {
-          geoCoordsGroupDiv.style.display = e.target.checked ? 'block' : 'none';
-        });
-      }
-      if (geoCoordsPresetSelect && geoCustomCoordsDiv) {
-        geoCoordsPresetSelect.addEventListener('change', (e) => {
-          geoCustomCoordsDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
-        });
-      }
-
-      // Add block
-      if (addBlockBtn) addBlockBtn.addEventListener('click', addBlock);
-
-      // Add Custom Location
-      if (addLocBtn) addLocBtn.addEventListener('click', addLocation);
-
-      // Import/Export
-      if (exportBtn) exportBtn.addEventListener('click', exportSettings);
-      if (importBtn && importFile) importBtn.addEventListener('click', () => importFile.click());
-      if (debugBtn) debugBtn.addEventListener('click', openExtensionDebug);
-      if (importFile) importFile.addEventListener('change', importSettings);
-
-      // Reset all
-      if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllSettings);
-
-      // Enter key handling
-      if (websiteUrlInput) {
-        websiteUrlInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') addOrUpdateRule();
-        });
-      }
-
-      // Storage change listeners
-      if (browser && browser.storage && browser.storage.onChanged) {
-        browser.storage.onChanged.addListener((changes, areaName) => {
-          if (areaName === 'sync') {
-            if (changes.websiteRules) {
-              websiteRules = changes.websiteRules.newValue || [];
-              renderRules();
-              loadTabSettings();
-            }
-            if (changes.blockList) {
-              blockList = changes.blockList.newValue || [];
-              renderBlockList();
-            }
-            if (changes.whiteList) {
-              whiteList = changes.whiteList.newValue || [];
-              renderBlockList();
-            }
-            if (changes.listMode) {
-              listMode = changes.listMode.newValue || 'blacklist';
-              renderBlockList();
-            }
-            if (changes.customLocations) {
-              customLocations = changes.customLocations.newValue || [];
-              renderLocations();
-            }
-          }
-          if (areaName === 'local') {
-            if (changes.theme) {
-              applyTheme(changes.theme.newValue || 'dark');
-            }
-            if (changes.threatLogs) {
-              renderAnalytics();
-            }
-            if (changes.hardwareHarmonizeEnabled || changes.customHardwareCores || changes.customDeviceMemory) {
-              loadHarmonizationSettings();
-            }
-            if (changes.autoHarmonizeTzEnabled || changes.geoTimezone || changes.geoLocale) {
-              loadTimezoneHarmonizationSettings();
-            }
-            if (changes.adBlockEnabled || changes.dnsProvider || changes.dnsCustomEndpoint || changes.adBlockCosmeticEnabled || changes.adBlockAntiAdblockEnabled || changes.adBlockStats || changes.trackersBlockEnabled || changes.removeTrackingParamsEnabled || changes.hideSearchQueriesEnabled || changes.sendDntGpcEnabled || changes.webrtcPreventLeakEnabled || changes.removeXClientDataEnabled || changes.filtersState || changes.filtersLastChecked) {
-              loadDnsAndAdBlockSettings();
-            }
-          }
-        });
-      }
-
-      if (blockUrlInput) {
-        blockUrlInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') addBlock();
-        });
-        blockUrlInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && editingBlock) {
+    if (modeTabs.length > 0) {
+      modeTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          const tabEl = e.target.closest('.mode-tab');
+          if (!tabEl) return;
+          const targetMode = tabEl.getAttribute('data-mode');
+          if (targetMode === listMode) return;
+          listMode = targetMode;
+          if (editingBlock) {
             cancelEditBlock();
           }
-        });
-      }
-
-      // Tab-specific buttons
-      if (refreshTabsBtn) refreshTabsBtn.addEventListener('click', loadTabSettings);
-      if (clearAllTabsBtn) clearAllTabsBtn.addEventListener('click', clearAllTabSettings);
-
-      // Feature 1: Hardware & Memory Harmonization listeners
-      if (hwHarmonizeToggle) {
-        hwHarmonizeToggle.addEventListener('change', (e) => {
-          const browser = window.morphApi || window.browser || window.chrome;
-          browser.storage.local.set({ hardwareHarmonizeEnabled: e.target.checked }, () => {
-            updateHarmonizationPreviews();
-            showStatus(e.target.checked ? 'Hardware Harmonization enabled' : 'Hardware Harmonization disabled');
-          });
-        });
-      }
-      if (hwCoresSelect) {
-        hwCoresSelect.addEventListener('change', (e) => {
-          const browser = window.morphApi || window.browser || window.chrome;
-          browser.storage.local.set({ customHardwareCores: e.target.value }, () => {
-            updateHarmonizationPreviews();
-            showStatus(`Hardware concurrency set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' Cores'}`);
-          });
-        });
-      }
-      if (hwMemorySelect) {
-        hwMemorySelect.addEventListener('change', (e) => {
-          const browser = window.morphApi || window.browser || window.chrome;
-          browser.storage.local.set({ customDeviceMemory: e.target.value }, () => {
-            updateHarmonizationPreviews();
-            showStatus(`Device memory set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' GB'}`);
-          });
-        });
-      }
-
-      // Feature 2: Timezone & Locale Auto-Harmonizer listeners
-      if (autoHarmonizeTzToggle) {
-        autoHarmonizeTzToggle.addEventListener('change', (e) => {
-          const browser = window.morphApi || window.browser || window.chrome;
-          browser.storage.local.set({ autoHarmonizeTzEnabled: e.target.checked }, () => {
-            updateTimezonePreviews();
-            showStatus(e.target.checked ? 'Timezone & Locale auto-harmonization enabled' : 'Timezone & Locale auto-harmonization disabled');
-          });
-        });
-      }
-
-      // Feature 3: Real-Time Interception Feed listeners
-      if (feedSearch) {
-        feedSearch.addEventListener('input', (e) => {
-          feedSearchQuery = e.target.value.toLowerCase().trim();
-          renderThreatFeed();
-        });
-      }
-
-      vectorPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-          vectorPills.forEach(p => p.classList.remove('active'));
-          pill.classList.add('active');
-          activeVectorFilter = pill.getAttribute('data-vector') || 'all';
-          renderThreatFeed();
+          saveSettings();
+          renderBlockList();
         });
       });
+    }
 
-      if (clearFeedBtn) {
-        clearFeedBtn.addEventListener('click', () => {
-          if (confirm('Clear all recorded fingerprinting interception logs?')) {
-            const browser = window.morphApi || window.browser || window.chrome;
-            browser.storage.local.set({ threatLogs: [] }, () => {
-              allThreatLogs = [];
-              renderAnalytics();
-              showStatus('Threat feed cleared successfully');
-            });
+    if (cancelEditBlockBtn) {
+      cancelEditBlockBtn.addEventListener('click', cancelEditBlock);
+    }
+
+    // Geo Spoof logic
+    if (geoSpoofRuleCheckbox && geoCoordsGroupDiv) {
+      geoSpoofRuleCheckbox.addEventListener('change', (e) => {
+        geoCoordsGroupDiv.style.display = e.target.checked ? 'block' : 'none';
+      });
+    }
+    if (geoCoordsPresetSelect && geoCustomCoordsDiv) {
+      geoCoordsPresetSelect.addEventListener('change', (e) => {
+        geoCustomCoordsDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
+      });
+    }
+
+    // Add block
+    if (addBlockBtn) addBlockBtn.addEventListener('click', addBlock);
+
+    // Add Custom Location
+    if (addLocBtn) addLocBtn.addEventListener('click', addLocation);
+
+    // Import/Export
+    if (exportBtn) exportBtn.addEventListener('click', exportSettings);
+    if (importBtn && importFile) importBtn.addEventListener('click', () => importFile.click());
+    if (debugBtn) debugBtn.addEventListener('click', openExtensionDebug);
+    if (importFile) importFile.addEventListener('change', importSettings);
+
+    // Reset all
+    if (resetAllBtn) resetAllBtn.addEventListener('click', resetAllSettings);
+
+    // Enter key handling
+    if (websiteUrlInput) {
+      websiteUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addOrUpdateRule();
+      });
+    }
+
+    // Storage change listeners
+    if (browser && browser.storage && browser.storage.onChanged) {
+      browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync') {
+          if (changes.websiteRules) {
+            websiteRules = changes.websiteRules.newValue || [];
+            renderRules();
+            loadTabSettings();
           }
-        });
-      }
-
-      if (exportFeedBtn) {
-        exportFeedBtn.addEventListener('click', () => {
-          const dataStr = JSON.stringify(allThreatLogs, null, 2);
-          const blob = new Blob([dataStr], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `morphagent-threat-feed-${new Date().toISOString().slice(0, 10)}.json`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          showStatus('Exported threat logs to JSON');
-        });
-      }
-
-      // Feature 4: Live Stealth Health Audit listeners
-      if (runAuditBtn) {
-        runAuditBtn.addEventListener('click', runStealthAudit);
-      }
-      if (optimizeAuditBtn) {
-        optimizeAuditBtn.addEventListener('click', optimizeAllVectors);
-      }
-      if (copyAuditReportBtn) {
-        copyAuditReportBtn.addEventListener('click', copyAuditReport);
-      }
-
-      // Feature 5: Secure DNS & AdBlock Engine listeners
-      if (advDnsSelect) {
-        advDnsSelect.addEventListener('change', () => {
-          const provider = advDnsSelect.value;
-          browser.storage.local.set({ dnsProvider: provider }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { dnsProvider: provider }
-            }).catch(() => {});
-            loadDnsAndAdBlockSettings();
-            showStatus(`DNS preference saved; configure your browser: ${advDnsSelect.options[advDnsSelect.selectedIndex].text.split(' (')[0]}`);
-          });
-        });
-      }
-
-      if (advDnsCustom) {
-        advDnsCustom.addEventListener('change', () => {
-          const customUrl = advDnsCustom.value.trim();
-          browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { dnsCustomEndpoint: customUrl }
-            }).catch(() => {});
-            loadDnsAndAdBlockSettings();
-            showStatus('Custom DoH endpoint updated');
-          });
-        });
-      }
-
-      if (advAdBlockMasterToggle) {
-        advAdBlockMasterToggle.addEventListener('change', () => {
-          const active = advAdBlockMasterToggle.checked;
-          if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = active;
-          browser.storage.local.set({ adBlockEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { adBlockEnabled: active }
-            }).catch(() => {});
-            loadDnsAndAdBlockSettings();
-            showStatus(active ? 'AdGuard AdBlock & Tracker Shield activated' : 'AdGuard AdBlock Shield paused', active ? 'success' : 'info');
-          });
-        });
-      }
-
-      if (advAdBlockDnrToggle) {
-        advAdBlockDnrToggle.addEventListener('change', () => {
-          const active = advAdBlockDnrToggle.checked;
-          if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = active;
-          browser.storage.local.set({ adBlockEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { adBlockEnabled: active }
-            }).catch(() => {});
-            loadDnsAndAdBlockSettings();
-            showStatus(`Network DNR ad filtering ${active ? 'enabled' : 'disabled'}`);
-          });
-        });
-      }
-
-      if (advAdBlockCosmeticToggle) {
-        advAdBlockCosmeticToggle.addEventListener('change', () => {
-          const active = advAdBlockCosmeticToggle.checked;
-          browser.storage.local.set({ adBlockCosmeticEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { adBlockCosmeticEnabled: active }
-            }).catch(() => {});
-            showStatus(`Cosmetic element collapse ${active ? 'enabled' : 'disabled'}`);
-          });
-        });
-      }
-
-      if (advAdBlockAntiAdblockToggle) {
-        advAdBlockAntiAdblockToggle.addEventListener('change', () => {
-          const active = advAdBlockAntiAdblockToggle.checked;
-          browser.storage.local.set({ adBlockAntiAdblockEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { adBlockAntiAdblockEnabled: active }
-            }).catch(() => {});
-            showStatus(`Anti-adblock defuser & video skip ${active ? 'enabled' : 'disabled'}`);
-          });
-        });
-      }
-
-      if (advClearAdBlockStatsBtn) {
-        advClearAdBlockStatsBtn.addEventListener('click', () => {
-          if (confirm('Reset blocked ads, tracking pixels, and bandwidth telemetry statistics to zero?')) {
-            browser.runtime.sendMessage({ type: 'clear-adblock-stats' }, () => {
-              if (statAdsBlocked) statAdsBlocked.textContent = '0';
-              if (statTrackersBlocked) statTrackersBlocked.textContent = '0';
-              if (statDataSaved) statDataSaved.textContent = '0 MB';
-              showStatus('AdBlock and DNS telemetry statistics reset');
-            });
+          if (changes.blockList) {
+            blockList = changes.blockList.newValue || [];
+            renderBlockList();
           }
-        });
-      }
+          if (changes.whiteList) {
+            whiteList = changes.whiteList.newValue || [];
+            renderBlockList();
+          }
+          if (changes.listMode) {
+            listMode = changes.listMode.newValue || 'blacklist';
+            renderBlockList();
+          }
+          if (changes.customLocations) {
+            customLocations = changes.customLocations.newValue || [];
+            renderLocations();
+          }
+        }
+        if (areaName === 'local') {
+          if (changes.theme) {
+            applyTheme(changes.theme.newValue || 'dark');
+          }
+          if (changes.threatLogs) {
+            renderAnalytics();
+          }
+          if (changes.hardwareHarmonizeEnabled || changes.customHardwareCores || changes.customDeviceMemory) {
+            loadHarmonizationSettings();
+          }
+          if (changes.autoHarmonizeTzEnabled || changes.geoTimezone || changes.geoLocale) {
+            loadTimezoneHarmonizationSettings();
+          }
+          if (changes.adBlockEnabled || changes.dnsProvider || changes.dnsCustomEndpoint || changes.adBlockCosmeticEnabled || changes.adBlockAntiAdblockEnabled || changes.adBlockStats || changes.trackersBlockEnabled || changes.removeTrackingParamsEnabled || changes.hideSearchQueriesEnabled || changes.sendDntGpcEnabled || changes.webrtcPreventLeakEnabled || changes.removeXClientDataEnabled || changes.filtersState || changes.filtersLastChecked) {
+            loadDnsAndAdBlockSettings();
+          }
+        }
+      });
+    }
 
-      // Feature 5.1: Tracking Protection Toggles Listeners
-      if (advBlockTrackersToggle) {
-        advBlockTrackersToggle.addEventListener('change', () => {
-          const active = advBlockTrackersToggle.checked;
-          browser.storage.local.set({ trackersBlockEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { trackersBlockEnabled: active }
-            }).catch(() => {});
-            showStatus(active ? 'AdGuard Tracking Protection filter activated' : 'Tracking Protection filter paused');
+    if (blockUrlInput) {
+      blockUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addBlock();
+      });
+      blockUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && editingBlock) {
+          cancelEditBlock();
+        }
+      });
+    }
+
+    // Tab-specific buttons
+    if (refreshTabsBtn) refreshTabsBtn.addEventListener('click', loadTabSettings);
+    if (clearAllTabsBtn) clearAllTabsBtn.addEventListener('click', clearAllTabSettings);
+
+    // Feature 1: Hardware & Memory Harmonization listeners
+    if (hwHarmonizeToggle) {
+      hwHarmonizeToggle.addEventListener('change', (e) => {
+        const browser = window.morphApi || window.browser || window.chrome;
+        browser.storage.local.set({ hardwareHarmonizeEnabled: e.target.checked }, () => {
+          updateHarmonizationPreviews();
+          showStatus(e.target.checked ? 'Hardware Harmonization enabled' : 'Hardware Harmonization disabled');
+        });
+      });
+    }
+    if (hwCoresSelect) {
+      hwCoresSelect.addEventListener('change', (e) => {
+        const browser = window.morphApi || window.browser || window.chrome;
+        browser.storage.local.set({ customHardwareCores: e.target.value }, () => {
+          updateHarmonizationPreviews();
+          showStatus(`Hardware concurrency set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' Cores'}`);
+        });
+      });
+    }
+    if (hwMemorySelect) {
+      hwMemorySelect.addEventListener('change', (e) => {
+        const browser = window.morphApi || window.browser || window.chrome;
+        browser.storage.local.set({ customDeviceMemory: e.target.value }, () => {
+          updateHarmonizationPreviews();
+          showStatus(`Device memory set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' GB'}`);
+        });
+      });
+    }
+
+    // Feature 2: Timezone & Locale Auto-Harmonizer listeners
+    if (autoHarmonizeTzToggle) {
+      autoHarmonizeTzToggle.addEventListener('change', (e) => {
+        const browser = window.morphApi || window.browser || window.chrome;
+        browser.storage.local.set({ autoHarmonizeTzEnabled: e.target.checked }, () => {
+          updateTimezonePreviews();
+          showStatus(e.target.checked ? 'Timezone & Locale auto-harmonization enabled' : 'Timezone & Locale auto-harmonization disabled');
+        });
+      });
+    }
+
+    // Feature 3: Real-Time Interception Feed listeners
+    if (feedSearch) {
+      feedSearch.addEventListener('input', (e) => {
+        feedSearchQuery = e.target.value.toLowerCase().trim();
+        renderThreatFeed();
+      });
+    }
+
+    vectorPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        vectorPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeVectorFilter = pill.getAttribute('data-vector') || 'all';
+        renderThreatFeed();
+      });
+    });
+
+    if (clearFeedBtn) {
+      clearFeedBtn.addEventListener('click', () => {
+        if (confirm('Clear all recorded fingerprinting interception logs?')) {
+          const browser = window.morphApi || window.browser || window.chrome;
+          browser.storage.local.set({ threatLogs: [] }, () => {
+            allThreatLogs = [];
+            renderAnalytics();
+            showStatus('Threat feed cleared successfully');
           });
-        });
-      }
+        }
+      });
+    }
 
-      if (advRemoveTrackingParamsToggle) {
-        advRemoveTrackingParamsToggle.addEventListener('change', () => {
-          const active = advRemoveTrackingParamsToggle.checked;
-          browser.storage.local.set({ removeTrackingParamsEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { removeTrackingParamsEnabled: active }
-            }).catch(() => {});
-            showStatus(`URL tracking parameter stripping ${active ? 'enabled' : 'disabled'}`);
+    if (exportFeedBtn) {
+      exportFeedBtn.addEventListener('click', () => {
+        const dataStr = JSON.stringify(allThreatLogs, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `morphagent-threat-feed-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatus('Exported threat logs to JSON');
+      });
+    }
+
+    // Feature 4: Live Stealth Health Audit listeners
+    if (runAuditBtn) {
+      runAuditBtn.addEventListener('click', runStealthAudit);
+    }
+    if (optimizeAuditBtn) {
+      optimizeAuditBtn.addEventListener('click', optimizeAllVectors);
+    }
+    if (copyAuditReportBtn) {
+      copyAuditReportBtn.addEventListener('click', copyAuditReport);
+    }
+
+    // Feature 5: Secure DNS & AdBlock Engine listeners
+    if (advDnsSelect) {
+      advDnsSelect.addEventListener('change', () => {
+        const provider = advDnsSelect.value;
+        browser.storage.local.set({ dnsProvider: provider }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { dnsProvider: provider }
+          }).catch(() => { });
+          loadDnsAndAdBlockSettings();
+          showStatus(`DNS preference saved; configure your browser: ${advDnsSelect.options[advDnsSelect.selectedIndex].text.split(' (')[0]}`);
+        });
+      });
+    }
+
+    if (advDnsCustom) {
+      advDnsCustom.addEventListener('change', () => {
+        const customUrl = advDnsCustom.value.trim();
+        browser.storage.local.set({ dnsCustomEndpoint: customUrl }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { dnsCustomEndpoint: customUrl }
+          }).catch(() => { });
+          loadDnsAndAdBlockSettings();
+          showStatus('Custom DoH endpoint updated');
+        });
+      });
+    }
+
+    if (advAdBlockMasterToggle) {
+      advAdBlockMasterToggle.addEventListener('change', () => {
+        const active = advAdBlockMasterToggle.checked;
+        if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = active;
+        browser.storage.local.set({ adBlockEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockEnabled: active }
+          }).catch(() => { });
+          loadDnsAndAdBlockSettings();
+          showStatus(active ? 'AdGuard AdBlock & Tracker Shield activated' : 'AdGuard AdBlock Shield paused', active ? 'success' : 'info');
+        });
+      });
+    }
+
+    if (advAdBlockDnrToggle) {
+      advAdBlockDnrToggle.addEventListener('change', () => {
+        const active = advAdBlockDnrToggle.checked;
+        if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = active;
+        browser.storage.local.set({ adBlockEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockEnabled: active }
+          }).catch(() => { });
+          loadDnsAndAdBlockSettings();
+          showStatus(`Network DNR ad filtering ${active ? 'enabled' : 'disabled'}`);
+        });
+      });
+    }
+
+    if (advAdBlockCosmeticToggle) {
+      advAdBlockCosmeticToggle.addEventListener('change', () => {
+        const active = advAdBlockCosmeticToggle.checked;
+        browser.storage.local.set({ adBlockCosmeticEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockCosmeticEnabled: active }
+          }).catch(() => { });
+          showStatus(`Cosmetic element collapse ${active ? 'enabled' : 'disabled'}`);
+        });
+      });
+    }
+
+    if (advAdBlockAntiAdblockToggle) {
+      advAdBlockAntiAdblockToggle.addEventListener('change', () => {
+        const active = advAdBlockAntiAdblockToggle.checked;
+        browser.storage.local.set({ adBlockAntiAdblockEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { adBlockAntiAdblockEnabled: active }
+          }).catch(() => { });
+          showStatus(`Anti-adblock defuser & video skip ${active ? 'enabled' : 'disabled'}`);
+        });
+      });
+    }
+
+    if (advClearAdBlockStatsBtn) {
+      advClearAdBlockStatsBtn.addEventListener('click', () => {
+        if (confirm('Reset blocked ads, tracking pixels, and bandwidth telemetry statistics to zero?')) {
+          browser.runtime.sendMessage({ type: 'clear-adblock-stats' }, () => {
+            if (statAdsBlocked) statAdsBlocked.textContent = '0';
+            if (statTrackersBlocked) statTrackersBlocked.textContent = '0';
+            if (statDataSaved) statDataSaved.textContent = '0 MB';
+            showStatus('AdBlock and DNS telemetry statistics reset');
           });
+        }
+      });
+    }
+
+    // Feature 5.1: Tracking Protection Toggles Listeners
+    if (advBlockTrackersToggle) {
+      advBlockTrackersToggle.addEventListener('change', () => {
+        const active = advBlockTrackersToggle.checked;
+        browser.storage.local.set({ trackersBlockEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { trackersBlockEnabled: active }
+          }).catch(() => { });
+          showStatus(active ? 'AdGuard Tracking Protection filter activated' : 'Tracking Protection filter paused');
         });
-      }
+      });
+    }
 
-      if (advHideSearchQueriesToggle) {
-        advHideSearchQueriesToggle.addEventListener('change', () => {
-          const active = advHideSearchQueriesToggle.checked;
-          browser.storage.local.set({ hideSearchQueriesEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { hideSearchQueriesEnabled: active }
-            }).catch(() => {});
-            showStatus(`Search query referer concealment ${active ? 'enabled' : 'disabled'}`);
-          });
+    if (advRemoveTrackingParamsToggle) {
+      advRemoveTrackingParamsToggle.addEventListener('change', () => {
+        const active = advRemoveTrackingParamsToggle.checked;
+        browser.storage.local.set({ removeTrackingParamsEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { removeTrackingParamsEnabled: active }
+          }).catch(() => { });
+          showStatus(`URL tracking parameter stripping ${active ? 'enabled' : 'disabled'}`);
         });
-      }
+      });
+    }
 
-      if (advDntGpcToggle) {
-        advDntGpcToggle.addEventListener('change', () => {
-          const active = advDntGpcToggle.checked;
-          browser.storage.local.set({ sendDntGpcEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { sendDntGpcEnabled: active }
-            }).catch(() => {});
-            showStatus(`Global Privacy Control & DNT signals ${active ? 'enabled' : 'disabled'}`);
-          });
+    if (advHideSearchQueriesToggle) {
+      advHideSearchQueriesToggle.addEventListener('change', () => {
+        const active = advHideSearchQueriesToggle.checked;
+        browser.storage.local.set({ hideSearchQueriesEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { hideSearchQueriesEnabled: active }
+          }).catch(() => { });
+          showStatus(`Search query referer concealment ${active ? 'enabled' : 'disabled'}`);
         });
-      }
+      });
+    }
 
-      if (advWebrtcLeakToggle) {
-        advWebrtcLeakToggle.addEventListener('change', () => {
-          const active = advWebrtcLeakToggle.checked;
-          browser.storage.local.set({ webrtcPreventLeakEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { webrtcPreventLeakEnabled: active }
-            }).catch(() => {});
-            showStatus(active ? 'Strict WebRTC IP leak prevention active' : 'WebRTC IP policy set to default');
-          });
+    if (advDntGpcToggle) {
+      advDntGpcToggle.addEventListener('change', () => {
+        const active = advDntGpcToggle.checked;
+        browser.storage.local.set({ sendDntGpcEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { sendDntGpcEnabled: active }
+          }).catch(() => { });
+          showStatus(`Global Privacy Control & DNT signals ${active ? 'enabled' : 'disabled'}`);
         });
-      }
+      });
+    }
 
-      if (advRemoveXClientDataToggle) {
-        advRemoveXClientDataToggle.addEventListener('change', () => {
-          const active = advRemoveXClientDataToggle.checked;
-          browser.storage.local.set({ removeXClientDataEnabled: active }, () => {
-            browser.runtime.sendMessage({
-              type: 'update-global-settings',
-              data: { removeXClientDataEnabled: active }
-            }).catch(() => {});
-            showStatus(`X-Client-Data header suppression ${active ? 'enabled' : 'disabled'}`);
-          });
+    if (advWebrtcLeakToggle) {
+      advWebrtcLeakToggle.addEventListener('change', () => {
+        const active = advWebrtcLeakToggle.checked;
+        browser.storage.local.set({ webrtcPreventLeakEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { webrtcPreventLeakEnabled: active }
+          }).catch(() => { });
+          showStatus(active ? 'Strict WebRTC IP leak prevention active' : 'WebRTC IP policy set to default');
         });
-      }
+      });
+    }
 
-      // Feature 5.2: Filters Hub Search & Update Actions
-      if (filterSearchInput) {
-        filterSearchInput.addEventListener('input', (e) => {
-          filterSearchQuery = e.target.value;
-          renderFilterCategories(filterSearchQuery);
+    if (advRemoveXClientDataToggle) {
+      advRemoveXClientDataToggle.addEventListener('change', () => {
+        const active = advRemoveXClientDataToggle.checked;
+        browser.storage.local.set({ removeXClientDataEnabled: active }, () => {
+          browser.runtime.sendMessage({
+            type: 'update-global-settings',
+            data: { removeXClientDataEnabled: active }
+          }).catch(() => { });
+          showStatus(`X-Client-Data header suppression ${active ? 'enabled' : 'disabled'}`);
         });
-      }
+      });
+    }
 
-      if (checkFilterUpdatesBtn) {
-        checkFilterUpdatesBtn.addEventListener('click', () => {
-          checkFilterUpdatesBtn.disabled = true;
-          if (filterUpdateSpinner) filterUpdateSpinner.classList.add('spin-icon');
-          showStatus('Checking for filter rule updates...');
+    // Feature 5.2: Filters Hub Search & Update Actions
+    if (filterSearchInput) {
+      filterSearchInput.addEventListener('input', (e) => {
+        filterSearchQuery = e.target.value;
+        renderFilterCategories(filterSearchQuery);
+      });
+    }
 
-          browser.runtime.sendMessage({ type: 'check-filter-updates' }, (res) => {
-            setTimeout(() => {
-              checkFilterUpdatesBtn.disabled = false;
-              if (filterUpdateSpinner) filterUpdateSpinner.classList.remove('spin-icon');
-              const timeStr = (res && res.timestamp) ? res.timestamp : 'Sep 28, 2026, 09:56 PM';
-              if (filtersLastCheckedTag) {
-                filtersLastCheckedTag.textContent = `Last checked: ${timeStr}`;
-              }
-              showStatus('All filter subscriptions up to date (296 rules active)', 'success');
-            }, 650);
-          });
+    if (checkFilterUpdatesBtn) {
+      checkFilterUpdatesBtn.addEventListener('click', () => {
+        checkFilterUpdatesBtn.disabled = true;
+        if (filterUpdateSpinner) filterUpdateSpinner.classList.add('spin-icon');
+        showStatus('Checking for filter rule updates...');
+
+        browser.runtime.sendMessage({ type: 'check-filter-updates' }, (res) => {
+          setTimeout(() => {
+            checkFilterUpdatesBtn.disabled = false;
+            if (filterUpdateSpinner) filterUpdateSpinner.classList.remove('spin-icon');
+            const timeStr = (res && res.timestamp) ? res.timestamp : 'Sep 28, 2026, 09:56 PM';
+            if (filtersLastCheckedTag) {
+              filtersLastCheckedTag.textContent = `Last checked: ${timeStr}`;
+            }
+            showStatus('All filter subscriptions up to date (296 rules active)', 'success');
+          }, 650);
         });
-      }
+      });
+    }
 
-      // AdBlock Live Interception & Verification Probe Suite
-      const runAdblockProbeBtn = document.getElementById('runAdblockProbeBtn');
-      const reloadDnrRulesBtn = document.getElementById('reloadDnrRulesBtn');
-      const adblockProbeTableBody = document.getElementById('adblockProbeTableBody');
-      const dnrRuleCountTag = document.getElementById('dnrRuleCountTag');
+    // AdBlock Live Interception & Verification Probe Suite
+    const runAdblockProbeBtn = document.getElementById('runAdblockProbeBtn');
+    const reloadDnrRulesBtn = document.getElementById('reloadDnrRulesBtn');
+    const adblockProbeTableBody = document.getElementById('adblockProbeTableBody');
+    const dnrRuleCountTag = document.getElementById('dnrRuleCountTag');
 
-      const TEST_ENDPOINTS = [
-        { name: 'ads.yahoo.com', url: 'https://ads.yahoo.com/tag.js', category: 'Yahoo Ad Network', type: 'Script / Ad Engine' },
-        { name: 'advertising.yahoo.com', url: 'https://advertising.yahoo.com', category: 'Yahoo Ads', type: 'Ad Management' },
-        { name: 'analytics.yahoo.com', url: 'https://analytics.yahoo.com/pixel', category: 'Yahoo Telemetry', type: 'Tracking Beacon' },
-        { name: 'geo.yahoo.com', url: 'https://geo.yahoo.com/b', category: 'Yahoo Geo Tracker', type: 'Ping / Telemetry' },
-        { name: 'udc.yahoo.com', url: 'https://udc.yahoo.com/v2', category: 'Yahoo Data Collect', type: 'Telemetry API' },
-        { name: 'udcm.yahoo.com', url: 'https://udcm.yahoo.com/collect', category: 'Yahoo User Sync', type: 'Cookie Sync' },
-        { name: 'partnerads.ysm.yahoo.com', url: 'https://partnerads.ysm.yahoo.com/ad', category: 'Yahoo Partner Ads', type: 'Sponsored Feed' },
-        { name: 'advertising-api-eu.amazon.com', url: 'https://advertising-api-eu.amazon.com', category: 'Amazon Ad API', type: 'Ad Serving API' },
-        { name: 'mads-eu.amazon.com', url: 'https://mads-eu.amazon.com/ad', category: 'Amazon Mobile Ads', type: 'Mobile Ad Network' },
-        { name: 'ads.microsoft.com', url: 'https://ads.microsoft.com/tag.js', category: 'Microsoft Advertising', type: 'Ad Network Engine' },
-        { name: 'c.bing.com', url: 'https://c.bing.com/c.gif', category: 'Bing Telemetry', type: 'Search Pixel' },
-        { name: 'metrika.yandex.ru', url: 'https://metrika.yandex.ru/watch', category: 'Yandex Metrika', type: 'Telemetry Stream' },
-        { name: 'appmetrica.yandex.ru', url: 'https://appmetrica.yandex.ru/report', category: 'Yandex AppMetrica', type: 'Mobile Telemetry' },
-        { name: 'advertising.yandex.ru', url: 'https://advertising.yandex.ru', category: 'Yandex Ads', type: 'Ad Platform' },
-        { name: 's.youtube.com', url: 'https://s.youtube.com/api/stats/ads', category: 'YouTube Video Ads', type: 'Video Ad Beacon' },
-        { name: 'redirector.googlevideo.com', url: 'https://redirector.googlevideo.com', category: 'Google Video Ad Redirect', type: 'Video Ad Stream' },
-        { name: 'dai.google.com', url: 'https://dai.google.com/ad', category: 'Google Dynamic Ad Insertion', type: 'Stream Ad Injection' },
-        { name: 'fundingchoicesmessages.google.com', url: 'https://fundingchoicesmessages.google.com', category: 'Google Anti-Adblock Wall', type: 'Consent Trap' },
-        { name: 'firebase-settings.crashlytics.com', url: 'https://firebase-settings.crashlytics.com', category: 'Crashlytics Telemetry', type: 'Crash Tracker' },
-        { name: 'ads-api.tiktok.com', url: 'https://ads-api.tiktok.com/pixel', category: 'TikTok Ads API', type: 'Conversion Pixel' },
-        { name: 'ads.tiktok.com', url: 'https://ads.tiktok.com/banner', category: 'TikTok Ad Network', type: 'Ad Serving' },
-        { name: 'pangleglobal.com', url: 'https://pangleglobal.com/ad', category: 'TikTok Pangle Network', type: 'Mobile SSP' },
-        { name: 'ads.pinterest.com', url: 'https://ads.pinterest.com/ct.js', category: 'Pinterest Ads', type: 'Conversion Tracker' },
-        { name: 'analytics.pinterest.com', url: 'https://analytics.pinterest.com', category: 'Pinterest Analytics', type: 'Telemetry Stream' },
-        { name: 'analytics.x.com', url: 'https://analytics.x.com', category: 'X / Twitter Analytics', type: 'Behavioral Tracker' },
-        { name: 'ads.x.com', url: 'https://ads.x.com', category: 'X / Twitter Ads', type: 'Ad Serving' },
-        { name: 'pixel.quora.com', url: 'https://pixel.quora.com', category: 'Quora Pixel', type: 'Ad Conversion Pixel' },
-        { name: 'advertising.apple.com', url: 'https://advertising.apple.com', category: 'Apple Advertising', type: 'Apple Search Ads' },
-        { name: 'xp.apple.com', url: 'https://xp.apple.com', category: 'Apple Telemetry', type: 'Device Reporting' },
-        { name: 'ads.huawei.com', url: 'https://ads.huawei.com', category: 'Huawei Ads', type: 'Mobile Ad Engine' },
-        { name: 'ngfts.lge.com', url: 'https://ngfts.lge.com', category: 'LG Smart TV Telemetry', type: 'Hardware Telemetry' },
-        { name: 'quantcast.com', url: 'https://quantcast.com/pixel', category: 'Quantcast Audience', type: 'Audience Tracker' },
-        { name: 'cloudflareinsights.com', url: 'https://cloudflareinsights.com/beacon.min.js', category: 'Cloudflare Telemetry', type: 'Web Analytics' },
-        { name: 'app.posthog.com', url: 'https://app.posthog.com/e', category: 'PostHog Product Telemetry', type: 'Session Replay Stream' },
-        { name: 'fingerprintjs.com', url: 'https://fingerprintjs.com/v3', category: 'FingerprintJS', type: 'Browser Fingerprinter' },
-        { name: 'notify.bugsnag.com', url: 'https://notify.bugsnag.com/report', category: 'Bugsnag Telemetry', type: 'Error / Session Tracking' },
-        { name: 'browser.sentry-cdn.com', url: 'https://browser.sentry-cdn.com/bundle.min.js', category: 'Sentry Telemetry', type: 'Error Replay Script' },
-        { name: 'o0.ingest.sentry.io', url: 'https://o0.ingest.sentry.io/api', category: 'Sentry Ingest', type: 'Telemetry Ingest' },
-        { name: 'g.jwpsrv.com', url: 'https://g.jwpsrv.com/ad', category: 'JWPlayer Ad Stream', type: 'Video Ad Engine' },
-        { name: 'bea4.v.fwmrm.net', url: 'https://bea4.v.fwmrm.net/ad/g/1', category: 'FreeWheel Video Ads', type: 'Streaming Video SSP' },
-        { name: 'analytics.google.com', url: 'https://analytics.google.com/g/collect', category: 'Google Analytics 4', type: 'Telemetry Stream' },
-        { name: 'google-analytics.com', url: 'https://google-analytics.com/analytics.js', category: 'Universal Analytics', type: 'Tracker Script' },
-        { name: 'ads.js (Generic Loader)', url: 'https://ads.yahoo.com/ads.js', category: 'Ad Scriptlet', type: 'Script Pattern (*ads.js*)' },
-        { name: 'pagead.js (Google AdSense)', url: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', category: 'Ad Scriptlet', type: 'Script Pattern (*pagead.js*)' }
-      ];
+    const TEST_ENDPOINTS = [
+      { name: 'ads.yahoo.com', url: 'https://ads.yahoo.com/tag.js', category: 'Yahoo Ad Network', type: 'Script / Ad Engine' },
+      { name: 'advertising.yahoo.com', url: 'https://advertising.yahoo.com', category: 'Yahoo Ads', type: 'Ad Management' },
+      { name: 'analytics.yahoo.com', url: 'https://analytics.yahoo.com/pixel', category: 'Yahoo Telemetry', type: 'Tracking Beacon' },
+      { name: 'geo.yahoo.com', url: 'https://geo.yahoo.com/b', category: 'Yahoo Geo Tracker', type: 'Ping / Telemetry' },
+      { name: 'udc.yahoo.com', url: 'https://udc.yahoo.com/v2', category: 'Yahoo Data Collect', type: 'Telemetry API' },
+      { name: 'udcm.yahoo.com', url: 'https://udcm.yahoo.com/collect', category: 'Yahoo User Sync', type: 'Cookie Sync' },
+      { name: 'partnerads.ysm.yahoo.com', url: 'https://partnerads.ysm.yahoo.com/ad', category: 'Yahoo Partner Ads', type: 'Sponsored Feed' },
+      { name: 'advertising-api-eu.amazon.com', url: 'https://advertising-api-eu.amazon.com', category: 'Amazon Ad API', type: 'Ad Serving API' },
+      { name: 'mads-eu.amazon.com', url: 'https://mads-eu.amazon.com/ad', category: 'Amazon Mobile Ads', type: 'Mobile Ad Network' },
+      { name: 'ads.microsoft.com', url: 'https://ads.microsoft.com/tag.js', category: 'Microsoft Advertising', type: 'Ad Network Engine' },
+      { name: 'c.bing.com', url: 'https://c.bing.com/c.gif', category: 'Bing Telemetry', type: 'Search Pixel' },
+      { name: 'metrika.yandex.ru', url: 'https://metrika.yandex.ru/watch', category: 'Yandex Metrika', type: 'Telemetry Stream' },
+      { name: 'appmetrica.yandex.ru', url: 'https://appmetrica.yandex.ru/report', category: 'Yandex AppMetrica', type: 'Mobile Telemetry' },
+      { name: 'advertising.yandex.ru', url: 'https://advertising.yandex.ru', category: 'Yandex Ads', type: 'Ad Platform' },
+      { name: 's.youtube.com', url: 'https://s.youtube.com/api/stats/ads', category: 'YouTube Video Ads', type: 'Video Ad Beacon' },
+      { name: 'redirector.googlevideo.com', url: 'https://redirector.googlevideo.com', category: 'Google Video Ad Redirect', type: 'Video Ad Stream' },
+      { name: 'dai.google.com', url: 'https://dai.google.com/ad', category: 'Google Dynamic Ad Insertion', type: 'Stream Ad Injection' },
+      { name: 'fundingchoicesmessages.google.com', url: 'https://fundingchoicesmessages.google.com', category: 'Google Anti-Adblock Wall', type: 'Consent Trap' },
+      { name: 'firebase-settings.crashlytics.com', url: 'https://firebase-settings.crashlytics.com', category: 'Crashlytics Telemetry', type: 'Crash Tracker' },
+      { name: 'ads-api.tiktok.com', url: 'https://ads-api.tiktok.com/pixel', category: 'TikTok Ads API', type: 'Conversion Pixel' },
+      { name: 'ads.tiktok.com', url: 'https://ads.tiktok.com/banner', category: 'TikTok Ad Network', type: 'Ad Serving' },
+      { name: 'pangleglobal.com', url: 'https://pangleglobal.com/ad', category: 'TikTok Pangle Network', type: 'Mobile SSP' },
+      { name: 'ads.pinterest.com', url: 'https://ads.pinterest.com/ct.js', category: 'Pinterest Ads', type: 'Conversion Tracker' },
+      { name: 'analytics.pinterest.com', url: 'https://analytics.pinterest.com', category: 'Pinterest Analytics', type: 'Telemetry Stream' },
+      { name: 'analytics.x.com', url: 'https://analytics.x.com', category: 'X / Twitter Analytics', type: 'Behavioral Tracker' },
+      { name: 'ads.x.com', url: 'https://ads.x.com', category: 'X / Twitter Ads', type: 'Ad Serving' },
+      { name: 'pixel.quora.com', url: 'https://pixel.quora.com', category: 'Quora Pixel', type: 'Ad Conversion Pixel' },
+      { name: 'advertising.apple.com', url: 'https://advertising.apple.com', category: 'Apple Advertising', type: 'Apple Search Ads' },
+      { name: 'xp.apple.com', url: 'https://xp.apple.com', category: 'Apple Telemetry', type: 'Device Reporting' },
+      { name: 'ads.huawei.com', url: 'https://ads.huawei.com', category: 'Huawei Ads', type: 'Mobile Ad Engine' },
+      { name: 'ngfts.lge.com', url: 'https://ngfts.lge.com', category: 'LG Smart TV Telemetry', type: 'Hardware Telemetry' },
+      { name: 'quantcast.com', url: 'https://quantcast.com/pixel', category: 'Quantcast Audience', type: 'Audience Tracker' },
+      { name: 'cloudflareinsights.com', url: 'https://cloudflareinsights.com/beacon.min.js', category: 'Cloudflare Telemetry', type: 'Web Analytics' },
+      { name: 'app.posthog.com', url: 'https://app.posthog.com/e', category: 'PostHog Product Telemetry', type: 'Session Replay Stream' },
+      { name: 'fingerprintjs.com', url: 'https://fingerprintjs.com/v3', category: 'FingerprintJS', type: 'Browser Fingerprinter' },
+      { name: 'notify.bugsnag.com', url: 'https://notify.bugsnag.com/report', category: 'Bugsnag Telemetry', type: 'Error / Session Tracking' },
+      { name: 'browser.sentry-cdn.com', url: 'https://browser.sentry-cdn.com/bundle.min.js', category: 'Sentry Telemetry', type: 'Error Replay Script' },
+      { name: 'o0.ingest.sentry.io', url: 'https://o0.ingest.sentry.io/api', category: 'Sentry Ingest', type: 'Telemetry Ingest' },
+      { name: 'g.jwpsrv.com', url: 'https://g.jwpsrv.com/ad', category: 'JWPlayer Ad Stream', type: 'Video Ad Engine' },
+      { name: 'bea4.v.fwmrm.net', url: 'https://bea4.v.fwmrm.net/ad/g/1', category: 'FreeWheel Video Ads', type: 'Streaming Video SSP' },
+      { name: 'analytics.google.com', url: 'https://analytics.google.com/g/collect', category: 'Google Analytics 4', type: 'Telemetry Stream' },
+      { name: 'google-analytics.com', url: 'https://google-analytics.com/analytics.js', category: 'Universal Analytics', type: 'Tracker Script' },
+      { name: 'ads.js (Generic Loader)', url: 'https://ads.yahoo.com/ads.js', category: 'Ad Scriptlet', type: 'Script Pattern (*ads.js*)' },
+      { name: 'pagead.js (Google AdSense)', url: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', category: 'Ad Scriptlet', type: 'Script Pattern (*pagead.js*)' }
+    ];
 
-      function renderProbeInitialState() {
-        if (!adblockProbeTableBody) return;
-        adblockProbeTableBody.innerHTML = TEST_ENDPOINTS.map((item, idx) => `
+    function renderProbeInitialState() {
+      if (!adblockProbeTableBody) return;
+      adblockProbeTableBody.innerHTML = TEST_ENDPOINTS.map((item, idx) => `
           <tr id="probe-row-${idx}">
             <td style="font-family: var(--font-mono, monospace); font-weight: 500; color: var(--text-primary); font-size: 11px;">${item.name}</td>
             <td style="color: var(--text-secondary); font-size: 11px;">${item.category}</td>
@@ -1720,686 +1720,686 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
           </tr>
         `).join('');
-      }
+    }
 
-      function updateActiveDnrCount() {
-        browser.runtime.sendMessage({ type: 'get-dnr-rules' }, (res) => {
-          if (res && res.success && dnrRuleCountTag) {
-            dnrRuleCountTag.textContent = `${res.count} Active Zero-Latency Rules`;
-          }
-        });
-      }
+    function updateActiveDnrCount() {
+      browser.runtime.sendMessage({ type: 'get-dnr-rules' }, (res) => {
+        if (res && res.success && dnrRuleCountTag) {
+          dnrRuleCountTag.textContent = `${res.count} Active Zero-Latency Rules`;
+        }
+      });
+    }
 
-      async function runAdblockProbe() {
-        if (!runAdblockProbeBtn || !adblockProbeTableBody) return;
-        runAdblockProbeBtn.disabled = true;
-        runAdblockProbeBtn.textContent = 'Probing Endpoints...';
+    async function runAdblockProbe() {
+      if (!runAdblockProbeBtn || !adblockProbeTableBody) return;
+      runAdblockProbeBtn.disabled = true;
+      runAdblockProbeBtn.textContent = 'Probing Endpoints...';
 
-        for (let i = 0; i < TEST_ENDPOINTS.length; i++) {
-          const item = TEST_ENDPOINTS[i];
-          const statusCell = document.getElementById(`probe-status-${i}`);
-          if (statusCell) {
-            statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.2); font-size: 10px;">Testing...</span>`;
-          }
-
-          let blocked = false;
-          const startTime = performance.now();
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1200);
-            await fetch(item.url, { mode: 'no-cors', signal: controller.signal });
-            clearTimeout(timeoutId);
-            blocked = false;
-          } catch (err) {
-            // DeclarativeNetRequest drops request instantly with net::ERR_BLOCKED_BY_CLIENT
-            blocked = true;
-          }
-          const durationMs = Math.round(performance.now() - startTime);
-
-          if (statusCell) {
-            if (blocked) {
-              statusCell.innerHTML = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); font-size: 10px;">BLOCKED (${durationMs}ms)</span>`;
-            } else {
-              statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--status-danger); border: 1px solid rgba(239, 68, 68, 0.3); font-size: 10px;">UNBLOCKED</span>`;
-            }
-          }
+      for (let i = 0; i < TEST_ENDPOINTS.length; i++) {
+        const item = TEST_ENDPOINTS[i];
+        const statusCell = document.getElementById(`probe-status-${i}`);
+        if (statusCell) {
+          statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.2); font-size: 10px;">Testing...</span>`;
         }
 
-        runAdblockProbeBtn.disabled = false;
-        runAdblockProbeBtn.innerHTML = `
+        let blocked = false;
+        const startTime = performance.now();
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1200);
+          await fetch(item.url, { mode: 'no-cors', signal: controller.signal });
+          clearTimeout(timeoutId);
+          blocked = false;
+        } catch (err) {
+          // DeclarativeNetRequest drops request instantly with net::ERR_BLOCKED_BY_CLIENT
+          blocked = true;
+        }
+        const durationMs = Math.round(performance.now() - startTime);
+
+        if (statusCell) {
+          if (blocked) {
+            statusCell.innerHTML = `<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); font-size: 10px;">BLOCKED (${durationMs}ms)</span>`;
+          } else {
+            statusCell.innerHTML = `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--status-danger); border: 1px solid rgba(239, 68, 68, 0.3); font-size: 10px;">UNBLOCKED</span>`;
+          }
+        }
+      }
+
+      runAdblockProbeBtn.disabled = false;
+      runAdblockProbeBtn.innerHTML = `
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Run Live Interception Test
         `;
-        showStatus('Live Endpoint Interception Test completed successfully!');
-      }
+      showStatus('Live Endpoint Interception Test completed successfully!');
+    }
 
-      if (runAdblockProbeBtn) {
-        runAdblockProbeBtn.addEventListener('click', runAdblockProbe);
-      }
+    if (runAdblockProbeBtn) {
+      runAdblockProbeBtn.addEventListener('click', runAdblockProbe);
+    }
 
-      if (reloadDnrRulesBtn) {
-        reloadDnrRulesBtn.addEventListener('click', () => {
-          reloadDnrRulesBtn.disabled = true;
-          browser.runtime.sendMessage({ type: 'reload-dnr-rules' }, (res) => {
-            reloadDnrRulesBtn.disabled = false;
-            updateActiveDnrCount();
-            showStatus('DeclarativeNetRequest rules re-synchronized with browser network core!');
-          });
+    if (reloadDnrRulesBtn) {
+      reloadDnrRulesBtn.addEventListener('click', () => {
+        reloadDnrRulesBtn.disabled = true;
+        browser.runtime.sendMessage({ type: 'reload-dnr-rules' }, (res) => {
+          reloadDnrRulesBtn.disabled = false;
+          updateActiveDnrCount();
+          showStatus('DeclarativeNetRequest rules re-synchronized with browser network core!');
         });
-      }
-
-      renderProbeInitialState();
-      updateActiveDnrCount();
-    }
-
-    function loadSettings() {
-      const browser = window.morphApi || window.browser || window.chrome;
-      if (!browser || !browser.storage || !browser.storage.sync) return;
-      browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode'], (result) => {
-        const res = result || {};
-        websiteRules = res.websiteRules || [];
-        blockList = res.blockList || [];
-        whiteList = res.whiteList || [];
-        customLocations = res.customLocations || [];
-        listMode = res.listMode || 'blacklist';
-        renderRules();
-        renderBlockList();
-        renderLocations();
       });
     }
 
-    function saveSettings() {
-      const browser = window.morphApi || window.browser || window.chrome;
-      browser.storage.sync.set({
-        websiteRules: (websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com')),
-        blockList: blockList,
-        whiteList: whiteList,
-        customLocations: customLocations,
-        listMode: listMode
-      }, () => {
-        showStatus('Settings saved successfully!');
+    renderProbeInitialState();
+    updateActiveDnrCount();
+  }
+
+  function loadSettings() {
+    const browser = window.morphApi || window.browser || window.chrome;
+    if (!browser || !browser.storage || !browser.storage.sync) return;
+    browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode'], (result) => {
+      const res = result || {};
+      websiteRules = res.websiteRules || [];
+      blockList = res.blockList || [];
+      whiteList = res.whiteList || [];
+      customLocations = res.customLocations || [];
+      listMode = res.listMode || 'blacklist';
+      renderRules();
+      renderBlockList();
+      renderLocations();
+    });
+  }
+
+  function saveSettings() {
+    const browser = window.morphApi || window.browser || window.chrome;
+    browser.storage.sync.set({
+      websiteRules: (websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com')),
+      blockList: blockList,
+      whiteList: whiteList,
+      customLocations: customLocations,
+      listMode: listMode
+    }, () => {
+      showStatus('Settings saved successfully!');
+    });
+  }
+
+  function setupTheme() {
+    const browser = window.morphApi || window.browser || window.chrome;
+    browser.storage.local.get(['theme'], (result) => {
+      const theme = (result && result.theme) ? result.theme : 'dark';
+      applyTheme(theme);
+    });
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.classList.remove('dark-mode', 'light-mode');
+    document.body.classList.remove('dark-mode', 'light-mode');
+    const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
+    const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
+
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+      document.body.classList.add('dark-mode');
+      if (lightIcon) lightIcon.style.display = 'none';
+      if (darkIcon) darkIcon.style.display = 'block';
+    } else {
+      document.documentElement.classList.add('light-mode');
+      document.body.classList.add('light-mode');
+      if (lightIcon) lightIcon.style.display = 'block';
+      if (darkIcon) darkIcon.style.display = 'none';
+    }
+  }
+
+  function toggleTheme() {
+    const browser = window.morphApi || window.browser || window.chrome;
+    const isDark = document.body.classList.contains('dark-mode') || !document.body.classList.contains('light-mode');
+    const newTheme = isDark ? 'light' : 'dark';
+
+    applyTheme(newTheme);
+    try { localStorage.setItem('morph_theme', newTheme); } catch (e) { }
+
+    if (browser && browser.storage && browser.storage.local) {
+      browser.storage.local.set({ theme: newTheme }, () => {
+        if (browser.runtime && browser.runtime.sendMessage) {
+          try {
+            const res = browser.runtime.sendMessage({
+              type: 'set-settings',
+              data: { theme: newTheme }
+            });
+            if (res && typeof res.catch === 'function') {
+              res.catch(() => { });
+            }
+          } catch (e) { }
+        }
       });
     }
+  }
 
-    function setupTheme() {
-      const browser = window.morphApi || window.browser || window.chrome;
-      browser.storage.local.get(['theme'], (result) => {
-        const theme = (result && result.theme) ? result.theme : 'dark';
-        applyTheme(theme);
+
+
+
+
+  categorySelect.addEventListener('change', (e) => {
+    const catKey = e.target.value;
+    platformSelect.innerHTML = '<option value="">Platform...</option>';
+    browserSelect.innerHTML = '<option value="">Browser...</option>';
+    profileSelect.innerHTML = '<option value="">Device...</option>';
+    platformSelect.disabled = true;
+    browserSelect.disabled = true;
+    profileSelect.disabled = true;
+
+    if (!catKey || typeof profilesStructured === 'undefined') return;
+
+    const cat = profilesStructured[catKey];
+    if (cat && cat.platforms) {
+      platformSelect.disabled = false;
+      Object.entries(cat.platforms).forEach(([platKey, plat]) => {
+        const option = document.createElement('option');
+        option.value = platKey;
+        option.textContent = plat.name;
+        platformSelect.appendChild(option);
       });
     }
+  });
 
-    function applyTheme(theme) {
-      document.documentElement.classList.remove('dark-mode', 'light-mode');
-      document.body.classList.remove('dark-mode', 'light-mode');
-      const lightIcon = themeToggle ? themeToggle.querySelector('.light-icon') : null;
-      const darkIcon = themeToggle ? themeToggle.querySelector('.dark-icon') : null;
+  platformSelect.addEventListener('change', (e) => {
+    const platKey = e.target.value;
+    browserSelect.innerHTML = '<option value="">Browser...</option>';
+    profileSelect.innerHTML = '<option value="">Device...</option>';
+    profileSelect.disabled = true;
 
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark-mode');
-        document.body.classList.add('dark-mode');
-        if (lightIcon) lightIcon.style.display = 'none';
-        if (darkIcon) darkIcon.style.display = 'block';
-      } else {
-        document.documentElement.classList.add('light-mode');
-        document.body.classList.add('light-mode');
-        if (lightIcon) lightIcon.style.display = 'block';
-        if (darkIcon) darkIcon.style.display = 'none';
-      }
-    }
-
-    function toggleTheme() {
-      const browser = window.morphApi || window.browser || window.chrome;
-      const isDark = document.body.classList.contains('dark-mode') || !document.body.classList.contains('light-mode');
-      const newTheme = isDark ? 'light' : 'dark';
-
-      applyTheme(newTheme);
-      try { localStorage.setItem('morph_theme', newTheme); } catch(e) {}
-
-      if (browser && browser.storage && browser.storage.local) {
-        browser.storage.local.set({ theme: newTheme }, () => {
-          if (browser.runtime && browser.runtime.sendMessage) {
-            try {
-              const res = browser.runtime.sendMessage({
-                type: 'set-settings',
-                data: { theme: newTheme }
-              });
-              if (res && typeof res.catch === 'function') {
-                res.catch(() => {});
-              }
-            } catch(e) {}
-          }
-        });
-      }
-    }
-
-
-
-
-
-    categorySelect.addEventListener('change', (e) => {
-      const catKey = e.target.value;
-      platformSelect.innerHTML = '<option value="">Platform...</option>';
-      browserSelect.innerHTML = '<option value="">Browser...</option>';
-      profileSelect.innerHTML = '<option value="">Device...</option>';
-      platformSelect.disabled = true;
+    if (!platKey) {
       browserSelect.disabled = true;
-      profileSelect.disabled = true;
-      
-      if (!catKey || typeof profilesStructured === 'undefined') return;
-      
-      const cat = profilesStructured[catKey];
-      if (cat && cat.platforms) {
-        platformSelect.disabled = false;
-        Object.entries(cat.platforms).forEach(([platKey, plat]) => {
-          const option = document.createElement('option');
-          option.value = platKey;
-          option.textContent = plat.name;
-          platformSelect.appendChild(option);
-        });
-      }
-    });
-
-    platformSelect.addEventListener('change', (e) => {
-      const platKey = e.target.value;
-      browserSelect.innerHTML = '<option value="">Browser...</option>';
-      profileSelect.innerHTML = '<option value="">Device...</option>';
-      profileSelect.disabled = true;
-      
-      if (!platKey) {
-        browserSelect.disabled = true;
-        return;
-      }
-      
-      browserSelect.disabled = false;
-      const option = document.createElement('option');
-      option.value = 'all';
-      option.textContent = 'Default / All';
-      browserSelect.appendChild(option);
-      // For simplicity, we just use "Default / All" in advanced settings unless we copy browserTypes
-      if (typeof browserTypes !== 'undefined') {
-        Object.entries(browserTypes).forEach(([bKey, bVal]) => {
-          if (bKey !== 'all' && (bVal.platforms.includes('all') || bVal.platforms.includes(platKey))) {
-            const opt = document.createElement('option');
-            opt.value = bKey;
-            opt.textContent = bVal.name;
-            browserSelect.appendChild(opt);
-          }
-        });
-      }
-    });
-
-    function filterProfilesByBrowser(profilesList, browserType) {
-      if (typeof browserTypes === 'undefined') return profilesList;
-      const bObj = browserTypes[browserType];
-      if (!bObj) return profilesList;
-
-      const patterns = bObj.patterns || (bObj.pattern ? [bObj.pattern] : []);
-      
-      const filtered = profilesList.filter(profile => {
-        if (!profile.ua) return false;
-        if (browserType === 'safari') {
-          return profile.ua.includes('Safari') && 
-                 !profile.ua.includes('Chrome') && 
-                 !profile.ua.includes('Edg') && 
-                 !profile.ua.includes('OPR') && 
-                 !profile.ua.includes('CriOS');
-        }
-        return patterns.some(pat => pat && profile.ua.includes(pat));
-      });
-
-      if (filtered.length > 0) return filtered;
-
-      return profilesList.map(profile => {
-        let newUA = profile.ua;
-        if (browserType === 'chrome') {
-          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
-            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1');
-          } else {
-            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36');
-          }
-        } else if (browserType === 'firefox') {
-          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
-            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'FxiOS/142.0 Mobile/15E148 Safari/604.1');
-          } else {
-            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Firefox/142.0');
-          }
-        } else if (browserType === 'edge') {
-          if (newUA.includes('iPhone') || newUA.includes('iPad')) {
-            newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1');
-          } else {
-            newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36 Edg/145.0.3211.55');
-          }
-        }
-        return {
-          ...profile,
-          name: profile.name.includes('(') ? profile.name : `${profile.name} (${bObj.name || browserType})`,
-          ua: newUA
-        };
-      });
+      return;
     }
 
-    browserSelect.addEventListener('change', (e) => {
-      const catKey = categorySelect.value;
-      const platKey = platformSelect.value;
-      const bKey = e.target.value;
-      profileSelect.innerHTML = '<option value="">Device...</option><option value="custom">Custom String...</option>';
-      
-      if (!bKey) {
-        profileSelect.disabled = true;
-        return;
-      }
-      
-      profileSelect.disabled = false;
-      const cat = typeof profilesStructured !== 'undefined' ? profilesStructured[catKey] : null;
-      if (cat && cat.platforms && cat.platforms[platKey]) {
-        let variants = cat.platforms[platKey].variants;
-        if (bKey !== 'all') {
-          variants = filterProfilesByBrowser(variants, bKey);
-        }
-        profileSelect.activeVariants = variants;
-        variants.forEach((v, idx) => {
+    browserSelect.disabled = false;
+    const option = document.createElement('option');
+    option.value = 'all';
+    option.textContent = 'Default / All';
+    browserSelect.appendChild(option);
+    // For simplicity, we just use "Default / All" in advanced settings unless we copy browserTypes
+    if (typeof browserTypes !== 'undefined') {
+      Object.entries(browserTypes).forEach(([bKey, bVal]) => {
+        if (bKey !== 'all' && (bVal.platforms.includes('all') || bVal.platforms.includes(platKey))) {
           const opt = document.createElement('option');
-          opt.value = idx.toString();
-          opt.textContent = v.name;
-          profileSelect.appendChild(opt);
-        });
-      }
-    });
-
-    profileSelect.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (val === 'custom') {
-        customUaInput.style.display = 'block';
-        customUaText.value = '';
-        touchPointsInput.value = 0;
-      } else if (val !== '') {
-        customUaInput.style.display = 'none';
-        const variants = profileSelect.activeVariants;
-        if (variants && variants[parseInt(val)]) {
-          const variant = variants[parseInt(val)];
-          customUaText.value = variant.ua;
-          touchPointsInput.value = variant.touchPoints || 0;
+          opt.value = bKey;
+          opt.textContent = bVal.name;
+          browserSelect.appendChild(opt);
         }
-      } else {
-        customUaInput.style.display = 'none';
+      });
+    }
+  });
+
+  function filterProfilesByBrowser(profilesList, browserType) {
+    if (typeof browserTypes === 'undefined') return profilesList;
+    const bObj = browserTypes[browserType];
+    if (!bObj) return profilesList;
+
+    const patterns = bObj.patterns || (bObj.pattern ? [bObj.pattern] : []);
+
+    const filtered = profilesList.filter(profile => {
+      if (!profile.ua) return false;
+      if (browserType === 'safari') {
+        return profile.ua.includes('Safari') &&
+          !profile.ua.includes('Chrome') &&
+          !profile.ua.includes('Edg') &&
+          !profile.ua.includes('OPR') &&
+          !profile.ua.includes('CriOS');
       }
+      return patterns.some(pat => pat && profile.ua.includes(pat));
     });
 
-    function addOrUpdateRule() {
-      const website = websiteUrlInput.value.trim();
-      const customUA = customUaText.value.trim();
-      const touchPoints = parseInt(touchPointsInput.value) || 0;
+    if (filtered.length > 0) return filtered;
 
-      if (!website) {
-        showStatus('Please enter a website URL', 'error');
-        return;
-      }
-
-      const userAgent = customUA;
-      if (!userAgent) {
-        showStatus('Please select a user agent or enter a custom one', 'error');
-        return;
-      }
-
-      let geoCoords = null;
-      if (geoSpoofRuleCheckbox.checked) {
-        if (geoCoordsPresetSelect.value === 'custom') {
-          geoCoords = {
-            lat: parseFloat(geoLatRuleInput.value) || 40.7128,
-            lng: parseFloat(geoLngRuleInput.value) || -74.0060
-          };
+    return profilesList.map(profile => {
+      let newUA = profile.ua;
+      if (browserType === 'chrome') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1');
         } else {
-          const [lat, lng] = geoCoordsPresetSelect.value.split(',');
-          geoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36');
+        }
+      } else if (browserType === 'firefox') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'FxiOS/142.0 Mobile/15E148 Safari/604.1');
+        } else {
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Firefox/142.0');
+        }
+      } else if (browserType === 'edge') {
+        if (newUA.includes('iPhone') || newUA.includes('iPad')) {
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'EdgiOS/145.0.3211.55 Mobile/15E148 Safari/604.1');
+        } else {
+          newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36 Edg/145.0.3211.55');
         }
       }
-
-      const rule = {
-        id: editingRule ? editingRule.id : Date.now(),
-        website: website,
-        userAgent: userAgent,
-        touchPoints: touchPoints,
-        touchSpoofEnabled: touchPoints > 0,
-        jsBlocked: jsBlockRuleCheckbox.checked,
-        jsProtected: jsProtectRuleCheckbox.checked,
-        mediaQuerySpoofEnabled: mediaQueryRuleCheckbox ? mediaQueryRuleCheckbox.checked : false,
-        timingShieldEnabled: timingShieldRuleCheckbox ? timingShieldRuleCheckbox.checked : false,
-        geoSpoofEnabled: geoSpoofRuleCheckbox.checked,
-        geoCoords: geoCoords,
-        created: editingRule ? editingRule.created : new Date().toISOString()
+      return {
+        ...profile,
+        name: profile.name.includes('(') ? profile.name : `${profile.name} (${bObj.name || browserType})`,
+        ua: newUA
       };
+    });
+  }
 
-      if (editingRule) {
-        const index = websiteRules.findIndex(r => r.id === editingRule.id);
-        websiteRules[index] = rule;
-        editingRule = null;
-        addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
-      } else {
-        // Check for duplicates
-        if (websiteRules.some(r => r.website === website)) {
-          showStatus('Rule for this website already exists', 'error');
-          return;
-        }
-        websiteRules.push(rule);
-      }
+  browserSelect.addEventListener('change', (e) => {
+    const catKey = categorySelect.value;
+    const platKey = platformSelect.value;
+    const bKey = e.target.value;
+    profileSelect.innerHTML = '<option value="">Device...</option><option value="custom">Custom String...</option>';
 
-      websiteUrlInput.value = '';
-      categorySelect.value = '';
-      platformSelect.innerHTML = '<option value="">Platform...</option>';
-      platformSelect.disabled = true;
-      browserSelect.innerHTML = '<option value="">Browser...</option>';
-      profileSelect.innerHTML = '<option value="">Device...</option>';
-      browserSelect.disabled = true;
+    if (!bKey) {
       profileSelect.disabled = true;
-      customUaText.value = '';
-      touchPointsInput.value = '0';
-      jsBlockRuleCheckbox.checked = false;
-      jsProtectRuleCheckbox.checked = false;
-      if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = false;
-      if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = false;
-      geoSpoofRuleCheckbox.checked = false;
-      geoCoordsPresetSelect.value = '40.7128,-74.0060';
-      geoLatRuleInput.value = '';
-      geoLngRuleInput.value = '';
-      geoCoordsGroupDiv.style.display = 'none';
-      geoCustomCoordsDiv.style.display = 'none';
-      customUaInput.style.display = 'none';
+      return;
+    }
 
+    profileSelect.disabled = false;
+    const cat = typeof profilesStructured !== 'undefined' ? profilesStructured[catKey] : null;
+    if (cat && cat.platforms && cat.platforms[platKey]) {
+      let variants = cat.platforms[platKey].variants;
+      if (bKey !== 'all') {
+        variants = filterProfilesByBrowser(variants, bKey);
+      }
+      profileSelect.activeVariants = variants;
+      variants.forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx.toString();
+        opt.textContent = v.name;
+        profileSelect.appendChild(opt);
+      });
+    }
+  });
+
+  profileSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+      customUaInput.style.display = 'block';
+      customUaText.value = '';
+      touchPointsInput.value = 0;
+    } else if (val !== '') {
+      customUaInput.style.display = 'none';
+      const variants = profileSelect.activeVariants;
+      if (variants && variants[parseInt(val)]) {
+        const variant = variants[parseInt(val)];
+        customUaText.value = variant.ua;
+        touchPointsInput.value = variant.touchPoints || 0;
+      }
+    } else {
+      customUaInput.style.display = 'none';
+    }
+  });
+
+  function addOrUpdateRule() {
+    const website = websiteUrlInput.value.trim();
+    const customUA = customUaText.value.trim();
+    const touchPoints = parseInt(touchPointsInput.value) || 0;
+
+    if (!website) {
+      showStatus('Please enter a website URL', 'error');
+      return;
+    }
+
+    const userAgent = customUA;
+    if (!userAgent) {
+      showStatus('Please select a user agent or enter a custom one', 'error');
+      return;
+    }
+
+    let geoCoords = null;
+    if (geoSpoofRuleCheckbox.checked) {
+      if (geoCoordsPresetSelect.value === 'custom') {
+        geoCoords = {
+          lat: parseFloat(geoLatRuleInput.value) || 40.7128,
+          lng: parseFloat(geoLngRuleInput.value) || -74.0060
+        };
+      } else {
+        const [lat, lng] = geoCoordsPresetSelect.value.split(',');
+        geoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
+      }
+    }
+
+    const rule = {
+      id: editingRule ? editingRule.id : Date.now(),
+      website: website,
+      userAgent: userAgent,
+      touchPoints: touchPoints,
+      touchSpoofEnabled: touchPoints > 0,
+      jsBlocked: jsBlockRuleCheckbox.checked,
+      jsProtected: jsProtectRuleCheckbox.checked,
+      mediaQuerySpoofEnabled: mediaQueryRuleCheckbox ? mediaQueryRuleCheckbox.checked : false,
+      timingShieldEnabled: timingShieldRuleCheckbox ? timingShieldRuleCheckbox.checked : false,
+      geoSpoofEnabled: geoSpoofRuleCheckbox.checked,
+      geoCoords: geoCoords,
+      created: editingRule ? editingRule.created : new Date().toISOString()
+    };
+
+    if (editingRule) {
+      const index = websiteRules.findIndex(r => r.id === editingRule.id);
+      websiteRules[index] = rule;
+      editingRule = null;
+      addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
+    } else {
+      // Check for duplicates
+      if (websiteRules.some(r => r.website === website)) {
+        showStatus('Rule for this website already exists', 'error');
+        return;
+      }
+      websiteRules.push(rule);
+    }
+
+    websiteUrlInput.value = '';
+    categorySelect.value = '';
+    platformSelect.innerHTML = '<option value="">Platform...</option>';
+    platformSelect.disabled = true;
+    browserSelect.innerHTML = '<option value="">Browser...</option>';
+    profileSelect.innerHTML = '<option value="">Device...</option>';
+    browserSelect.disabled = true;
+    profileSelect.disabled = true;
+    customUaText.value = '';
+    touchPointsInput.value = '0';
+    jsBlockRuleCheckbox.checked = false;
+    jsProtectRuleCheckbox.checked = false;
+    if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = false;
+    if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = false;
+    geoSpoofRuleCheckbox.checked = false;
+    geoCoordsPresetSelect.value = '40.7128,-74.0060';
+    geoLatRuleInput.value = '';
+    geoLngRuleInput.value = '';
+    geoCoordsGroupDiv.style.display = 'none';
+    geoCustomCoordsDiv.style.display = 'none';
+    customUaInput.style.display = 'none';
+
+    saveSettings();
+    renderRules();
+  }
+
+  function editRule(rule) {
+    console.log('Editing rule:', rule);
+    editingRule = rule;
+    websiteUrlInput.value = rule.website;
+    touchPointsInput.value = rule.touchPoints || 0;
+    jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
+    jsProtectRuleCheckbox.checked = !!rule.jsProtected;
+    if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = !!rule.mediaQuerySpoofEnabled;
+    if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = !!rule.timingShieldEnabled;
+
+    geoSpoofRuleCheckbox.checked = !!rule.geoSpoofEnabled;
+    geoCoordsGroupDiv.style.display = rule.geoSpoofEnabled ? 'block' : 'none';
+
+    if (rule.geoSpoofEnabled && rule.geoCoords) {
+      const presetVal = `${rule.geoCoords.lat},${rule.geoCoords.lng}`;
+      const option = Array.from(geoCoordsPresetSelect.options).find(opt => opt.value === presetVal);
+      if (option) {
+        geoCoordsPresetSelect.value = presetVal;
+        geoCustomCoordsDiv.style.display = 'none';
+      } else {
+        geoCoordsPresetSelect.value = 'custom';
+        geoLatRuleInput.value = rule.geoCoords.lat;
+        geoLngRuleInput.value = rule.geoCoords.lng;
+        geoCustomCoordsDiv.style.display = 'block';
+      }
+    }
+
+    categorySelect.value = '';
+    platformSelect.innerHTML = '<option value="">Platform...</option>';
+    platformSelect.disabled = true;
+    browserSelect.innerHTML = '<option value="">Browser...</option>';
+    profileSelect.innerHTML = '<option value="">Device...</option>';
+    browserSelect.disabled = true;
+    profileSelect.disabled = true;
+
+    customUaText.value = rule.userAgent;
+    customUaInput.style.display = 'block';
+
+    addRuleBtn.innerHTML = '<span class="icon">✓</span> Update Rule';
+    websiteUrlInput.focus();
+  }
+
+  function deleteRule(id) {
+    console.log('Deleting rule with id:', id);
+    if (confirm('Are you sure you want to delete this rule?')) {
+      websiteRules = websiteRules.filter(r => r.id !== id);
       saveSettings();
       renderRules();
     }
+  }
 
-    function editRule(rule) {
-      console.log('Editing rule:', rule);
-      editingRule = rule;
-      websiteUrlInput.value = rule.website;
-      touchPointsInput.value = rule.touchPoints || 0;
-      jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
-      jsProtectRuleCheckbox.checked = !!rule.jsProtected;
-      if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = !!rule.mediaQuerySpoofEnabled;
-      if (timingShieldRuleCheckbox) timingShieldRuleCheckbox.checked = !!rule.timingShieldEnabled;
-      
-      geoSpoofRuleCheckbox.checked = !!rule.geoSpoofEnabled;
-      geoCoordsGroupDiv.style.display = rule.geoSpoofEnabled ? 'block' : 'none';
-      
-      if (rule.geoSpoofEnabled && rule.geoCoords) {
-        const presetVal = `${rule.geoCoords.lat},${rule.geoCoords.lng}`;
-        const option = Array.from(geoCoordsPresetSelect.options).find(opt => opt.value === presetVal);
-        if (option) {
-          geoCoordsPresetSelect.value = presetVal;
-          geoCustomCoordsDiv.style.display = 'none';
-        } else {
-          geoCoordsPresetSelect.value = 'custom';
-          geoLatRuleInput.value = rule.geoCoords.lat;
-          geoLngRuleInput.value = rule.geoCoords.lng;
-          geoCustomCoordsDiv.style.display = 'block';
-        }
-      }
+  function addBlock() {
+    const rawWebsite = blockUrlInput.value.trim();
 
-      categorySelect.value = '';
-      platformSelect.innerHTML = '<option value="">Platform...</option>';
-      platformSelect.disabled = true;
-      browserSelect.innerHTML = '<option value="">Browser...</option>';
-      profileSelect.innerHTML = '<option value="">Device...</option>';
-      browserSelect.disabled = true;
-      profileSelect.disabled = true;
-      
-      customUaText.value = rule.userAgent;
-      customUaInput.style.display = 'block';
-
-      addRuleBtn.innerHTML = '<span class="icon">✓</span> Update Rule';
-      websiteUrlInput.focus();
+    if (!rawWebsite) {
+      showStatus('Please enter a website URL or pattern', 'error');
+      return;
     }
 
-    function deleteRule(id) {
-      console.log('Deleting rule with id:', id);
-      if (confirm('Are you sure you want to delete this rule?')) {
-        websiteRules = websiteRules.filter(r => r.id !== id);
-        saveSettings();
-        renderRules();
+    // Normalize website pattern (strip protocol if user pasted URL)
+    let website = rawWebsite;
+    try {
+      if (website.startsWith('http://') || website.startsWith('https://')) {
+        website = new URL(website).hostname;
       }
+    } catch (err) {
+      // use rawWebsite
     }
 
-    function addBlock() {
-      const rawWebsite = blockUrlInput.value.trim();
+    const isWhite = listMode === 'whitelist';
+    const currentList = isWhite ? whiteList : blockList;
+    const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+    const oppositeList = isWhite ? blockList : whiteList;
+    const oppositeListName = isWhite ? 'Blacklist' : 'Whitelist';
 
-      if (!rawWebsite) {
-        showStatus('Please enter a website URL or pattern', 'error');
+    if (editingBlock) {
+      const index = currentList.findIndex(b => b.id === editingBlock.id);
+      if (index !== -1) {
+        currentList[index].website = website;
+      }
+      editingBlock = null;
+      if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
+      showStatus(`Updated website in ${currentListName}`);
+    } else {
+      // Check for duplicates in current list
+      if (currentList.some(item => item.website.toLowerCase() === website.toLowerCase())) {
+        showStatus(`Website already in ${currentListName}`, 'error');
         return;
       }
 
-      // Normalize website pattern (strip protocol if user pasted URL)
-      let website = rawWebsite;
-      try {
-        if (website.startsWith('http://') || website.startsWith('https://')) {
-          website = new URL(website).hostname;
-        }
-      } catch (err) {
-        // use rawWebsite
-      }
-
-      const isWhite = listMode === 'whitelist';
-      const currentList = isWhite ? whiteList : blockList;
-      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
-      const oppositeList = isWhite ? blockList : whiteList;
-      const oppositeListName = isWhite ? 'Blacklist' : 'Whitelist';
-
-      if (editingBlock) {
-        const index = currentList.findIndex(b => b.id === editingBlock.id);
-        if (index !== -1) {
-          currentList[index].website = website;
-        }
-        editingBlock = null;
-        if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
-        showStatus(`Updated website in ${currentListName}`);
+      // If exists in opposite list, remove it from opposite list to avoid contradiction
+      const oppIndex = oppositeList.findIndex(item => item.website.toLowerCase() === website.toLowerCase());
+      if (oppIndex !== -1) {
+        oppositeList.splice(oppIndex, 1);
+        showStatus(`Added to ${currentListName} (moved from ${oppositeListName})`);
       } else {
-        // Check for duplicates in current list
-        if (currentList.some(item => item.website.toLowerCase() === website.toLowerCase())) {
-          showStatus(`Website already in ${currentListName}`, 'error');
-          return;
-        }
-
-        // If exists in opposite list, remove it from opposite list to avoid contradiction
-        const oppIndex = oppositeList.findIndex(item => item.website.toLowerCase() === website.toLowerCase());
-        if (oppIndex !== -1) {
-          oppositeList.splice(oppIndex, 1);
-          showStatus(`Added to ${currentListName} (moved from ${oppositeListName})`);
-        } else {
-          showStatus(`Added to ${currentListName}!`);
-        }
-
-        const blockItem = {
-          id: Date.now(),
-          website: website,
-          created: new Date().toISOString()
-        };
-
-        currentList.push(blockItem);
+        showStatus(`Added to ${currentListName}!`);
       }
-      
-      blockUrlInput.value = '';
+
+      const blockItem = {
+        id: Date.now(),
+        website: website,
+        created: new Date().toISOString()
+      };
+
+      currentList.push(blockItem);
+    }
+
+    blockUrlInput.value = '';
+
+    saveSettings();
+    renderBlockList();
+  }
+
+  function editBlock(id) {
+    const currentList = listMode === 'whitelist' ? whiteList : blockList;
+    const item = currentList.find(b => b.id === id);
+    if (!item) return;
+
+    editingBlock = item;
+    blockUrlInput.value = item.website;
+    if (addBlockBtnText) {
+      addBlockBtnText.textContent = `Update in ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
+    }
+    if (cancelEditBlockBtn) {
+      cancelEditBlockBtn.style.display = 'inline-flex';
+    }
+    blockUrlInput.focus();
+  }
+
+  function cancelEditBlock() {
+    editingBlock = null;
+    blockUrlInput.value = '';
+    if (addBlockBtnText) {
+      addBlockBtnText.textContent = `Add to ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
+    }
+    if (cancelEditBlockBtn) {
+      cancelEditBlockBtn.style.display = 'none';
+    }
+  }
+
+  function deleteBlock(id) {
+    const isWhite = listMode === 'whitelist';
+    const currentList = isWhite ? whiteList : blockList;
+    const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+    const item = currentList.find(i => i.id === id);
+    const name = item ? `"${item.website}"` : 'this website';
+
+    if (confirm(`Are you sure you want to remove ${name} from the ${currentListName}?`)) {
+      if (isWhite) {
+        whiteList = whiteList.filter(item => item.id !== id);
+      } else {
+        blockList = blockList.filter(item => item.id !== id);
+      }
+
+      if (editingBlock && editingBlock.id === id) {
+        cancelEditBlock();
+      }
+
+      saveSettings();
+      renderBlockList();
+      showStatus(`Removed from ${currentListName}`);
+    }
+  }
+
+  function moveBlockItem(id, action) {
+    if (action === 'to-whitelist') {
+      const itemIndex = blockList.findIndex(b => b.id === id);
+      if (itemIndex === -1) return;
+      const [item] = blockList.splice(itemIndex, 1);
+
+      if (!whiteList.some(w => w.website.toLowerCase() === item.website.toLowerCase())) {
+        whiteList.push({
+          id: item.id || Date.now(),
+          website: item.website,
+          created: item.created || new Date().toISOString()
+        });
+        showStatus(`Moved "${item.website}" to Whitelist!`);
+      } else {
+        showStatus(`"${item.website}" is already in Whitelist (removed from Blacklist)`);
+      }
+
+      if (editingBlock && editingBlock.id === id) {
+        cancelEditBlock();
+      }
+
+      saveSettings();
+      renderBlockList();
+    } else if (action === 'to-blacklist') {
+      const itemIndex = whiteList.findIndex(w => w.id === id);
+      if (itemIndex === -1) return;
+      const [item] = whiteList.splice(itemIndex, 1);
+
+      if (!blockList.some(b => b.website.toLowerCase() === item.website.toLowerCase())) {
+        blockList.push({
+          id: item.id || Date.now(),
+          website: item.website,
+          created: item.created || new Date().toISOString()
+        });
+        showStatus(`Moved "${item.website}" to Blacklist!`);
+      } else {
+        showStatus(`"${item.website}" is already in Blacklist (removed from Whitelist)`);
+      }
+
+      if (editingBlock && editingBlock.id === id) {
+        cancelEditBlock();
+      }
 
       saveSettings();
       renderBlockList();
     }
+  }
 
-    function editBlock(id) {
-      const currentList = listMode === 'whitelist' ? whiteList : blockList;
-      const item = currentList.find(b => b.id === id);
-      if (!item) return;
+  function addLocation() {
+    const name = locNameInput.value.trim();
+    const lat = parseFloat(locLatInput.value);
+    const lng = parseFloat(locLngInput.value);
 
-      editingBlock = item;
-      blockUrlInput.value = item.website;
-      if (addBlockBtnText) {
-        addBlockBtnText.textContent = `Update in ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
+    if (!name) { showStatus('Please enter a location name', 'error'); return; }
+    if (isNaN(lat) || lat < -90 || lat > 90) { showStatus('Invalid Latitude (-90 to 90)', 'error'); return; }
+    if (isNaN(lng) || lng < -180 || lng > 180) { showStatus('Invalid Longitude (-180 to 180)', 'error'); return; }
+
+    const location = {
+      id: editingLocation ? editingLocation.id : Date.now(),
+      name: name,
+      lat: lat,
+      lng: lng
+    };
+
+    if (editingLocation) {
+      const index = customLocations.findIndex(l => l.id === editingLocation.id);
+      if (index !== -1) {
+        customLocations[index] = location;
       }
-      if (cancelEditBlockBtn) {
-        cancelEditBlockBtn.style.display = 'inline-flex';
-      }
-      blockUrlInput.focus();
+      editingLocation = null;
+      if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">+</span> Add Location';
+    } else {
+      customLocations.push(location);
     }
 
-    function cancelEditBlock() {
-      editingBlock = null;
-      blockUrlInput.value = '';
-      if (addBlockBtnText) {
-        addBlockBtnText.textContent = `Add to ${listMode === 'whitelist' ? 'Whitelist' : 'Blacklist'}`;
-      }
-      if (cancelEditBlockBtn) {
-        cancelEditBlockBtn.style.display = 'none';
-      }
-    }
+    locNameInput.value = '';
+    locLatInput.value = '';
+    locLngInput.value = '';
 
-    function deleteBlock(id) {
-      const isWhite = listMode === 'whitelist';
-      const currentList = isWhite ? whiteList : blockList;
-      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
-      const item = currentList.find(i => i.id === id);
-      const name = item ? `"${item.website}"` : 'this website';
+    saveSettings();
+    renderLocations();
+  }
 
-      if (confirm(`Are you sure you want to remove ${name} from the ${currentListName}?`)) {
-        if (isWhite) {
-          whiteList = whiteList.filter(item => item.id !== id);
-        } else {
-          blockList = blockList.filter(item => item.id !== id);
-        }
+  function editLocation(loc) {
+    editingLocation = loc;
+    locNameInput.value = loc.name;
+    locLatInput.value = loc.lat;
+    locLngInput.value = loc.lng;
+    if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">✓</span> Update Location';
+    locNameInput.focus();
+  }
 
-        if (editingBlock && editingBlock.id === id) {
-          cancelEditBlock();
-        }
-
-        saveSettings();
-        renderBlockList();
-        showStatus(`Removed from ${currentListName}`);
-      }
-    }
-
-    function moveBlockItem(id, action) {
-      if (action === 'to-whitelist') {
-        const itemIndex = blockList.findIndex(b => b.id === id);
-        if (itemIndex === -1) return;
-        const [item] = blockList.splice(itemIndex, 1);
-
-        if (!whiteList.some(w => w.website.toLowerCase() === item.website.toLowerCase())) {
-          whiteList.push({
-            id: item.id || Date.now(),
-            website: item.website,
-            created: item.created || new Date().toISOString()
-          });
-          showStatus(`Moved "${item.website}" to Whitelist!`);
-        } else {
-          showStatus(`"${item.website}" is already in Whitelist (removed from Blacklist)`);
-        }
-
-        if (editingBlock && editingBlock.id === id) {
-          cancelEditBlock();
-        }
-
-        saveSettings();
-        renderBlockList();
-      } else if (action === 'to-blacklist') {
-        const itemIndex = whiteList.findIndex(w => w.id === id);
-        if (itemIndex === -1) return;
-        const [item] = whiteList.splice(itemIndex, 1);
-
-        if (!blockList.some(b => b.website.toLowerCase() === item.website.toLowerCase())) {
-          blockList.push({
-            id: item.id || Date.now(),
-            website: item.website,
-            created: item.created || new Date().toISOString()
-          });
-          showStatus(`Moved "${item.website}" to Blacklist!`);
-        } else {
-          showStatus(`"${item.website}" is already in Blacklist (removed from Whitelist)`);
-        }
-
-        if (editingBlock && editingBlock.id === id) {
-          cancelEditBlock();
-        }
-
-        saveSettings();
-        renderBlockList();
-      }
-    }
-
-    function addLocation() {
-      const name = locNameInput.value.trim();
-      const lat = parseFloat(locLatInput.value);
-      const lng = parseFloat(locLngInput.value);
-
-      if (!name) { showStatus('Please enter a location name', 'error'); return; }
-      if (isNaN(lat) || lat < -90 || lat > 90) { showStatus('Invalid Latitude (-90 to 90)', 'error'); return; }
-      if (isNaN(lng) || lng < -180 || lng > 180) { showStatus('Invalid Longitude (-180 to 180)', 'error'); return; }
-
-      const location = {
-        id: editingLocation ? editingLocation.id : Date.now(),
-        name: name,
-        lat: lat,
-        lng: lng
-      };
-
-      if (editingLocation) {
-        const index = customLocations.findIndex(l => l.id === editingLocation.id);
-        if (index !== -1) {
-          customLocations[index] = location;
-        }
-        editingLocation = null;
-        if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">+</span> Add Location';
-      } else {
-        customLocations.push(location);
-      }
-      
-      locNameInput.value = '';
-      locLatInput.value = '';
-      locLngInput.value = '';
-
+  function deleteLocation(id) {
+    if (confirm('Delete this custom location?')) {
+      customLocations = customLocations.filter(loc => loc.id !== id);
       saveSettings();
       renderLocations();
     }
+  }
 
-    function editLocation(loc) {
-      editingLocation = loc;
-      locNameInput.value = loc.name;
-      locLatInput.value = loc.lat;
-      locLngInput.value = loc.lng;
-      if (addLocBtn) addLocBtn.innerHTML = '<span class="icon">✓</span> Update Location';
-      locNameInput.focus();
+  function renderLocations() {
+    const geoCoordsPreset = document.getElementById('geoCoordsPreset');
+    if (geoCoordsPreset) {
+      // Remove old custom options
+      const customOptions = geoCoordsPreset.querySelectorAll('option.custom-loc-option');
+      customOptions.forEach(opt => opt.remove());
+
+      // Add current custom locations before the "Custom Coordinates..." option if it existed, or at the end
+      const customCoordsOption = geoCoordsPreset.querySelector('option[value="custom"]');
+
+      customLocations.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = `${loc.lat},${loc.lng}`;
+        option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
+        option.className = 'custom-loc-option';
+        if (customCoordsOption) {
+          geoCoordsPreset.insertBefore(option, customCoordsOption);
+        } else {
+          geoCoordsPreset.appendChild(option);
+        }
+      });
     }
 
-    function deleteLocation(id) {
-      if (confirm('Delete this custom location?')) {
-        customLocations = customLocations.filter(loc => loc.id !== id);
-        saveSettings();
-        renderLocations();
-      }
-    }
-
-    function renderLocations() {
-      const geoCoordsPreset = document.getElementById('geoCoordsPreset');
-      if (geoCoordsPreset) {
-        // Remove old custom options
-        const customOptions = geoCoordsPreset.querySelectorAll('option.custom-loc-option');
-        customOptions.forEach(opt => opt.remove());
-        
-        // Add current custom locations before the "Custom Coordinates..." option if it existed, or at the end
-        const customCoordsOption = geoCoordsPreset.querySelector('option[value="custom"]');
-        
-        customLocations.forEach(loc => {
-          const option = document.createElement('option');
-          option.value = `${loc.lat},${loc.lng}`;
-          option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
-          option.className = 'custom-loc-option';
-          if (customCoordsOption) {
-            geoCoordsPreset.insertBefore(option, customCoordsOption);
-          } else {
-            geoCoordsPreset.appendChild(option);
-          }
-        });
-      }
-
-      if (customLocations.length === 0) {
-        customLocItems.innerHTML = `
+    if (customLocations.length === 0) {
+      customLocItems.innerHTML = `
         <tr>
           <td colspan="4">
             <div class="empty-state">
@@ -2411,10 +2411,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </td>
         </tr>`;
-        return;
-      }
+      return;
+    }
 
-      customLocItems.innerHTML = customLocations.map(loc => `
+    customLocItems.innerHTML = customLocations.map(loc => `
       <tr>
         <td>${escapeHtml(loc.name)}</td>
         <td>${loc.lat}</td>
@@ -2428,24 +2428,24 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>
       `).join('');
 
-      document.querySelectorAll('#customLocationsList .edit-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const loc = JSON.parse(e.target.getAttribute('data-loc'));
-          editLocation(loc);
-        });
+    document.querySelectorAll('#customLocationsList .edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const loc = JSON.parse(e.target.getAttribute('data-loc'));
+        editLocation(loc);
       });
+    });
 
-      document.querySelectorAll('#customLocationsList .delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const locId = parseInt(e.target.getAttribute('data-loc-id'));
-          deleteLocation(locId);
-        });
+    document.querySelectorAll('#customLocationsList .delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const locId = parseInt(e.target.getAttribute('data-loc-id'));
+        deleteLocation(locId);
       });
-    }
+    });
+  }
 
-    function renderRules() {
-      if (websiteRules.length === 0) {
-        rulesItems.innerHTML = `
+  function renderRules() {
+    if (websiteRules.length === 0) {
+      rulesItems.innerHTML = `
         <tr>
           <td colspan="7">
             <div class="empty-state">
@@ -2458,10 +2458,10 @@ document.addEventListener('DOMContentLoaded', () => {
           </td>
         </tr>
       `;
-        return;
-      }
+      return;
+    }
 
-      rulesItems.innerHTML = websiteRules.map(rule => `
+    rulesItems.innerHTML = websiteRules.map(rule => `
       <tr>
         <td>${escapeHtml(rule.website)}</td>
         <td style="font-size: 11px;">${escapeHtml(truncateUA(rule.userAgent))}</td>
@@ -2478,75 +2478,75 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>
     `).join('');
 
-      // Add event listeners to buttons
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const rule = JSON.parse(e.target.getAttribute('data-rule'));
-          editRule(rule);
-        });
+    // Add event listeners to buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const rule = JSON.parse(e.target.getAttribute('data-rule'));
+        editRule(rule);
       });
+    });
 
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const ruleId = parseInt(e.target.getAttribute('data-rule-id'));
-          deleteRule(ruleId);
-        });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const ruleId = parseInt(e.target.getAttribute('data-rule-id'));
+        deleteRule(ruleId);
+      });
+    });
+  }
+
+  function renderBlockList() {
+    // Update count badges
+    if (blacklistCount) blacklistCount.textContent = blockList.length;
+    if (whitelistCount) whitelistCount.textContent = whiteList.length;
+
+    // Update tabs active state
+    if (modeTabs.length > 0) {
+      modeTabs.forEach(tab => {
+        if (tab.getAttribute('data-mode') === listMode) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
       });
     }
 
-    function renderBlockList() {
-      // Update count badges
-      if (blacklistCount) blacklistCount.textContent = blockList.length;
-      if (whitelistCount) whitelistCount.textContent = whiteList.length;
+    // Update headers, labels, descriptions
+    const isWhite = listMode === 'whitelist';
+    const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
+    const targetListName = isWhite ? 'Blacklist' : 'Whitelist';
 
-      // Update tabs active state
-      if (modeTabs.length > 0) {
-        modeTabs.forEach(tab => {
-          if (tab.getAttribute('data-mode') === listMode) {
-            tab.classList.add('active');
-          } else {
-            tab.classList.remove('active');
-          }
-        });
-      }
+    if (modeDescription) {
+      modeDescription.textContent = isWhite
+        ? 'Whitelist Mode active: Spoofing is DISABLED everywhere EXCEPT on these websites.'
+        : 'Blacklist Mode active: Spoofing is ENABLED everywhere EXCEPT on these websites.';
+    }
 
-      // Update headers, labels, descriptions
-      const isWhite = listMode === 'whitelist';
-      const currentListName = isWhite ? 'Whitelist' : 'Blacklist';
-      const targetListName = isWhite ? 'Blacklist' : 'Whitelist';
+    if (blockTableTitle) {
+      blockTableTitle.textContent = isWhite
+        ? 'WHITELISTED WEBSITES (SPOOFING ACTIVE)'
+        : 'BLACKLISTED WEBSITES (SPOOFING BYPASSED)';
+    }
 
-      if (modeDescription) {
-        modeDescription.textContent = isWhite
-          ? 'Whitelist Mode active: Spoofing is DISABLED everywhere EXCEPT on these websites.'
-          : 'Blacklist Mode active: Spoofing is ENABLED everywhere EXCEPT on these websites.';
-      }
+    if (blockUrlLabel) {
+      blockUrlLabel.textContent = `WEBSITE URL OR PATTERN (${currentListName.toUpperCase()})`;
+    }
 
-      if (blockTableTitle) {
-        blockTableTitle.textContent = isWhite
-          ? 'WHITELISTED WEBSITES (SPOOFING ACTIVE)'
-          : 'BLACKLISTED WEBSITES (SPOOFING BYPASSED)';
-      }
+    if (blockUrlInput) {
+      blockUrlInput.placeholder = isWhite
+        ? 'e.g., mysite.com or *.allowed.org'
+        : 'e.g., bank.com or *.financial.org';
+    }
 
-      if (blockUrlLabel) {
-        blockUrlLabel.textContent = `WEBSITE URL OR PATTERN (${currentListName.toUpperCase()})`;
-      }
+    if (addBlockBtnText) {
+      addBlockBtnText.textContent = editingBlock
+        ? `Update in ${currentListName}`
+        : `Add to ${currentListName}`;
+    }
 
-      if (blockUrlInput) {
-        blockUrlInput.placeholder = isWhite
-          ? 'e.g., mysite.com or *.allowed.org'
-          : 'e.g., bank.com or *.financial.org';
-      }
+    const currentList = isWhite ? whiteList : blockList;
 
-      if (addBlockBtnText) {
-        addBlockBtnText.textContent = editingBlock 
-          ? `Update in ${currentListName}` 
-          : `Add to ${currentListName}`;
-      }
-
-      const currentList = isWhite ? whiteList : blockList;
-
-      if (currentList.length === 0) {
-        blockItems.innerHTML = `
+    if (currentList.length === 0) {
+      blockItems.innerHTML = `
           <tr>
             <td colspan="2">
               <div class="empty-state">
@@ -2556,30 +2556,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 </svg>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                   <p>No websites in ${currentListName.toLowerCase()} yet</p>
-                  <span>${isWhite 
-                    ? 'Add websites where user agent spoofing should exclusively be enabled' 
-                    : 'Add websites where user agent spoofing should be disabled'}</span>
+                  <span>${isWhite
+          ? 'Add websites where user agent spoofing should exclusively be enabled'
+          : 'Add websites where user agent spoofing should be disabled'}</span>
                 </div>
               </div>
             </td>
           </tr>
         `;
-        return;
-      }
+      return;
+    }
 
-      const badgeStyle = isWhite
-        ? 'background: rgba(34,197,94,0.12); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3);'
-        : 'background: rgba(239,68,68,0.12); color: var(--status-danger); border: 1px solid rgba(239,68,68,0.3);';
+    const badgeStyle = isWhite
+      ? 'background: rgba(34,197,94,0.12); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3);'
+      : 'background: rgba(239,68,68,0.12); color: var(--status-danger); border: 1px solid rgba(239,68,68,0.3);';
 
-      const badgeLabel = isWhite ? 'Whitelisted' : 'Blacklisted';
+    const badgeLabel = isWhite ? 'Whitelisted' : 'Blacklisted';
 
-      const moveAction = isWhite ? 'to-blacklist' : 'to-whitelist';
-      const moveBtnLabel = isWhite 
-        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Move to Blacklist`
-        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Move to Whitelist`;
-      const moveBtnTitle = `Move this website to the ${targetListName}`;
+    const moveAction = isWhite ? 'to-blacklist' : 'to-whitelist';
+    const moveBtnLabel = isWhite
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Move to Blacklist`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Move to Whitelist`;
+    const moveBtnTitle = `Move this website to the ${targetListName}`;
 
-      blockItems.innerHTML = currentList.map(item => `
+    blockItems.innerHTML = currentList.map(item => `
         <tr>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2599,204 +2599,204 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
       `).join('');
 
-      // Add event listeners
-      blockItems.querySelectorAll('.move-block-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const targetBtn = e.target.closest('.move-block-btn');
-          if (!targetBtn) return;
-          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
-          const action = targetBtn.getAttribute('data-action');
-          moveBlockItem(id, action);
-        });
+    // Add event listeners
+    blockItems.querySelectorAll('.move-block-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetBtn = e.target.closest('.move-block-btn');
+        if (!targetBtn) return;
+        const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+        const action = targetBtn.getAttribute('data-action');
+        moveBlockItem(id, action);
       });
+    });
 
-      blockItems.querySelectorAll('.edit-block-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const targetBtn = e.target.closest('.edit-block-btn');
-          if (!targetBtn) return;
-          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
-          editBlock(id);
-        });
+    blockItems.querySelectorAll('.edit-block-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetBtn = e.target.closest('.edit-block-btn');
+        if (!targetBtn) return;
+        const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+        editBlock(id);
       });
+    });
 
-      blockItems.querySelectorAll('.delete-block-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const targetBtn = e.target.closest('.delete-block-btn');
-          if (!targetBtn) return;
-          const id = parseInt(targetBtn.getAttribute('data-id'), 10);
-          deleteBlock(id);
-        });
+    blockItems.querySelectorAll('.delete-block-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetBtn = e.target.closest('.delete-block-btn');
+        if (!targetBtn) return;
+        const id = parseInt(targetBtn.getAttribute('data-id'), 10);
+        deleteBlock(id);
       });
+    });
+  }
+
+  function openExtensionDebug() {
+    try {
+      const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
+      const debugUrl = isChrome ? 'chrome://extensions' : 'about:debugging#/runtime/this-firefox';
+      // Open debugging page in a new tab
+      browser.tabs.create({
+        url: debugUrl
+      });
+      showStatus('Extension debugging page opened in new tab', 'success');
+    } catch (error) {
+      console.error('Failed to open debugging page:', error);
+      showStatus('Failed to open debugging page', 'error');
     }
+  }
 
-    function openExtensionDebug() {
+  function exportSettings() {
+    const browser = window.morphApi || window.browser || window.chrome;
+    const localKeys = [
+      'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled',
+      'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue',
+      'geoCoords', 'activeCategory', 'uiState', 'theme',
+      'hardwareHarmonizeEnabled', 'customHardwareCores', 'customDeviceMemory',
+      'autoHarmonizeTzEnabled', 'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint',
+      'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
+    ];
+
+    browser.storage.local.get(localKeys, (localResult) => {
+      const settings = {
+        websiteRules: websiteRules,
+        blockList: blockList,
+        whiteList: whiteList,
+        listMode: listMode,
+        customLocations: customLocations,
+        globalSettings: localResult,
+        exportedAt: new Date().toISOString(),
+        version: '1.2'
+      };
+
+      const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `morphagent-settings-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showStatus('Settings exported successfully!');
+    });
+  }
+
+  function importSettings(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
       try {
-        const isChrome = navigator.userAgent.toLowerCase().includes('chrome');
-        const debugUrl = isChrome ? 'chrome://extensions' : 'about:debugging#/runtime/this-firefox';
-        // Open debugging page in a new tab
-        browser.tabs.create({
-          url: debugUrl
-        });
-        showStatus('Extension debugging page opened in new tab', 'success');
-      } catch (error) {
-        console.error('Failed to open debugging page:', error);
-        showStatus('Failed to open debugging page', 'error');
-      }
-    }
+        const settings = JSON.parse(e.target.result);
 
-    function exportSettings() {
-      const browser = window.morphApi || window.browser || window.chrome;
-      const localKeys = [
-        'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled', 
-        'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue', 
-        'geoCoords', 'activeCategory', 'uiState', 'theme',
-        'hardwareHarmonizeEnabled', 'customHardwareCores', 'customDeviceMemory',
-        'autoHarmonizeTzEnabled', 'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint',
-        'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
-      ];
+        if (settings.websiteRules && Array.isArray(settings.websiteRules)) {
+          websiteRules = settings.websiteRules;
+        }
 
-      browser.storage.local.get(localKeys, (localResult) => {
-        const settings = {
-          websiteRules: websiteRules,
-          blockList: blockList,
-          whiteList: whiteList,
-          listMode: listMode,
-          customLocations: customLocations,
-          globalSettings: localResult,
-          exportedAt: new Date().toISOString(),
-          version: '1.2'
-        };
+        if (settings.blockList && Array.isArray(settings.blockList)) {
+          blockList = settings.blockList;
+        }
 
-        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `morphagent-settings-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        if (settings.whiteList && Array.isArray(settings.whiteList)) {
+          whiteList = settings.whiteList;
+        }
 
-        showStatus('Settings exported successfully!');
-      });
-    }
+        if (settings.listMode) {
+          listMode = settings.listMode;
+        }
+        if (settings.customLocations && Array.isArray(settings.customLocations)) {
+          customLocations = settings.customLocations;
+        }
 
-    function importSettings(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+        // Save sync settings
+        saveSettings();
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const settings = JSON.parse(e.target.result);
+        // Save global local settings if present
+        if (settings.globalSettings && typeof settings.globalSettings === 'object') {
+          const browser = window.morphApi || window.browser || window.chrome;
+          browser.storage.local.set(settings.globalSettings, () => {
+            // Notify background script to update badge/rules if needed
+            browser.runtime.sendMessage({ type: 'set-settings', data: settings.globalSettings }).catch(() => { });
 
-          if (settings.websiteRules && Array.isArray(settings.websiteRules)) {
-            websiteRules = settings.websiteRules;
-          }
+            // Apply theme locally if changed
+            if (settings.globalSettings.theme) {
+              applyTheme(settings.globalSettings.theme);
+            }
 
-          if (settings.blockList && Array.isArray(settings.blockList)) {
-            blockList = settings.blockList;
-          }
-
-          if (settings.whiteList && Array.isArray(settings.whiteList)) {
-            whiteList = settings.whiteList;
-          }
-
-          if (settings.listMode) {
-            listMode = settings.listMode;
-          }
-          if (settings.customLocations && Array.isArray(settings.customLocations)) {
-            customLocations = settings.customLocations;
-          }
-
-          // Save sync settings
-          saveSettings();
-
-          // Save global local settings if present
-          if (settings.globalSettings && typeof settings.globalSettings === 'object') {
-            const browser = window.morphApi || window.browser || window.chrome;
-            browser.storage.local.set(settings.globalSettings, () => {
-              // Notify background script to update badge/rules if needed
-              browser.runtime.sendMessage({ type: 'set-settings', data: settings.globalSettings }).catch(() => {});
-              
-              // Apply theme locally if changed
-              if (settings.globalSettings.theme) {
-                applyTheme(settings.globalSettings.theme);
-              }
-              
-              renderRules();
-              renderBlockList();
-              renderLocations();
-              showStatus('Settings imported successfully!');
-            });
-          } else {
             renderRules();
             renderBlockList();
             renderLocations();
             showStatus('Settings imported successfully!');
-          }
-          
-        } catch (error) {
-          console.error(error);
-          showStatus('Invalid settings file', 'error');
+          });
+        } else {
+          renderRules();
+          renderBlockList();
+          renderLocations();
+          showStatus('Settings imported successfully!');
         }
-      };
-      reader.readAsText(file);
 
-      // Clear the file input
-      event.target.value = '';
-    }
-
-    function resetAllSettings() {
-      if (confirm('Are you sure you want to reset all advanced settings? This action cannot be undone.')) {
-        websiteRules = [];
-        blockList = [];
-        whiteList = [];
-        listMode = 'blacklist';
-        editingRule = null;
-        editingBlock = null;
-        if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
-
-        // Clear forms
-        websiteUrlInput.value = '';
-        blockUrlInput.value = '';
-        categorySelect.value = '';
-        platformSelect.innerHTML = '<option value="">Platform...</option>';
-        platformSelect.disabled = true;
-        browserSelect.innerHTML = '<option value="">Browser...</option>';
-        profileSelect.innerHTML = '<option value="">Device...</option>';
-        browserSelect.disabled = true;
-        profileSelect.disabled = true;
-        customUaText.value = '';
-        jsBlockRuleCheckbox.checked = false;
-        jsProtectRuleCheckbox.checked = false;
-        customUaInput.style.display = 'none';
-        addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
-
-        saveSettings();
-        renderRules();
-        renderBlockList();
-
-        browser.storage.local.set({
-          adBlockEnabled: true,
-          dnsProvider: 'adguard',
-          dnsCustomEndpoint: '',
-          adBlockCosmeticEnabled: true,
-          adBlockAntiAdblockEnabled: true,
-          adBlockStats: { totalBlocked: 0, adsBlocked: 0, trackersBlocked: 0, perDomain: {} }
-        }, () => {
-          browser.runtime.sendMessage({
-            type: 'update-global-settings',
-            data: { adBlockEnabled: true, dnsProvider: 'adguard' }
-          }).catch(() => {});
-          loadDnsAndAdBlockSettings();
-        });
-
-        showStatus('All settings have been reset');
+      } catch (error) {
+        console.error(error);
+        showStatus('Invalid settings file', 'error');
       }
-    }
+    };
+    reader.readAsText(file);
 
-    // Tab-specific settings functions
+    // Clear the file input
+    event.target.value = '';
+  }
+
+  function resetAllSettings() {
+    if (confirm('Are you sure you want to reset all advanced settings? This action cannot be undone.')) {
+      websiteRules = [];
+      blockList = [];
+      whiteList = [];
+      listMode = 'blacklist';
+      editingRule = null;
+      editingBlock = null;
+      if (cancelEditBlockBtn) cancelEditBlockBtn.style.display = 'none';
+
+      // Clear forms
+      websiteUrlInput.value = '';
+      blockUrlInput.value = '';
+      categorySelect.value = '';
+      platformSelect.innerHTML = '<option value="">Platform...</option>';
+      platformSelect.disabled = true;
+      browserSelect.innerHTML = '<option value="">Browser...</option>';
+      profileSelect.innerHTML = '<option value="">Device...</option>';
+      browserSelect.disabled = true;
+      profileSelect.disabled = true;
+      customUaText.value = '';
+      jsBlockRuleCheckbox.checked = false;
+      jsProtectRuleCheckbox.checked = false;
+      customUaInput.style.display = 'none';
+      addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
+
+      saveSettings();
+      renderRules();
+      renderBlockList();
+
+      browser.storage.local.set({
+        adBlockEnabled: true,
+        dnsProvider: 'adguard',
+        dnsCustomEndpoint: '',
+        adBlockCosmeticEnabled: true,
+        adBlockAntiAdblockEnabled: true,
+        adBlockStats: { totalBlocked: 0, adsBlocked: 0, trackersBlocked: 0, perDomain: {} }
+      }, () => {
+        browser.runtime.sendMessage({
+          type: 'update-global-settings',
+          data: { adBlockEnabled: true, dnsProvider: 'adguard' }
+        }).catch(() => { });
+        loadDnsAndAdBlockSettings();
+      });
+
+      showStatus('All settings have been reset');
+    }
+  }
+
+  // Tab-specific settings functions
   function loadTabSettings() {
     browser.runtime.sendMessage({ type: 'get-tab-settings' }).then((settings) => {
       tabSettings = settings || [];
@@ -2828,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tabSettingsItems.innerHTML = tabSettings.map(tab => {
       let touchText = 'Default';
       if (tab.touchSpoofEnabled) touchText = tab.maxTouchPoints;
-      
+
       return `
       <tr>
         <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(tab.url)}">${escapeHtml(tab.url)}</td>
@@ -2855,7 +2855,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tab) return;
 
     const settingsText = `User Agent: ${tab.userAgent}\nTouch Points: ${tab.touchPoints || 0}`;
-    
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(settingsText).then(() => {
         showStatus('Tab settings copied to clipboard', 'success');
@@ -3228,36 +3228,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showStatus(message, type = 'success') {
-      statusText.textContent = message;
-      statusMessage.className = `status-message ${type}`;
-      statusMessage.style.display = 'block';
+    statusText.textContent = message;
+    statusMessage.className = `status-message ${type}`;
+    statusMessage.style.display = 'block';
 
-      // Trigger animation
+    // Trigger animation
+    setTimeout(() => {
+      statusMessage.classList.add('show');
+    }, 10);
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+      statusMessage.classList.remove('show');
       setTimeout(() => {
-        statusMessage.classList.add('show');
-      }, 10);
+        statusMessage.style.display = 'none';
+      }, 300);
+    }, 3000);
+  }
 
-      // Hide after 3 seconds
-      setTimeout(() => {
-        statusMessage.classList.remove('show');
-        setTimeout(() => {
-          statusMessage.style.display = 'none';
-        }, 300);
-      }, 3000);
-    }
+  function truncateUA(ua) {
+    return ua.length > 80 ? ua.substring(0, 80) + '...' : ua;
+  }
 
-    function truncateUA(ua) {
-      return ua.length > 80 ? ua.substring(0, 80) + '...' : ua;
-    }
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
 
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    // Make functions globally available for inline event handlers
-    window.editRule = editRule;
-    window.deleteRule = deleteRule;
-    window.deleteBlock = deleteBlock;
-  });
+  // Make functions globally available for inline event handlers
+  window.editRule = editRule;
+  window.deleteRule = deleteRule;
+  window.deleteBlock = deleteBlock;
+});

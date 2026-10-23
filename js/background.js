@@ -1,4 +1,4 @@
-// background.js - MorphAgent 4.6.0
+// background.js - MorphAgent 4.7.0
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 import './adblock-rules.js';
 import { buildUARules, siteDomain } from './network-rules.mjs';
@@ -97,7 +97,7 @@ async function launchProxyiumUrl(rawUrl, country = 'pl', openInNewTab = true) {
       geoSpoofEnabled: false,
       touchSpoofEnabled: false
     });
-  } catch (e) {}
+  } catch (e) { }
 
   const normUrl = normalizeTargetUrl(targetUrl);
   const proxyiumUrl = `https://proxyium.com/?morph_url=${encodeURIComponent(normUrl)}&morph_country=${encodeURIComponent(country || 'pl')}`;
@@ -225,13 +225,15 @@ async function synchronizeRules(targetUA) {
     const removeRuleIds = existingRules.map(r => r.id);
     const addRules = [];
 
-    addRules.push(...buildUARules({ enabled: uaSpoofEnabled, ua: targetUA,
-      websiteRules, blockList, whiteList, listMode }));
+    addRules.push(...buildUARules({
+      enabled: uaSpoofEnabled, ua: targetUA,
+      websiteRules, blockList, whiteList, listMode
+    }));
 
     // 2. AdGuard Ad & Tracker Blocker Engine (Rules starting at ID: 1000)
     {
-      const adBlockEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) 
-        ? globalThis.MorphAgentAdBlock 
+      const adBlockEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock)
+        ? globalThis.MorphAgentAdBlock
         : null;
       if (adBlockEngine && typeof adBlockEngine.generateDNRAdBlockRules === 'function') {
         const adRules = adBlockEngine.generateDNRAdBlockRules(1000, {
@@ -275,7 +277,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       details: message.data.details || '',
       tabId: sender.tab ? sender.tab.id : null
     };
-    
+
     api.storage.local.get(['threatLogs']).then(result => {
       let logs = result.threatLogs || [];
       logs.unshift(threat);
@@ -515,7 +517,7 @@ function getUserAgentForUrl(url) {
 if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
   try {
     api.webRequest.onBeforeSendHeaders.addListener(
-      function(details) {
+      function (details) {
         if (!uaSpoofEnabled) return { requestHeaders: details.requestHeaders };
 
         const targetUA = getUserAgentForUrl(details.url);
@@ -547,7 +549,7 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
 if (api.webRequest && api.webRequest.onBeforeRequest) {
   try {
     api.webRequest.onBeforeRequest.addListener(
-      function(details) {
+      function (details) {
         if (!adBlockEnabled) return { cancel: false };
         const url = (details.url || '').toLowerCase();
         const adEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) ? globalThis.MorphAgentAdBlock : null;
@@ -580,7 +582,7 @@ if (api.webRequest && api.webRequest.onBeforeRequest) {
       { urls: ["<all_urls>"] },
       ["blocking"]
     );
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // Messaging Interface
@@ -750,7 +752,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 ruleId: matchingRule.id
               });
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       });
       sendResponse(tabSettings);
@@ -779,7 +781,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const hostname = new URL(tab.url).hostname;
             const matchingRule = websiteRules.find(rule => matchesPattern(hostname, rule.website) || matchesPattern(tab.url, rule.website));
             if (matchingRule) activeRuleIds.add(matchingRule.id);
-          } catch (e) {}
+          } catch (e) { }
         }
       });
       websiteRules = websiteRules.filter(rule => !activeRuleIds.has(rule.id));
@@ -861,7 +863,7 @@ function setupContextMenus() {
         title: 'Quick Switch User Agent',
         contexts: ['all']
       });
-      
+
       TOP_10_UAS.forEach(uaObj => {
         api.contextMenus.create({
           id: uaObj.id,
@@ -1055,11 +1057,11 @@ if (api.contextMenus && api.contextMenus.onClicked) {
     // Check if it's a Top 10 UA click
     const uaObj = TOP_10_UAS.find(u => u.id === info.menuItemId);
     if (uaObj) {
-      api.storage.local.set({ 
-        selectedUA: uaObj.ua, 
-        activeCategory: uaObj.category, 
-        touchSpoofEnabled: uaObj.touch || false, 
-        maxTouchPoints: uaObj.touch ? 5 : 0 
+      api.storage.local.set({
+        selectedUA: uaObj.ua,
+        activeCategory: uaObj.category,
+        touchSpoofEnabled: uaObj.touch || false,
+        maxTouchPoints: uaObj.touch ? 5 : 0
       }).then(() => {
         updateDeclarativeNetRequestRules(uaObj.ua);
         if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
@@ -1070,7 +1072,7 @@ if (api.contextMenus && api.contextMenus.onClicked) {
     // Check if it's a Location click
     if (typeof info.menuItemId === 'string' && info.menuItemId.startsWith('loc-')) {
       const locIdStr = info.menuItemId.replace('loc-', '');
-      
+
       // Check standard locations first
       const stdLoc = STANDARD_LOCS.find(l => l.id === locIdStr);
       if (stdLoc) {
@@ -1135,7 +1137,7 @@ if (api.contextMenus && api.contextMenus.onClicked) {
           api.storage.sync.get(['websiteRules']).then(res => {
             const rules = res.websiteRules || [];
             let rule = rules.find(r => matchesPattern(hostname, r.website) || matchesPattern(tab.url, r.website));
-            
+
             if (!rule) {
               rule = {
                 id: Date.now(),

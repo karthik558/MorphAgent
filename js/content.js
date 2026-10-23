@@ -1,4 +1,4 @@
-// content.js - MorphAgent 4.6.0
+// content.js - MorphAgent 4.7.0
 // Inject stealth scripts into the page context immediately to override native methods.
 
 (function () {
@@ -151,7 +151,7 @@
       if (changed) {
         window.history.replaceState(window.history.state, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function injectCosmeticAdBlocker() {
@@ -251,7 +251,7 @@
   function monitorAndCleanAdElements() {
     let loggedCount = 0;
     const querySelectors = '#cts_test, #ad_ctd, .adbox, .banner_ads, .adsbox, .textads, [class*="banner_ads"], [class*="textads"], [class*="adbox"], div[data-ads], [data-ads], [id^="yandex_rtb_"], #yandex_rtb_R-A-491776-1, .includeWrapper, .include, img[src*="pr_advertising"], img[src*="/banners/"], object[data*="pr_advertising"], embed[src*="pr_advertising"], ins.adsbygoogle, [id^="google_ads_"], [id^="div-gpt-ad"], .ad-banner, .ad-container, .ad-slot, iframe[src*="doubleclick"], iframe[src*="googlesyndication"], ytd-ad-slot-renderer, .taboola-ad, .outbrain-ad';
-    
+
     const countAds = () => {
       try {
         const found = document.querySelectorAll(querySelectors);
@@ -272,7 +272,7 @@
             data: { domain: window.location.hostname, count: delta, isTracker: false }
           });
         }
-      } catch(e) {}
+      } catch (e) { }
     };
 
     if (document.readyState === 'loading') {
@@ -289,7 +289,7 @@
         countAds();
       });
       observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
-    } catch(e) {}
+    } catch (e) { }
   }
 
   if (api.runtime && api.runtime.onMessage) {
@@ -380,7 +380,7 @@
             try {
               const cleanUrl = window.location.origin + window.location.pathname;
               window.history.replaceState({}, document.title, cleanUrl);
-            } catch (e) {}
+            } catch (e) { }
 
             setTimeout(() => {
               if (submitBtn) {

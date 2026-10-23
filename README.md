@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**
 > Manifest V3 for Chromium and Firefox with configurable privacy protections
 
-![Version](https://img.shields.io/badge/version-4.6.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.7.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
