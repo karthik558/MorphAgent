@@ -4,8 +4,16 @@
 (function () {
   const api = typeof browser !== 'undefined' ? browser : chrome;
 
+  // Match hostnames at domain boundaries, never arbitrary substrings.
+  function matchesSite(hostname, raw) {
+    let domain = String(raw || '').trim().toLowerCase().replace(/^\*:\/\//, 'https://');
+    try { if (domain.includes('://')) domain = new URL(domain).hostname; } catch { return false; }
+    domain = domain.replace(/^\*\./, '').replace(/\/$/, '');
+    return !!domain && (hostname === domain || hostname.endsWith('.' + domain));
+  }
+
   // Preemptively inject cosmetic stylesheet at document_start for instant zero-flicker ad suppression
-  injectCosmeticAdBlocker();
+  // Wait for stored preferences before applying cosmetic filtering.
 
   // Retrieve settings and initialize stealth suite
   api.storage.local.get([
@@ -35,7 +43,7 @@
     'webrtcPreventLeakEnabled',
     'removeXClientDataEnabled'
   ]).then((settings) => {
-    api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
+    return api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
       const whiteList = syncResult.whiteList || [];
       const listMode = syncResult.listMode || 'blacklist';
@@ -44,8 +52,8 @@
 
       let inBlacklist = false;
       for (const blockItem of blockList) {
-        const pattern = blockItem.website.replace(/\*/g, '');
-        if (currentHostname.includes(pattern)) {
+        const pattern = blockItem.website;
+        if (matchesSite(currentHostname, pattern)) {
           inBlacklist = true;
           break;
         }
@@ -53,8 +61,8 @@
 
       let inWhitelist = false;
       for (const whiteItem of whiteList) {
-        const pattern = whiteItem.website.replace(/\*/g, '');
-        if (currentHostname.includes(pattern)) {
+        const pattern = whiteItem.website;
+        if (matchesSite(currentHostname, pattern)) {
           inWhitelist = true;
           break;
         }
@@ -67,7 +75,7 @@
         shouldSpoof = false;
       }
 
-      if (!shouldSpoof || currentHostname.includes('proxyium.com')) {
+      if (!shouldSpoof || matchesSite(currentHostname, 'proxyium.com')) {
         settings.uaSpoofEnabled = false;
         settings.touchSpoofEnabled = false;
         settings.jsBlockEnabled = false;
@@ -78,8 +86,8 @@
       } else {
         // Apply website rules if we are spoofing
         for (const rule of websiteRules) {
-          const rulePattern = (rule.website || '').replace(/\*/g, '').trim();
-          if (rulePattern && currentHostname.includes(rulePattern)) {
+          const rulePattern = rule.website || '';
+          if (rulePattern && matchesSite(currentHostname, rulePattern)) {
             settings.selectedUA = rule.userAgent || settings.selectedUA;
             settings.uaSpoofEnabled = rule.uaSpoofEnabled !== false;
             settings.maxTouchPoints = rule.touchPoints || 0;
@@ -97,7 +105,7 @@
 
       // Check AdBlock Whitelist
       const adBlockWhitelist = settings.adBlockWhitelist || [];
-      const isAdWhitelisted = adBlockWhitelist.some(site => currentHostname.includes(site.replace(/\*/g, '')));
+      const isAdWhitelisted = adBlockWhitelist.some(site => matchesSite(currentHostname, site));
       const isAdBlockActive = (settings.adBlockEnabled !== false) && !isAdWhitelisted;
 
       // Clean URL tracking parameters immediately if enabled

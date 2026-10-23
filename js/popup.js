@@ -17,7 +17,7 @@ try {
 
 function startPopup() {
   // Cross-browser API adapter
-  const browser = window.browser || window.chrome;
+  const browser = window.morphApi || window.browser || window.chrome;
 
   // DOM Elements
   const themeToggle = document.getElementById('theme-toggle');
@@ -282,8 +282,9 @@ function startPopup() {
       } else if (pid === 'custom') {
         dnsCurrentLabel.textContent = 'Custom DoH Resolver';
       } else {
-        dnsCurrentLabel.textContent = 'System Default (Direct OS)';
+        dnsCurrentLabel.textContent = 'System Default';
       }
+      dnsCurrentLabel.textContent += ' · Browser setup required';
     }
   }
 
@@ -359,7 +360,7 @@ function startPopup() {
           ? dnsProviderSelect.options[dnsProviderSelect.selectedIndex].text.split(' (')[0]
           : provider;
         if (typeof showStatus === 'function') {
-          showStatus(`DNS switched to ${optText}`);
+          showStatus(`DNS preference saved: ${optText}. Configure Secure DNS in your browser.`);
         }
       } catch (e) {
         console.warn('Failed to update dnsProvider select:', e);
@@ -739,6 +740,15 @@ function startPopup() {
       card.addEventListener('click', () => {
         const category = card.dataset ? card.dataset.category : card.getAttribute('data-category');
         selectCategory(category);
+        // Keep the visible category, profile and saved UA in agreement.
+        if (platformSelect.options.length > 1) {
+          platformSelect.selectedIndex = 1;
+          platformSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          if (profileSelect.options.length > 1) {
+            profileSelect.selectedIndex = 1;
+            profileSelect.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
       });
     });
   }

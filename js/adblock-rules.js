@@ -742,7 +742,7 @@
         action: {
           type: 'modifyHeaders',
           requestHeaders: [
-            { header: 'Referer', operation: 'set', value: 'https://www.google.com/' }
+            { header: 'Referer', operation: 'remove' }
           ]
         },
         condition: {
@@ -811,7 +811,7 @@
           priority: 2,
           action: { type: 'block' },
           condition: {
-            urlFilter: `||${domain}`,
+            urlFilter: `||${domain}^`,
             resourceTypes
           }
         });

@@ -1,6 +1,7 @@
 // background.js - MorphAgent 4.6.0
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 import './adblock-rules.js';
+import { buildUARules, siteDomain } from './network-rules.mjs';
 
 const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : {});
 
@@ -42,7 +43,7 @@ let filtersLastChecked = 'Sep 28, 2026, 09:56 PM';
 // WebRTC IP Leak Prevention Controller
 function applyWebRTCLeakPolicy(enabled) {
   if (api.privacy && api.privacy.network && api.privacy.network.webRTCIPHandlingPolicy) {
-    const policy = enabled ? 'default_public_interface_only' : 'default';
+    const policy = enabled ? 'disable_non_proxied_udp' : 'default';
     try {
       api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }).then(() => {
         console.log(`[MorphAgent 4.6] WebRTC IP handling policy applied: ${policy}`);
@@ -124,60 +125,45 @@ function applyBrowserProxy(pConfig) {
     return Promise.resolve({ success: false, reason: 'Proxy API unavailable' });
   }
 
-  return new Promise((resolve) => {
-    let config = { mode: 'direct' };
-
-    if (pConfig && pConfig.enabled && pConfig.mode !== 'direct') {
-      if (pConfig.mode === 'system') {
-        config = { mode: 'system' };
-      } else if (pConfig.mode === 'pac_script' || pConfig.mode === 'pac') {
-        config = {
-          mode: 'pac_script',
-          pacScript: {
-            url: pConfig.pacUrl || ''
-          }
-        };
-      } else {
-        // Manual fixed servers
-        const scheme = (pConfig.protocol || 'socks5').toLowerCase();
-        const host = pConfig.host || '127.0.0.1';
-        const port = parseInt(pConfig.port, 10) || 9050;
-        const bypass = (pConfig.bypassList || 'localhost, 127.0.0.1, <local>')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        config = {
-          mode: 'fixed_servers',
-          rules: {
-            singleProxy: { scheme, host, port },
-            bypassList: bypass
-          }
-        };
-      }
-    }
-
+  return (async () => {
     try {
-      api.proxy.settings.set({ value: config, scope: 'regular' }, () => {
-        if (api.runtime.lastError) {
-          console.warn('[MorphAgent 4.6] Proxy setting error:', api.runtime.lastError);
-          resolve({ success: false, error: api.runtime.lastError.message });
-        } else {
-          console.log('[MorphAgent 4.6] Browser proxy applied:', config.mode);
-          if (pConfig && pConfig.enabled && pConfig.mode !== 'direct') {
-            applyWebRTCLeakPolicy(true);
-          }
-          resolve({ success: true, config });
-        }
-      });
-    } catch (e) {
-      console.warn('[MorphAgent 4.6] Proxy exception:', e);
-      resolve({ success: false, error: e.message });
-    }
-  });
+      if (!pConfig?.enabled || pConfig.mode === 'direct') {
+        await api.proxy.settings.clear({ scope: 'regular' });
+        return { success: true };
+      }
+      const firefox = typeof browser !== 'undefined';
+      let config;
+      if (pConfig.mode === 'system') {
+        config = firefox ? { proxyType: 'system' } : { mode: 'system' };
+      } else if (['pac', 'pac_script'].includes(pConfig.mode)) {
+        const url = new URL(pConfig.pacUrl);
+        if (!['https:', 'http:'].includes(url.protocol)) throw new Error('PAC URL must use HTTP or HTTPS');
+        config = firefox ? { proxyType: 'autoConfig', autoConfigUrl: url.href }
+          : { mode: 'pac_script', pacScript: { url: url.href } };
+      } else {
+        const scheme = pConfig.protocol || 'socks5';
+        const host = (pConfig.host || '').trim();
+        const port = Number(pConfig.port);
+        if (!host || /[\s/]/.test(host) || !Number.isInteger(port) || port < 1 || port > 65535)
+          throw new Error('Enter a valid proxy host and port (1–65535)');
+        if (!['http', 'https', 'socks4', 'socks5'].includes(scheme)) throw new Error('Unsupported proxy protocol');
+        const bypass = (pConfig.bypassList || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (firefox) {
+          config = { proxyType: 'manual', passthrough: bypass.join(', ') };
+          if (scheme.startsWith('socks')) Object.assign(config, {
+            socks: `${host}:${port}`, socksVersion: scheme === 'socks4' ? 4 : 5, proxyDNS: true
+          });
+          else Object.assign(config, { http: `${scheme}://${host}:${port}`, httpProxyAll: true });
+        } else config = { mode: 'fixed_servers', rules: { singleProxy: { scheme, host, port }, bypassList: bypass } };
+      }
+      await api.proxy.settings.set({ value: config, scope: 'regular' });
+      applyWebRTCLeakPolicy(true);
+      return { success: true, config };
+    } catch (error) { return { success: false, error: error.message }; }
+  })();
 }
 
-console.log('[MorphAgent 4.6] Background engine with 100% AdBlock & Secure DNS starting...');
+console.log('[MorphAgent] Background engine starting');
 
 // Helper: Extract Client Hints headers from UA string
 function getClientHintsHeaders(ua) {
@@ -226,7 +212,12 @@ function updateBadge(ua, category) {
 }
 
 // Update Chrome Manifest V3 DeclarativeNetRequest Dynamic Rules
-async function updateDeclarativeNetRequestRules(targetUA) {
+let ruleUpdateQueue = Promise.resolve();
+function updateDeclarativeNetRequestRules(targetUA) {
+  ruleUpdateQueue = ruleUpdateQueue.then(() => synchronizeRules(targetUA));
+  return ruleUpdateQueue;
+}
+async function synchronizeRules(targetUA) {
   if (!api.declarativeNetRequest || !api.declarativeNetRequest.updateDynamicRules) return;
 
   try {
@@ -234,34 +225,11 @@ async function updateDeclarativeNetRequestRules(targetUA) {
     const removeRuleIds = existingRules.map(r => r.id);
     const addRules = [];
 
-    // 1. User Agent & Client Hints header spoofing (Rule ID: 1)
-    if (uaSpoofEnabled && targetUA) {
-      const ch = getClientHintsHeaders(targetUA);
-      addRules.push({
-        id: 1,
-        priority: 1,
-        action: {
-          type: 'modifyHeaders',
-          requestHeaders: [
-            { header: 'User-Agent', operation: 'set', value: targetUA },
-            { header: 'Sec-CH-UA', operation: 'set', value: ch.secChUa },
-            { header: 'Sec-CH-UA-Mobile', operation: 'set', value: ch.secChUaMobile },
-            { header: 'Sec-CH-UA-Platform', operation: 'set', value: ch.secChUaPlatform },
-            { header: 'Accept-Language', operation: 'set', value: 'en-US,en;q=0.9' }
-          ]
-        },
-        condition: {
-          urlFilter: '*',
-          resourceTypes: [
-            'main_frame', 'sub_frame', 'stylesheet', 'script',
-            'image', 'font', 'object', 'xmlhttprequest', 'ping', 'other'
-          ]
-        }
-      });
-    }
+    addRules.push(...buildUARules({ enabled: uaSpoofEnabled, ua: targetUA,
+      websiteRules, blockList, whiteList, listMode }));
 
     // 2. AdGuard Ad & Tracker Blocker Engine (Rules starting at ID: 1000)
-    if (adBlockEnabled) {
+    {
       const adBlockEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock) 
         ? globalThis.MorphAgentAdBlock 
         : null;
@@ -273,7 +241,15 @@ async function updateDeclarativeNetRequestRules(targetUA) {
           sendDntGpcEnabled,
           removeXClientDataEnabled
         });
-        addRules.push(...adRules);
+        const { adBlockWhitelist = [] } = await api.storage.local.get('adBlockWhitelist');
+        const exclusions = adBlockWhitelist.map(siteDomain).filter(Boolean);
+        addRules.push(...adRules.filter(rule => adBlockEnabled || rule.action.type !== 'block').map(rule => {
+          if (rule.action.type === 'block' && exclusions.length) {
+            rule.condition.excludedInitiatorDomains = exclusions;
+            rule.condition.excludedRequestDomains = exclusions;
+          }
+          return rule;
+        }));
       }
     }
 
@@ -317,7 +293,7 @@ async function loadSettings() {
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
       'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
       'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked',
-      'proxyConfig'
+      'proxyConfig', 'ghostModeEnabled', 'ghostInterval'
     ]);
     websiteRules = (syncData.websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com'));
     if (syncData.websiteRules && syncData.websiteRules.length !== websiteRules.length) {
@@ -358,6 +334,15 @@ async function loadSettings() {
       if (proxyConfig.enabled && proxyConfig.mode !== 'direct') {
         applyBrowserProxy(proxyConfig);
       }
+    }
+
+    if (api.alarms) {
+      if (localData.ghostModeEnabled) {
+        const interval = Math.max(1, Number(localData.ghostInterval) || 15);
+        const alarm = await api.alarms.get('ghostModeRotate');
+        if (!alarm || alarm.periodInMinutes !== interval)
+          await api.alarms.create('ghostModeRotate', { periodInMinutes: interval });
+      } else await api.alarms.clear('ghostModeRotate');
     }
 
     applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
@@ -401,11 +386,13 @@ api.storage.onChanged.addListener((changes, areaName) => {
     if (changes.listMode) {
       listMode = changes.listMode.newValue || 'blacklist';
     }
+    updateDeclarativeNetRequestRules(cachedUA);
     if (changes.customLocations) {
       setupContextMenus();
     }
   }
   if (areaName === 'local') {
+    if (changes.adBlockWhitelist) updateDeclarativeNetRequestRules(cachedUA);
     if (changes.selectedUA) {
       cachedUA = changes.selectedUA.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
@@ -635,7 +622,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(res);
     }).catch(() => sendResponse({}));
     return true;
-  } else if (message.type === 'set-settings') {
+  } else if (message.type === 'set-settings' || message.type === 'update-global-settings') {
     api.storage.local.set(message.data).then(() => {
       if (message.data.selectedUA !== undefined) {
         cachedUA = message.data.selectedUA;
@@ -758,6 +745,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 hostname: hostname,
                 title: tab.title || 'Untitled',
                 userAgent: matchingRule.userAgent,
+                uaSpoofEnabled: matchingRule.uaSpoofEnabled !== false,
                 touchPoints: matchingRule.touchPoints || 0,
                 ruleId: matchingRule.id
               });
@@ -812,11 +800,11 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true, proxyConfig });
     return true;
   } else if (message.type === 'set-browser-proxy') {
-    proxyConfig = Object.assign({}, proxyConfig, message.data);
-    applyBrowserProxy(proxyConfig).then(res => {
-      api.storage.local.set({ proxyConfig }).then(() => {
-        sendResponse(res);
-      });
+    const nextProxyConfig = Object.assign({}, proxyConfig, message.data);
+    applyBrowserProxy(nextProxyConfig).then(res => {
+      if (!res.success) { sendResponse(res); return; }
+      proxyConfig = nextProxyConfig;
+      api.storage.local.set({ proxyConfig }).then(() => sendResponse(res));
     }).catch(err => {
       sendResponse({ success: false, error: err.message });
     });
@@ -825,9 +813,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     proxyConfig.enabled = false;
     proxyConfig.mode = 'direct';
     applyBrowserProxy(proxyConfig).then(res => {
-      api.storage.local.set({ proxyConfig }).then(() => {
-        sendResponse(res);
-      });
+      if (!res.success) { sendResponse(res); return; }
+      api.storage.local.set({ proxyConfig }).then(() => sendResponse(res));
     }).catch(err => {
       sendResponse({ success: false, error: err.message });
     });

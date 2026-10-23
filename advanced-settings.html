@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Advanced Settings - MorphAgent</title>
   <link rel="stylesheet" href="css/advanced-settings.css">
+  <link rel="stylesheet" href="css/refinements.css">
 </head>
 <body class="dark-mode">
   <div class="container">
@@ -306,7 +307,7 @@
           </div>
           <div class="section-header-text">
             <h2>Secure DNS & AdBlock Engine</h2>
-            <p>Encrypted DNS resolver integration, DeclarativeNetRequest network filtering & cosmetic element neutralization</p>
+            <p>Network filtering, cosmetic ad blocking, and DNS provider references</p>
           </div>
         </div>
 
@@ -333,7 +334,7 @@
             </div>
             <div class="analytics-card">
               <svg class="analytics-bg-icon" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <h3>ACTIVE DNS RESOLVER</h3>
+              <h3>SAVED DNS PREFERENCE</h3>
               <div id="statDnsActive" class="value" style="font-size: 15px; margin-top: 4px; color: var(--accent-red);">AdGuard DNS</div>
               <div class="subtext" id="statDnsTag">DoH Encrypted · 94.140.14.14</div>
             </div>
@@ -344,12 +345,12 @@
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Secure DNS-over-HTTPS (DoH) Resolver Switcher</h3>
+                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">DNS-over-HTTPS provider reference</h3>
               </div>
-              <span class="harmonize-tag" id="dnsStatusTag">DNS-over-HTTPS (Active)</span>
+              <span class="harmonize-tag" id="dnsStatusTag">Browser setup required</span>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">
-              Direct your domain lookups through authenticated, privacy-preserving DNS-over-HTTPS providers. When paired with MorphAgent's DeclarativeNetRequest engine, malicious and advertising domains are eliminated before establishing TCP handshakes.
+              Choosing a provider saves a reference only. Configure Secure DNS in your browser settings to use this endpoint. Extensions cannot switch the browser’s DNS resolver.
             </p>
             <div class="form-row">
               <div class="input-group">
@@ -478,7 +479,7 @@
             <label class="settings-toggle-row" for="advDntGpcToggle">
               <div class="settings-toggle-text">
                 <div class="settings-toggle-title">Ask websites not to track me</div>
-                <div class="settings-toggle-desc">Send the <a href="https://link.adtidy.org/forward.html?app=browser_extension&action=global_privacy_control&from=options_screen" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="color: var(--accent-red); text-decoration: underline;">Global Privacy Control</a> and <a href="https://link.adtidy.org/forward.html?app=browser_extension&action=do_not_track&from=options_screen" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="color: var(--accent-red); text-decoration: underline;">Do Not Track</a> signals to the websites you visit</div>
+                <div class="settings-toggle-desc">Send the <a href="https://link.adtidy.org/forward.html?app=browser_extension&action=global_privacy_control&from=options_screen" target="_blank" rel="noopener noreferrer" style="color: var(--accent-red); text-decoration: underline;">Global Privacy Control</a> and <a href="https://link.adtidy.org/forward.html?app=browser_extension&action=do_not_track&from=options_screen" target="_blank" rel="noopener noreferrer" style="color: var(--accent-red); text-decoration: underline;">Do Not Track</a> signals to the websites you visit</div>
               </div>
               <span class="toggle-switch">
                 <input type="checkbox" id="advDntGpcToggle" checked>
@@ -520,14 +521,15 @@
                 <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Filters</h3>
               </div>
               <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <button class="btn btn-outline" id="checkFilterUpdatesBtn" style="height: 30px; font-size: 11px; padding: 4px 12px;">
+                <button class="btn btn-outline" disabled title="Filters are bundled with extension releases" id="checkFilterUpdatesBtn" style="height: 30px; font-size: 11px; padding: 4px 12px;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="filterUpdateSpinner"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                   Check for updates
                 </button>
-                <span style="font-size: 11px; color: var(--text-tertiary);" id="filtersLastCheckedTag">Last checked: Sep 28, 2026, 09:56 PM</span>
+                <span style="font-size: 11px; color: var(--text-tertiary);" id="filtersLastCheckedTag">Bundled rules · updated with extension releases</span>
               </div>
             </div>
 
+            <p class="feature-desc">The catalog below is a reference. Subscription toggles, remote lists, and custom rule compilation are not implemented. Protection uses the bundled rules and the working privacy controls above.</p>
             <!-- Search Filters -->
             <div class="filter-search-container">
               <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1358,9 +1360,11 @@
   </div>
 
   <input type="file" id="importFile" style="display: none;" accept=".json">
+  <script src="js/browser-api.js"></script>
   <script src="js/lib/chart.umd.js"></script>
   <script src="js/adblock-rules.js"></script>
   <script src="js/profiles.js"></script>
   <script src="js/advanced-settings.js"></script>
+  <script src="js/ui-accessibility.js"></script>
 </body>
 </html>

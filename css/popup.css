@@ -9,9 +9,9 @@
   --text-secondary: #475569;
   --text-tertiary: #64748b;
   
-  --accent-red: #ff0b2a;
-  --accent-red-hover: #e00621;
-  --accent-red-glow: 0 0 15px rgba(255, 11, 42, 0.35);
+  --accent-red: #b6453b;
+  --accent-red-hover: #98382f;
+  --accent-red-glow: none;
   --accent-red-soft: rgba(255, 11, 42, 0.12);
   --accent-green: #10b981;
   
@@ -36,9 +36,9 @@ html.light-mode, body.light-mode {
   --text-secondary: #475569;
   --text-tertiary: #64748b;
   
-  --accent-red: #ff0b2a;
-  --accent-red-hover: #e00621;
-  --accent-red-glow: 0 0 15px rgba(255, 11, 42, 0.35);
+  --accent-red: #b6453b;
+  --accent-red-hover: #98382f;
+  --accent-red-glow: none;
   --accent-red-soft: rgba(255, 11, 42, 0.12);
   --accent-green: #10b981;
   
@@ -57,9 +57,9 @@ html.dark-mode, body.dark-mode {
   --text-secondary: #a3a3a3;
   --text-tertiary: #737373;
   
-  --accent-red: #ff0b2a;
-  --accent-red-hover: #e00621;
-  --accent-red-glow: 0 0 15px rgba(255, 11, 42, 0.4);
+  --accent-red: #b6453b;
+  --accent-red-hover: #98382f;
+  --accent-red-glow: none;
   --accent-red-soft: rgba(255, 11, 42, 0.15);
   --accent-green: #10b981;
   
@@ -144,7 +144,7 @@ html.mobile .extension-container {
   flex-shrink: 0;
   height: 3px;
   width: 100%;
-  background: linear-gradient(90deg, #ff0b2a, #ff4d4d);
+  background: var(--accent-red-soft);
 }
 
 /* Header */
@@ -794,7 +794,7 @@ input:checked + .toggle-slider:before {
   padding: 0 14px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 11, 42, 0.5);
-  background: linear-gradient(135deg, rgba(255, 11, 42, 0.14) 0%, rgba(255, 11, 42, 0.05) 100%);
+  background: var(--accent-red-soft);
   color: var(--accent-red);
   font-size: 12px;
   font-weight: 600;
@@ -810,7 +810,7 @@ input:checked + .toggle-slider:before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, #ff0b2a 0%, #d60520 100%);
+  background: var(--accent-red-soft);
   opacity: 0;
   transition: opacity 0.22s var(--ease);
   z-index: 0;
@@ -841,7 +841,7 @@ input:checked + .toggle-slider:before {
 }
 
 .tunnel-action-btn:hover {
-  border-color: #ff0b2a;
+  border-color: #b6453b;
   color: #ffffff;
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(255, 11, 42, 0.38);
@@ -871,7 +871,7 @@ input:checked + .toggle-slider:before {
 }
 
 .tunnel-action-btn.tunneling::before {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--accent-red-soft);
   opacity: 1;
 }
 

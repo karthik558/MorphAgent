@@ -11,7 +11,6 @@
   "permissions": [
     "storage",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
     "tabs",
     "scripting",
     "contextMenus",
@@ -67,17 +66,13 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "advanced-settings.html",
-        "css/advanced-settings.css",
-        "js/advanced-settings.js",
-        "js/profiles.js",
-        "js/inject.js",
-        "js/adblock-rules.js"
+        "js/inject.js"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
   ],
-  "manifest_version": 3
+  "manifest_version": 3,
+  "minimum_chrome_version": "111"
 }

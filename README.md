@@ -2,12 +2,12 @@
 
 # MorphAgent
 
-> **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**  
-> 100% Chromium (Manifest V3) & Firefox Dual Engine with 10 Ultimate Stealth Protections
+> **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**
+> Manifest V3 for Chromium and Firefox with configurable privacy protections
 
 ![Version](https://img.shields.io/badge/version-4.6.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
-![Firefox](https://img.shields.io/badge/Firefox-Manifest_V2/V3-orange.svg?style=flat-square)
+![Firefox](https://img.shields.io/badge/Firefox-Manifest_V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-black.svg?style=flat-square)
 [![Release Chrome Extension](https://github.com/karthik558/MorphAgent/actions/workflows/release-chrome.yml/badge.svg)](https://github.com/karthik558/MorphAgent/actions/workflows/release-chrome.yml)
@@ -76,23 +76,23 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ## What's New in Version 4.6
 
-1. **Ultra-Efficiency 100% AdBlock & Tracker Engine (AdGuard / uBlock Origin Parity)**  
+1. **Built-in Ad & Tracker Filtering**
    - **Zero-Latency C++ Network Interception**: 220+ top programmatic ad exchanges, tracking pixels (Meta, TikTok, Twitter, LinkedIn), telemetry engines (Hotjar, Clarity, Mixpanel), and in-browser cryptominers blocked via native MV3 DeclarativeNetRequest dynamic rules.
-   - **Cross-Browser Dual Engine**: Chrome MV3 `declarativeNetRequest` + Firefox MV2 `webRequestBlocking` real-time drop.
+   - **Cross-Browser Dual Engine**: Chrome MV3 `declarativeNetRequest` + Firefox MV3 `declarativeNetRequest` filtering.
    - **Scriptlet Interception**: Block patterns catching inline ad scripts (`pagead2`, `fbevents.js`, `prebid.js`, `gtm.js`).
 
-2. **Advanced Anti-AdBlock Defuser & Height Probe Spoofing**  
+2. **Advanced Anti-AdBlock Defuser & Height Probe Spoofing**
    - Defuses DOM probe sizing tests (`.adsbox`, `.ad-banner`, `#ad-detector`) by dynamically proxying `HTMLElement.prototype.offsetHeight` and `offsetWidth` to return rendered dimensions, preventing anti-adblock detection walls.
    - High-fidelity stubs for `googletag`, `adsbygoogle`, `ga`, `gtag`, `_gaq`, and `fbq`.
    - Popunder & intrusive redirect blocker intercepting unprompted `window.open` spawners.
 
-3. **100% YouTube & HTML5 Video Ad Fast-Forward & Auto-Skipper**  
+3. **YouTube & HTML5 Video Ad Controls**
    - High-frequency 100ms loop coupled with a MutationObserver automatically muting, accelerating (16x rate), fast-forwarding, and clicking skip buttons on pre-roll/mid-roll video ads.
 
-4. **Bi-Directional Secure DNS Resolver Switcher**  
-   - Real-time synchronized one-click switching between encrypted DNS-over-HTTPS (DoH) providers (AdGuard DNS, Cloudflare 1.1.1.1, Quad9, NextDNS, CleanBrowsing, Direct OS, Custom) across Popup and Advanced Settings.
+4. **DNS Provider Reference**
+   - Synchronized saved references for DNS-over-HTTPS (DoH) providers (AdGuard DNS, Cloudflare 1.1.1.1, Quad9, NextDNS, CleanBrowsing, Direct OS, Custom) across Popup and Advanced Settings.
 
-5. **Proxyium Anonymous Web Tunnel & Native Browser Proxy Switcher**  
+5. **Proxyium Anonymous Web Tunnel & Native Browser Proxy Switcher**
    - **One-Click Proxyium Web Proxy**: Route any tab or custom URL anonymously through isolated European (Poland/France Fast), United States (Geo-Unblock), and Singapore (Asia-Pacific) cloud exit nodes without leaving your browser.
    - **Native Browser Proxy Controller (`chrome.proxy`)**: Direct connection, manual proxy switcher with SOCKS5 (Tor 127.0.0.1:9050 preset), SOCKS4, HTTP, and PAC script integration paired with strict WebRTC IP leak shielding.
    - **Geo-Location Exit Node Synchronization**: Dynamically synchronizes GPS coordinates with the active proxy region.
@@ -102,46 +102,46 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ## Features Overview
 
-1. **Dual Engine Manifest V3 & Manifest Generator (`scripts/generate-manifest.js`)**  
-   Automatically builds Manifest V3 for Chromium browsers and Manifest V2/V3 for Firefox with dynamic header spoofing.
+1. **Dual Engine Manifest V3 & Manifest Generator (`scripts/generate-manifest.js`)**
+   Automatically builds Manifest V3 for Chromium browsers and Manifest V3 for Firefox with dynamic header spoofing.
 
-2. **Client Hints (`Sec-CH-UA`) & `navigator.userAgentData` Synchronous Engine**  
+2. **Client Hints (`Sec-CH-UA`) & `navigator.userAgentData` Synchronous Engine**
    Full spoofing of `Sec-CH-UA`, `Sec-CH-UA-Mobile`, and `Sec-CH-UA-Platform` headers paired with synchronous `navigator.userAgentData.getHighEntropyValues()` injection.
 
-3. **Proxyium Web Proxy & Native SOCKS5/HTTP Proxy Switcher**  
+3. **Proxyium Web Proxy & Native SOCKS5/HTTP Proxy Switcher**
    Instant web tunneling through Proxyium multi-region exit nodes (Poland, US, Singapore) and full native browser proxy configuration with preset profiles (Tor, Local SOCKS5, HTTP).
 
-4. **Cryptographic Canvas & WebGL Stealth Matrix**  
+4. **Cryptographic Canvas & WebGL Stealth Matrix**
    Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 with cryptographic sub-pixel variation.
 
-5. **Ghost Mode (Intelligent Auto-Rotation)**  
+5. **Ghost Mode (Intelligent Auto-Rotation)**
    When enabled, a background timer automatically rotates your entire browser identity (User Agent, Touch Points, Canvas Seed) at configurable intervals to break persistent cross-site tracking sessions.
 
-6. **ClientRects & DOM Bounding Box Spoofing**  
+6. **ClientRects & DOM Bounding Box Spoofing**
    Intercepts `getBoundingClientRect` to inject microscopic noise, destroying OS-level font rendering and layout tracking vectors.
 
-7. **WebRTC IP Leak Shield & Network Spoofing**  
+7. **WebRTC IP Leak Shield & Network Spoofing**
    Silently strips local IPv4/IPv6 addresses from WebRTC offers (with a dedicated toggle) and spoofs `navigator.connection` to perfectly match your selected device profile (e.g. returning a 4G cellular connection when spoofing an iPhone).
 
-8. **Battery API & Sensor Spoofing**  
+8. **Battery API & Sensor Spoofing**
    Spoofs `navigator.getBattery()` to return a fake, slowly discharging 85% battery level across all tabs.
 
-9. **Font Enumeration Defender & Behavioral Masking**  
+9. **Font Enumeration Defender & Behavioral Masking**
    Defeats font hashing by adding variance to `offsetWidth`/`offsetHeight`, and introduces slight jitter into mouse coordinates and typing timestamps to mask behavioral biometrics.
 
-10. **AudioContext Fingerprint Shield**  
+10. **AudioContext Fingerprint Shield**
     Imperceptible frequency noise injection into `AnalyserNode.getFloatFrequencyData` and offline audio buffers.
 
-11. **GPS Geolocation & Timezone Spoofing Engine**  
+11. **GPS Geolocation & Timezone Spoofing Engine**
     GPS coordinate mocking (`getCurrentPosition` & `watchPosition`), city presets, custom latitude/longitude inputs, and synchronous `Intl.DateTimeFormat` timezone spoofing.
 
-12. **Screen Resolution, Orientation & Media Devices Masking**  
+12. **Screen Resolution, Orientation & Media Devices Masking**
     Device-accurate `screen.width/height`, pixel depth, orientation, and deterministic webcam/microphone enumeration masking.
 
-13. **Custom Profile Builder Studio & Context Menu Switcher**  
+13. **Custom Profile Builder Studio & Context Menu Switcher**
     GUI to create custom device profiles. Right-click context menus for instant profile switching (`iPhone 17`, `Chrome 145`), quick location presets, and Proxyium web proxy tunneling.
 
-14. **Real-Time Live Fingerprint Leak Inspector**  
+14. **Real-Time Live Fingerprint Leak Inspector**
     Embedded live testing inspector (`spoof_test.html`) that evaluates Canvas noise, WebGL GPU string, WebRTC, ClientRects, Network, and Battery status in real time.
 
 ---
@@ -149,7 +149,7 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 ## **Quick Start**
 
 1. Click the MorphAgent icon in your browser toolbar
-2. Select device category: Mobile, Tablet, Desktop, or Gaming  
+2. Select device category: Mobile, Tablet, Desktop, or Gaming
 3. Choose specific profile from the device grid
 4. Toggle touch spoofing (automatically sets appropriate touch points)
 5. Apply changes - refresh pages to see the new user agent
@@ -171,7 +171,7 @@ Click **"Advanced Settings"** for power-user features:
 MorphAgent includes a Node.js build script to generate manifest files for specific browser targets:
 
 ```bash
-# Generate both Chrome Manifest V3 and Firefox Manifest V2/V3
+# Generate both Chrome Manifest V3 and Firefox Manifest V3
 npm run build:manifest
 
 # Build and package for Firefox (creates morph-agent-firefox.zip)
@@ -217,7 +217,7 @@ Install it directly from the [Firefox Add-ons Store](https://addons.mozilla.org/
    ```
 2. Navigate to `about:debugging#/runtime/this-firefox` in Firefox.
 3. Click **Load Temporary Add-on...**
-4. Select `manifest.json` (or `morph-agent-firefox.zip`) from the project directory.
+4. Select `morph-agent-firefox.zip`. To load the source directory instead, run `npm run manifest:firefox` first, then select `manifest.json`. Restore Chrome with `npm run manifest:chrome`.
 
 ---
 
@@ -239,7 +239,7 @@ Install it directly from the [Firefox Add-ons Store](https://addons.mozilla.org/
 
 ## License
 
-Licensed under the [MIT License](LICENSE). 
+Licensed under the [MIT License](LICENSE).
 
 ## Author
 
@@ -255,3 +255,20 @@ Licensed under the [MIT License](LICENSE).
 *MorphAgent - Transform your browser identity with professional-grade spoofing & anti-fingerprinting*
 
 **⭐ Star this repo if MorphAgent helps your development workflow!**
+
+## Compatibility and validation
+
+Both packages use Manifest V3. Chrome uses a module service worker (Chrome 111+); Firefox uses a module event page (Firefox 128+). Both use declarative network rules. Grant website access when prompted so network and page protections can run.
+
+- `npm test`: manifest, network-rule, CSP and API-adapter regression checks.
+- `npm run build:chrome` / `npm run build:firefox`: fresh, isolated release archives. Packaging leaves the source manifest set to Chrome.
+- `npm run manifest:firefox` / `npm run manifest:chrome`: explicitly switch the source manifest for unpacked loading.
+
+DNS preferences do not change the browser resolver; configure Secure DNS in browser settings. Filtering lists are bundled, not equivalent to full AdGuard/uBlock subscriptions. Page-level JavaScript protection cannot guarantee interception before every page script, or undetectable fingerprints. Test important sites after changing spoofing or proxy settings.
+
+### Suggested next features
+
+1. A permission and compatibility panel showing effective website access, active rules, and proxy control conflicts.
+2. Named profile presets with preview, export, and one-click rollback.
+3. Temporary per-site exceptions that expire automatically.
+4. A rule tester showing which profile and filters apply to a URL before saving.

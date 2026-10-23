@@ -13,7 +13,6 @@ const baseManifest = {
   permissions: [
     "storage",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
     "tabs",
     "scripting",
     "contextMenus",
@@ -58,14 +57,7 @@ const baseManifest = {
   ],
   web_accessible_resources: [
     {
-      resources: [
-        "advanced-settings.html",
-        "css/advanced-settings.css",
-        "js/advanced-settings.js",
-        "js/profiles.js",
-        "js/inject.js",
-        "js/adblock-rules.js"
-      ],
+      resources: ["js/inject.js"],
       matches: ["<all_urls>"]
     }
   ]
@@ -73,47 +65,25 @@ const baseManifest = {
 
 const v3Manifest = {
   ...baseManifest,
-  manifest_version: 3
+  manifest_version: 3,
+  minimum_chrome_version: "111"
 };
 
-const v2Manifest = {
+const firefoxManifest = {
   ...baseManifest,
-  manifest_version: 2,
-  permissions: [
-    "storage",
-    "webRequest",
-    "webRequestBlocking",
-    "tabs",
-    "contextMenus",
-    "alarms",
-    "proxy",
-    "<all_urls>"
-  ],
-  background: {
-    scripts: ["js/adblock-rules.js", "js/background.js"]
-  },
-  browser_action: baseManifest.action,
-  web_accessible_resources: [
-    "advanced-settings.html",
-    "css/advanced-settings.css",
-    "js/advanced-settings.js",
-    "js/profiles.js",
-    "js/inject.js",
-    "js/adblock-rules.js"
-  ],
+  manifest_version: 3,
+  background: { scripts: ["js/background.js"], type: "module" },
   browser_specific_settings: {
     gecko: {
       id: "morph-agent@karthiklal.in",
-      data_collection_permissions: {
-        required: ["none"]
-      }
+      strict_min_version: "128.0",
+      data_collection_permissions: { required: ["none"] }
     }
   }
 };
-delete v2Manifest.action;
-delete v2Manifest.host_permissions;
 
 const target = process.argv[2] || 'all';
+if (!['all', 'chrome', 'firefox'].includes(target)) throw new Error('Expected chrome, firefox or all');
 
 if (target === 'chrome' || target === 'all') {
   fs.writeFileSync('manifest.chrome.json', JSON.stringify(v3Manifest, null, 2));
@@ -122,6 +92,7 @@ if (target === 'chrome' || target === 'all') {
 }
 
 if (target === 'firefox' || target === 'all') {
-  fs.writeFileSync('manifest.firefox.json', JSON.stringify(v2Manifest, null, 2));
-  console.log('✓ Generated manifest.firefox.json (Manifest V2)');
+  fs.writeFileSync('manifest.firefox.json', JSON.stringify(firefoxManifest, null, 2));
+  if (target === 'firefox') fs.writeFileSync('manifest.json', JSON.stringify(firefoxManifest, null, 2));
+  console.log('✓ Generated manifest.firefox.json (Manifest V3)');
 }

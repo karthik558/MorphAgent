@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Cross-browser API adapter
-  const browser = window.browser || window.chrome;
+  const browser = window.morphApi || window.browser || window.chrome;
 
   // Elements
   const themeToggle = document.getElementById('themeToggle');
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. Hardware & Memory Harmonization
   // ==========================================
   function loadHarmonizationSettings() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     if (!browser || !browser.storage || !browser.storage.local) return;
     browser.storage.local.get([
       'hardwareHarmonizeEnabled',
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. Timezone & Locale Auto-Harmonizer
   // ==========================================
   function loadTimezoneHarmonizationSettings() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     if (!browser || !browser.storage || !browser.storage.local) return;
     browser.storage.local.get([
       'autoHarmonizeTzEnabled',
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Secure DNS & AdBlock Engine Logic
   // ==========================================
   function loadDnsAndAdBlockSettings() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     browser.storage.local.get([
       'adBlockEnabled',
       'dnsProvider',
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (advWebrtcLeakToggle) advWebrtcLeakToggle.checked = webrtcPreventLeakEnabled;
       if (advRemoveXClientDataToggle) advRemoveXClientDataToggle.checked = removeXClientDataEnabled;
 
-      if (filtersLastCheckedTag) filtersLastCheckedTag.textContent = `Last checked: ${filtersLastChecked}`;
+      if (filtersLastCheckedTag) filtersLastCheckedTag.textContent = 'Bundled rules · updated with extension releases';
 
       // Update DNS Dropdown
       if (advDnsSelect) advDnsSelect.value = dnsProvider;
@@ -450,11 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (statDnsTag) {
       if (providerId === 'custom') {
-        statDnsTag.textContent = customEndpoint ? `Secure DoH · ${customEndpoint.slice(0, 30)}` : 'Custom Encrypted Endpoint';
+        statDnsTag.textContent = customEndpoint ? `Saved endpoint · ${customEndpoint.slice(0, 30)}` : 'Custom Encrypted Endpoint';
       } else if (providerId === 'direct') {
-        statDnsTag.textContent = 'Unencrypted OS Default';
+        statDnsTag.textContent = 'Managed by your browser';
       } else {
-        statDnsTag.textContent = `DoH Encrypted · ${(provider.ips || []).join(', ')}`;
+        statDnsTag.textContent = 'Preference only · configure in browser settings';
       }
     }
 
@@ -465,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
       advDnsIpPreview.textContent = (provider.ips && provider.ips.length) ? provider.ips.join(', ') : 'Direct OS Gateway';
     }
     if (dnsStatusTag) {
-      dnsStatusTag.textContent = providerId === 'direct' ? 'System Default (Direct)' : `DNS-over-HTTPS (${provider.tag || 'Active'})`;
+      dnsStatusTag.textContent = 'Browser setup required';
     }
   }
 
@@ -536,8 +536,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   Enabled: ${enabledSubs} of ${totalSubs}
                 </span>
               ` : ''}
-              <label class="toggle-switch" title="Toggle all in ${cat.name}" onclick="event.stopPropagation();">
-                <input type="checkbox" class="cat-master-toggle" data-cat-id="${cat.id}" ${enabledSubs > 0 ? 'checked' : ''}>
+              <label class="toggle-switch" title="Toggle all in ${cat.name}">
+                <input type="checkbox" disabled title="Subscription engine not implemented" class="cat-master-toggle" data-cat-id="${cat.id}" ${enabledSubs > 0 ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
               </label>
               <svg class="filter-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -553,11 +553,11 @@ document.addEventListener('DOMContentLoaded', () => {
               <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; gap: 8px;">
                   <input type="text" id="customFilterUrlInput" class="custom-input" placeholder="https://example.com/custom-rules.txt" style="font-size: 11px;">
-                  <button class="btn btn-outline" id="addCustomFilterUrlBtn" style="height: 32px; font-size: 11px; white-space: nowrap; padding: 4px 12px;">Add URL</button>
+                  <button class="btn btn-outline" disabled title="Remote subscriptions are not supported" id="addCustomFilterUrlBtn" style="height: 32px; font-size: 11px; white-space: nowrap; padding: 4px 12px;">Add URL</button>
                 </div>
                 <div style="display: flex; gap: 8px; flex-direction: column;">
                   <textarea id="customFilterRulesTextarea" class="custom-input" rows="2" placeholder="Add custom AdGuard / uBO rules (e.g. ||example.com^, ##.bad-ad)..." style="font-size: 11px; font-family: var(--font-mono, monospace);"></textarea>
-                  <button class="btn btn-solid" id="saveCustomRulesBtn" style="height: 28px; font-size: 11px; align-self: flex-start; padding: 4px 12px;">Save Custom Rules</button>
+                  <button class="btn btn-solid" disabled title="Custom filter compilation is not supported" id="saveCustomRulesBtn" style="height: 28px; font-size: 11px; align-self: flex-start; padding: 4px 12px;">Save Custom Rules</button>
                 </div>
               </div>
             ` : ''}
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="filter-subitem-desc">${sub.desc || ''}</div>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" class="subfilter-toggle" data-cat-id="${cat.id}" data-sub-id="${sub.id}" ${sub.enabled ? 'checked' : ''}>
+                  <input type="checkbox" disabled title="Subscription engine not implemented" class="subfilter-toggle" data-cat-id="${cat.id}" data-sub-id="${sub.id}" ${sub.enabled ? 'checked' : ''}>
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const sub = cat.subfilters.find(s => s.id === subId);
           if (sub) {
             sub.enabled = active;
-            const browser = window.browser || window.chrome;
+            const browser = window.morphApi || window.browser || window.chrome;
             browser.storage.local.set({ filtersState: userFiltersState }, () => {
               browser.runtime.sendMessage({
                 type: 'update-global-settings',
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cat = userFiltersState.find(c => c.id === catId);
         if (cat && cat.subfilters) {
           cat.subfilters.forEach(s => s.enabled = active);
-          const browser = window.browser || window.chrome;
+          const browser = window.morphApi || window.browser || window.chrome;
           browser.storage.local.set({ filtersState: userFiltersState }, () => {
             browser.runtime.sendMessage({
               type: 'update-global-settings',
@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showStatus('Please enter a valid filter list subscription URL', 'error');
           return;
         }
-        showStatus(`Subscribed to custom filter: ${url}`, 'success');
+        showStatus('Remote subscriptions are not supported in this build', 'info');
         customFilterUrlInput.value = '';
       });
     }
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showStatus('Please input custom rules before saving', 'info');
           return;
         }
-        showStatus('Custom AdGuard & uBO rules compiled and saved', 'success');
+        showStatus('Custom filter compilation is not supported in this build', 'info');
         customFilterRulesTextarea.value = '';
       });
     }
@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. Analytics & Real-Time Threat Feed
   // ==========================================
   function renderAnalytics() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     browser.storage.local.get(['threatLogs'], (result) => {
       allThreatLogs = result.threatLogs || [];
       const totalEl = document.getElementById('analytics-total');
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setTimeout(() => {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       browser.storage.local.get([
         'hardwareHarmonizeEnabled',
         'customHardwareCores',
@@ -1146,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function optimizeAllVectors() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     browser.storage.local.set({
       hardwareHarmonizeEnabled: true,
       customHardwareCores: 'auto',
@@ -1356,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Feature 1: Hardware & Memory Harmonization listeners
       if (hwHarmonizeToggle) {
         hwHarmonizeToggle.addEventListener('change', (e) => {
-          const browser = window.browser || window.chrome;
+          const browser = window.morphApi || window.browser || window.chrome;
           browser.storage.local.set({ hardwareHarmonizeEnabled: e.target.checked }, () => {
             updateHarmonizationPreviews();
             showStatus(e.target.checked ? 'Hardware Harmonization enabled' : 'Hardware Harmonization disabled');
@@ -1365,7 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (hwCoresSelect) {
         hwCoresSelect.addEventListener('change', (e) => {
-          const browser = window.browser || window.chrome;
+          const browser = window.morphApi || window.browser || window.chrome;
           browser.storage.local.set({ customHardwareCores: e.target.value }, () => {
             updateHarmonizationPreviews();
             showStatus(`Hardware concurrency set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' Cores'}`);
@@ -1374,7 +1374,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (hwMemorySelect) {
         hwMemorySelect.addEventListener('change', (e) => {
-          const browser = window.browser || window.chrome;
+          const browser = window.morphApi || window.browser || window.chrome;
           browser.storage.local.set({ customDeviceMemory: e.target.value }, () => {
             updateHarmonizationPreviews();
             showStatus(`Device memory set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' GB'}`);
@@ -1385,7 +1385,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Feature 2: Timezone & Locale Auto-Harmonizer listeners
       if (autoHarmonizeTzToggle) {
         autoHarmonizeTzToggle.addEventListener('change', (e) => {
-          const browser = window.browser || window.chrome;
+          const browser = window.morphApi || window.browser || window.chrome;
           browser.storage.local.set({ autoHarmonizeTzEnabled: e.target.checked }, () => {
             updateTimezonePreviews();
             showStatus(e.target.checked ? 'Timezone & Locale auto-harmonization enabled' : 'Timezone & Locale auto-harmonization disabled');
@@ -1413,7 +1413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (clearFeedBtn) {
         clearFeedBtn.addEventListener('click', () => {
           if (confirm('Clear all recorded fingerprinting interception logs?')) {
-            const browser = window.browser || window.chrome;
+            const browser = window.morphApi || window.browser || window.chrome;
             browser.storage.local.set({ threatLogs: [] }, () => {
               allThreatLogs = [];
               renderAnalytics();
@@ -1460,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
               data: { dnsProvider: provider }
             }).catch(() => {});
             loadDnsAndAdBlockSettings();
-            showStatus(`Secure DNS resolver set to ${advDnsSelect.options[advDnsSelect.selectedIndex].text.split(' (')[0]}`);
+            showStatus(`DNS preference saved; configure your browser: ${advDnsSelect.options[advDnsSelect.selectedIndex].text.split(' (')[0]}`);
           });
         });
       }
@@ -1793,7 +1793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadSettings() {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       if (!browser || !browser.storage || !browser.storage.sync) return;
       browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode'], (result) => {
         const res = result || {};
@@ -1809,7 +1809,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveSettings() {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       browser.storage.sync.set({
         websiteRules: (websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com')),
         blockList: blockList,
@@ -1822,7 +1822,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupTheme() {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       browser.storage.local.get(['theme'], (result) => {
         const theme = (result && result.theme) ? result.theme : 'dark';
         applyTheme(theme);
@@ -1849,7 +1849,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleTheme() {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       const isDark = document.body.classList.contains('dark-mode') || !document.body.classList.contains('light-mode');
       const newTheme = isDark ? 'light' : 'dark';
 
@@ -2645,7 +2645,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exportSettings() {
-      const browser = window.browser || window.chrome;
+      const browser = window.morphApi || window.browser || window.chrome;
       const localKeys = [
         'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled', 
         'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue', 
@@ -2714,7 +2714,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Save global local settings if present
           if (settings.globalSettings && typeof settings.globalSettings === 'object') {
-            const browser = window.browser || window.chrome;
+            const browser = window.morphApi || window.browser || window.chrome;
             browser.storage.local.set(settings.globalSettings, () => {
               // Notify background script to update badge/rules if needed
               browser.runtime.sendMessage({ type: 'set-settings', data: settings.globalSettings }).catch(() => {});
@@ -2923,7 +2923,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadProxySettings() {
-    const browser = window.browser || window.chrome;
+    const browser = window.morphApi || window.browser || window.chrome;
     if (!browser || !browser.storage) return;
 
     // Elements
@@ -3253,7 +3253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
-      return div.innerHTML;
+      return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // Make functions globally available for inline event handlers

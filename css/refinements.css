@@ -1,0 +1,57 @@
+/* Shared, restrained surfaces and accessible interaction states. */
+:root, html.light-mode, body.light-mode {
+  --accent-red: #a43830;
+  --accent-red-hover: #872e28;
+  --accent-red-soft: rgba(164, 56, 48, .08);
+  --accent-red-glow: none;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+}
+html.dark-mode, body.dark-mode {
+  --bg-main: #181a1b;
+  --bg-card: #202324;
+  --bg-hover: #2b2f30;
+  --text-primary: #f0f1ee;
+  --text-secondary: #b9bdb9;
+  --text-tertiary: #a0a6a1;
+  --border-light: #373c3b;
+  --accent-red: #e29185;
+  --accent-red-hover: #edaca2;
+  --accent-red-soft: rgba(226, 145, 133, .1);
+  color-scheme: dark;
+}
+html.light-mode { color-scheme: light; }
+body { line-height: 1.5; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea, [role="button"] { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--accent-red); outline-offset: 3px; }
+.icon-btn { min-width: 32px; min-height: 32px; }
+.header { padding: 16px; }
+.title, .title-section h1 { letter-spacing: -.025em; }
+.main-content { padding: 16px; }
+.form-section { margin-bottom: 0; }
+#ua-form { gap: 20px; }
+.device-card { color: var(--text-secondary); font: inherit; }
+.analytics-bg-icon { display: none; }
+.analytics-card.danger, .analytics-card.success { background: var(--bg-card); border-color: var(--border-light); }
+.live-pulse { animation: none; box-shadow: none; }
+.device-card { border-radius: 7px; box-shadow: none; }
+.device-card:hover, .device-card.active { transform: none; box-shadow: none; }
+.section-label, .sidebar-category { letter-spacing: .06em; }
+.sidebar-link { min-height: 42px; border-radius: 6px; }
+.sidebar-link.active { box-shadow: none; }
+.btn, .apply-btn { box-shadow: none; }
+.btn-primary, .apply-btn { background: #a43830; color: #fff; }
+.save-indicator { font-size: 12px; }
+input:disabled, button:disabled, select:disabled { opacity: .55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 720px) {
+  .layout-wrapper { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 0; position: static; border-right: 0; }
+  .sidebar-nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  .sidebar-category, .sidebar-brand { display: none; }
+  .sidebar-link { width: auto; }
+  .content-area { min-width: 0; padding: 16px; }
+}
