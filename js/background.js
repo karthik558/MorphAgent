@@ -869,7 +869,36 @@ function setupContextMenus() {
     api.contextMenus.removeAll(() => {
       api.contextMenus.create({
         id: 'morph-agent-root',
-        title: 'MorphAgent 4.8.2 Stealth',
+        title: 'MorphAgent',
+        contexts: ['all']
+      });
+
+      // Quick Actions
+      api.contextMenus.create({
+        id: 'morph-agent-rotate-ua',
+        parentId: 'morph-agent-root',
+        title: 'Rotate Identity Now',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-reset-ua',
+        parentId: 'morph-agent-root',
+        title: 'Reset to Default User Agent',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-toggle-shield-site',
+        parentId: 'morph-agent-root',
+        title: 'Toggle Ad & Tracker Shield for this Site',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-quick-sep',
+        parentId: 'morph-agent-root',
+        type: 'separator',
         contexts: ['all']
       });
 
@@ -906,21 +935,28 @@ function setupContextMenus() {
       api.contextMenus.create({
         id: 'morph-agent-spoof-location',
         parentId: 'morph-agent-root',
-        title: 'Enable Location Spoofing for this Site',
+        title: 'Toggle Location Spoofing for this Site',
         contexts: ['all']
       });
 
       api.contextMenus.create({
         id: 'morph-agent-block-js',
         parentId: 'morph-agent-root',
-        title: 'Block JavaScript for this Site',
+        title: 'Toggle JavaScript for this Site',
         contexts: ['all']
       });
 
       api.contextMenus.create({
         id: 'morph-agent-block-site',
         parentId: 'morph-agent-root',
-        title: 'Add to Exception List (Toggle Spoofing)',
+        title: 'Toggle Spoofing for this Site (Exception List)',
+        contexts: ['all']
+      });
+
+      api.contextMenus.create({
+        id: 'morph-agent-toggle-webrtc',
+        parentId: 'morph-agent-root',
+        title: 'Toggle WebRTC Leak Shield',
         contexts: ['all']
       });
 
@@ -1070,6 +1106,85 @@ api.storage.onChanged.addListener((changes, area) => {
 
 if (api.contextMenus && api.contextMenus.onClicked) {
   api.contextMenus.onClicked.addListener((info, tab) => {
+    // Quick Action: Rotate Identity Now
+    if (info.menuItemId === 'morph-agent-rotate-ua') {
+      const candidates = TOP_10_UAS.filter(u => u.ua !== cachedUA);
+      const picked = candidates.length > 0
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : TOP_10_UAS[Math.floor(Math.random() * TOP_10_UAS.length)];
+      if (picked) {
+        api.storage.local.set({
+          selectedUA: picked.ua,
+          activeCategory: picked.category,
+          touchSpoofEnabled: picked.touch || false,
+          maxTouchPoints: picked.touch ? 5 : 0
+        }).then(() => {
+          cachedUA = picked.ua;
+          activeCategory = picked.category;
+          updateDeclarativeNetRequestRules(picked.ua);
+          updateBadge(picked.ua, picked.category);
+          if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+        });
+      }
+      return;
+    }
+
+    // Quick Action: Reset to Default User Agent
+    if (info.menuItemId === 'morph-agent-reset-ua') {
+      const defaultUA = typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+      api.storage.local.set({
+        selectedUA: defaultUA,
+        activeCategory: 'desktop',
+        touchSpoofEnabled: false,
+        maxTouchPoints: 0
+      }).then(() => {
+        cachedUA = defaultUA;
+        activeCategory = 'desktop';
+        updateDeclarativeNetRequestRules(defaultUA);
+        updateBadge(defaultUA, 'desktop');
+        if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+      });
+      return;
+    }
+
+    // Quick Action: Toggle Ad & Tracker Shield for this Site
+    if (info.menuItemId === 'morph-agent-toggle-shield-site') {
+      if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('about:')) return;
+      try {
+        const hostname = new URL(tab.url).hostname;
+        if (!hostname) return;
+        api.storage.local.get(['adBlockWhitelist']).then(res => {
+          const whitelist = res.adBlockWhitelist || [];
+          const isExcluded = whitelist.some(d => hostname === d || hostname.endsWith('.' + d));
+          const next = isExcluded
+            ? whitelist.filter(d => hostname !== d && !hostname.endsWith('.' + d))
+            : [...new Set([...whitelist, hostname])];
+          api.storage.local.set({ adBlockWhitelist: next }).then(() => {
+            if (typeof synchronizeRules === 'function') {
+              synchronizeRules(cachedUA);
+            }
+            if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+          });
+        });
+      } catch (e) {
+        console.warn('[MorphAgent] Failed to toggle site shield:', e);
+      }
+      return;
+    }
+
+    // Quick Action: Toggle WebRTC Leak Shield
+    if (info.menuItemId === 'morph-agent-toggle-webrtc') {
+      api.storage.local.get(['webrtcPreventLeakEnabled']).then(res => {
+        const current = res.webrtcPreventLeakEnabled !== false;
+        const next = !current;
+        api.storage.local.set({ webrtcPreventLeakEnabled: next }).then(() => {
+          applyWebRTCLeakPolicy(next);
+          if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
+        });
+      });
+      return;
+    }
+
     // Check if it's a Top 10 UA click
     const uaObj = TOP_10_UAS.find(u => u.id === info.menuItemId);
     if (uaObj) {
@@ -1141,10 +1256,16 @@ if (api.contextMenus && api.contextMenus.onClicked) {
           api.storage.sync.get(['blockList', 'whiteList']).then(res => {
             const list = res.blockList || [];
             const white = res.whiteList || [];
-            if (!list.find(b => b.website === hostname)) {
+            const existingIndex = list.findIndex(b => b.website === hostname);
+            if (existingIndex === -1) {
               list.push({ id: Date.now(), website: hostname, created: new Date().toISOString() });
               const updatedWhite = white.filter(w => w.website !== hostname);
               api.storage.sync.set({ blockList: list, whiteList: updatedWhite }).then(() => {
+                if (api.tabs && api.tabs.reload) api.tabs.reload(tab.id);
+              });
+            } else {
+              list.splice(existingIndex, 1);
+              api.storage.sync.set({ blockList: list }).then(() => {
                 if (api.tabs && api.tabs.reload) api.tabs.reload(tab.id);
               });
             }
@@ -1168,9 +1289,9 @@ if (api.contextMenus && api.contextMenus.onClicked) {
             }
 
             if (info.menuItemId === 'morph-agent-spoof-location') {
-              rule.geoSpoofEnabled = true;
+              rule.geoSpoofEnabled = !rule.geoSpoofEnabled;
             } else if (info.menuItemId === 'morph-agent-block-js') {
-              rule.jsBlocked = true;
+              rule.jsBlocked = !rule.jsBlocked;
             }
 
             api.storage.sync.set({ websiteRules: rules }).then(() => {
