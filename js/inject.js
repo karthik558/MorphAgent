@@ -3,22 +3,13 @@
   window.__MORPH_INJECTED__ = true;
 
   try {
-    let cachedSettings = null;
     let isSettingsLoaded = false;
     const pendingCalls = [];
     const pendingWatches = [];
 
-    // Attempt to load synchronous settings
-    try {
-      const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
-      if (raw) {
-        cachedSettings = JSON.parse(raw);
-        isSettingsLoaded = true;
-      }
-    } catch (e) { }
-
+    // Wait for extension-owned preferences. Page storage may be stale or modified by the site.
     window.__MORPH_SYNC_LOADED = isSettingsLoaded;
-    window.__MORPH_AGENT_SETTINGS__ = cachedSettings || window.__MORPH_AGENT_SETTINGS__ || {};
+    window.__MORPH_AGENT_SETTINGS__ = {};
 
     function applyStealthSettings(s) {
       if (!s) return;
@@ -101,206 +92,6 @@
             };
           }
         } catch (e) { }
-      }
-
-      // Anti-Adblock Defuser, Scriptlet Traps & Height Probe Spoofing
-      if (s.adBlockEnabled !== false && s.adBlockAntiAdblockEnabled !== false) {
-        try {
-          const isBenchmarkSite = /turtlecute\.org|d3ward\.github\.io|adblock-tester\.com|canyoublockit\.com|checkadblock/i.test(window.location.hostname);
-          if (!isBenchmarkSite) {
-            window.canRunAds = true;
-            window.isAdBlockActive = false;
-            window.google_ad_client = window.google_ad_client || 'ca-pub-0000000000000000';
-          }
-
-          // Defuse Anti-Adblock DOM probe sizing checks (.adsbox, .ad-banner, etc.)
-          if (!window.__MORPH_AAB_DEFUSED__) {
-            window.__MORPH_AAB_DEFUSED__ = true;
-            const origOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
-            const origOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
-            const origClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
-            const origClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
-
-            const isAdProbeEl = (el) => {
-              if (!el || isBenchmarkSite) return false;
-              const id = (el.id || '').toString().toLowerCase();
-              if (id.includes('cts_test') || id.includes('ad_ctd')) return false;
-              const cls = (el.className || '').toString().toLowerCase();
-              if (cls.includes('textads') || cls.includes('banner_ads') || (cls.includes('adbox') && cls.includes('banner'))) return false;
-              return cls.includes('adsbox') || cls.includes('ad-banner') || cls.includes('ad-unit') ||
-                cls.includes('ad_unit') || cls.includes('ad-detector') || cls.includes('pub_300') ||
-                id.includes('ad-detector') || id.includes('ad_banner') || id.includes('ad-banner') ||
-                cls.includes('ad-slot') || cls.includes('advertisement');
-            };
-
-            if (origOffsetHeight && origOffsetHeight.get) {
-              Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
-                get() {
-                  const val = origOffsetHeight.get.call(this);
-                  return (val === 0 && isAdProbeEl(this)) ? 250 : val;
-                },
-                configurable: true
-              });
-            }
-            if (origOffsetWidth && origOffsetWidth.get) {
-              Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
-                get() {
-                  const val = origOffsetWidth.get.call(this);
-                  return (val === 0 && isAdProbeEl(this)) ? 300 : val;
-                },
-                configurable: true
-              });
-            }
-            if (origClientHeight && origClientHeight.get) {
-              Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-                get() {
-                  const val = origClientHeight.get.call(this);
-                  return (val === 0 && isAdProbeEl(this)) ? 250 : val;
-                },
-                configurable: true
-              });
-            }
-            if (origClientWidth && origClientWidth.get) {
-              Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
-                get() {
-                  const val = origClientWidth.get.call(this);
-                  return (val === 0 && isAdProbeEl(this)) ? 300 : val;
-                },
-                configurable: true
-              });
-            }
-          }
-
-          // Google Tag Manager / Analytics / AdSense Stubs
-          if (!window.adsbygoogle) {
-            window.adsbygoogle = [];
-            window.adsbygoogle.push = function () { return 1; };
-            window.adsbygoogle.loaded = true;
-          }
-
-          if (!window.googletag) {
-            const emptyFn = function () { return this; };
-            const emptyObj = { addService: emptyFn, setTargeting: emptyFn, defineSizeMapping: emptyFn, build: emptyFn };
-            window.googletag = {
-              cmd: [],
-              display: emptyFn,
-              defineSlot: function () { return emptyObj; },
-              defineOutOfPageSlot: function () { return emptyObj; },
-              enableServices: emptyFn,
-              pubads: function () {
-                return {
-                  enableSingleRequest: emptyFn,
-                  collapseEmptyDivs: emptyFn,
-                  addEventListener: emptyFn,
-                  clear: emptyFn,
-                  refresh: emptyFn,
-                  setTargeting: emptyFn
-                };
-              },
-              sizeMapping: function () { return { addSize: emptyFn, build: emptyFn }; }
-            };
-            window.googletag.cmd.push = function (fn) {
-              if (typeof fn === 'function') { try { fn(); } catch (e) { } }
-              return 1;
-            };
-          }
-
-          if (!window.ga) {
-            window.ga = function () {
-              if (arguments.length > 0 && typeof arguments[arguments.length - 1] === 'function') {
-                try { arguments[arguments.length - 1](); } catch (e) { }
-              }
-            };
-            window.ga.loaded = true;
-          }
-          if (!window.gtag) {
-            window.gtag = function () { };
-          }
-          if (!window._gaq) {
-            window._gaq = { push: function () { } };
-          }
-          if (!window.fbq) {
-            window.fbq = function () { };
-            window.fbq.loaded = true;
-          }
-
-          // Block Intrusive Popup / Popunder Spawners
-          if (!window.__MORPH_POPUP_HOOKED__) {
-            window.__MORPH_POPUP_HOOKED__ = true;
-            const origOpen = window.open;
-            window.open = function (url) {
-              if (typeof url === 'string') {
-                const lower = url.toLowerCase();
-                if (lower.includes('popads') || lower.includes('exoclick') || lower.includes('trafficjunky') ||
-                  lower.includes('propellerads') || lower.includes('popcash') || lower.includes('adsterra') ||
-                  lower.includes('clickadu') || lower.includes('ad-maven') || lower.includes('juicyads') ||
-                  lower.includes('yllix') || lower.includes('bidvertiser')) {
-                  console.log('[MorphAgent 4.7] Intrusive ad popunder blocked:', url);
-                  return null;
-                }
-              }
-              return origOpen.apply(this, arguments);
-            };
-          }
-        } catch (e) { }
-      }
-
-      // 100% Video Ad Auto-Skipper & Fast-Forwarder for YouTube and HTML5 Players
-      if (s.adBlockEnabled !== false && !window.__MORPH_VIDEO_SKIPPER__) {
-        window.__MORPH_VIDEO_SKIPPER__ = true;
-        const triggerSkip = () => {
-          try {
-            // Click skip buttons immediately
-            const skipSelectors = [
-              '.ytp-ad-skip-button',
-              '.ytp-ad-skip-button-modern',
-              '.ytp-skip-ad-button',
-              '.ytp-ad-skip-button-slot button',
-              'button.ytp-ad-skip-button',
-              '.videoAdUiSkipButton',
-              '.ytp-ad-overlay-close-button'
-            ];
-            for (const sel of skipSelectors) {
-              const btn = document.querySelector(sel);
-              if (btn && typeof btn.click === 'function') {
-                btn.click();
-              }
-            }
-
-            // Fast-forward & mute video ad streams
-            const adIndicators = [
-              '.ad-showing',
-              '.ad-interrupting',
-              '.html5-video-player.ad-showing',
-              '.video-ads:not(:empty)'
-            ];
-            const isAdPlaying = adIndicators.some(sel => !!document.querySelector(sel));
-            if (isAdPlaying) {
-              const videos = document.querySelectorAll('video');
-              videos.forEach(video => {
-                if (video && isFinite(video.duration) && video.duration > 0) {
-                  video.muted = true;
-                  video.playbackRate = 16.0;
-                  video.currentTime = video.duration;
-                }
-              });
-            }
-          } catch (e) { }
-        };
-
-        // Run on high-frequency interval for instantaneous zero-latency skipping
-        setInterval(triggerSkip, 100);
-
-        // Also observe DOM changes in player container for zero-latency reaction
-        const setupObserver = () => {
-          const player = document.querySelector('#movie_player, .html5-video-player, video');
-          if (player && !player.__morph_observed) {
-            player.__morph_observed = true;
-            const obs = new MutationObserver(triggerSkip);
-            obs.observe(player, { attributes: true, childList: true, subtree: true, attributeFilter: ['class', 'src'] });
-          }
-        };
-        setInterval(setupObserver, 1000);
       }
 
       // User Agent & Navigator Platform Spoofing
@@ -431,6 +222,42 @@
         };
       }
 
+      if (s.hardwareHarmonizeEnabled !== false && uaSpoofEnabled && ua) {
+        // Hardware & Memory Harmonization Engine
+        let cores = s.hardwareConcurrency;
+        let memory = s.deviceMemory;
+
+        if (!cores) {
+          if (ua.includes('iPhone') || ua.includes('iPad')) {
+            cores = 6; // Apple Silicon mobile A/M chip
+            memory = 8;
+          } else if (ua.includes('Android')) {
+            cores = 8; // Modern Octa-core Android
+            memory = 8;
+          } else if (ua.includes('PlayStation') || ua.includes('Xbox')) {
+            cores = 8;
+            memory = 16;
+          } else if (ua.includes('Macintosh') || ua.includes('Mac OS X')) {
+            cores = 8; // Apple Silicon M2/M3 base
+            memory = 16;
+          } else {
+            cores = 8; // Modern Desktop PC
+            memory = 16;
+          }
+        }
+
+        if (s.customHardwareCores && s.customHardwareCores !== 'auto') {
+          cores = Number(s.customHardwareCores) || cores;
+        }
+        if (s.customDeviceMemory && s.customDeviceMemory !== 'auto') {
+          memory = Number(s.customDeviceMemory) || memory;
+        }
+
+        Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => cores, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => memory, configurable: true });
+
+      }
+
       // Hardware & Screen Stealth Protections
       if (s.jsProtectEnabled) {
         const domainHash = Array.from(window.location.hostname || "localhost").reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
@@ -483,39 +310,6 @@
             Object.defineProperty(Navigator.prototype, 'mimeTypes', { get: () => fakeMimeArray, configurable: true });
           } catch (e) { }
         }
-
-        // Hardware & Memory Harmonization Engine
-        let cores = s.hardwareConcurrency;
-        let memory = s.deviceMemory;
-
-        if (!cores || s.hardwareHarmonize !== false) {
-          if (ua.includes('iPhone') || ua.includes('iPad')) {
-            cores = 6; // Apple Silicon mobile A/M chip
-            memory = 8;
-          } else if (ua.includes('Android')) {
-            cores = 8; // Modern Octa-core Android
-            memory = 8;
-          } else if (ua.includes('PlayStation') || ua.includes('Xbox')) {
-            cores = 8;
-            memory = 16;
-          } else if (ua.includes('Macintosh') || ua.includes('Mac OS X')) {
-            cores = 8; // Apple Silicon M2/M3 base
-            memory = 16;
-          } else {
-            cores = 8; // Modern Desktop PC
-            memory = 16;
-          }
-        }
-
-        if (s.customHardwareCores && s.customHardwareCores !== 'auto') {
-          cores = Number(s.customHardwareCores) || cores;
-        }
-        if (s.customDeviceMemory && s.customDeviceMemory !== 'auto') {
-          memory = Number(s.customDeviceMemory) || memory;
-        }
-
-        Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => cores, configurable: true });
-        Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => memory, configurable: true });
 
         // Spoof Screen Metrics
         if (window.Screen) {
@@ -628,7 +422,7 @@
           };
         }
 
-        if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection && s.rtcProtectEnabled !== false) {
+        if (!window.__MORPH_RTC_PROTECTED && window.RTCPeerConnection && s.webrtcPreventLeakEnabled !== false) {
           window.__MORPH_RTC_PROTECTED = true;
           const origCreateOffer = RTCPeerConnection.prototype.createOffer;
           RTCPeerConnection.prototype.createOffer = function (options) {
@@ -641,7 +435,7 @@
           };
         }
 
-        if (!window.__MORPH_NETWORK_PROTECTED && window.navigator && s.rtcProtectEnabled !== false) {
+        if (!window.__MORPH_NETWORK_PROTECTED && window.navigator && s.webrtcPreventLeakEnabled !== false) {
           window.__MORPH_NETWORK_PROTECTED = true;
           if (navigator.connection) {
             const fakeConn = {
@@ -766,10 +560,10 @@
       }
 
       // Timezone & Locale Auto-Harmonizer Engine
-      if (s.geoSpoofEnabled) {
+      if (s.geoSpoofEnabled && s.autoHarmonizeTzEnabled !== false) {
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
-        const lat = parseFloat(coords.lat) || 40.7128;
-        const lng = parseFloat(coords.lng) || -74.0060;
+        const lat = Number.isFinite(Number(coords.lat)) ? Number(coords.lat) : 40.7128;
+        const lng = Number.isFinite(Number(coords.lng)) ? Number(coords.lng) : -74.0060;
 
         const tzInfo = resolveTimezoneAndLocale(lat, lng, s.geoTimezone, s.geoLocale);
 
@@ -919,22 +713,12 @@
       return ['en-US', 'en'];
     }
 
-    // Apply cached settings synchronously before any page scripts run
-    applyStealthSettings(cachedSettings);
-
     window.addEventListener('morph-agent-update', (evt) => {
       let data = null;
       if (typeof evt.detail === 'string') {
         try { data = JSON.parse(evt.detail); } catch (e) { }
       } else if (evt.detail && typeof evt.detail === 'object' && Object.keys(evt.detail).length > 0) {
         data = evt.detail;
-      }
-
-      if (!data) {
-        try {
-          const raw = sessionStorage.getItem('morph_agent_settings') || localStorage.getItem('morph_agent_settings');
-          if (raw) data = JSON.parse(raw);
-        } catch (e) { }
       }
 
       if (data) {
@@ -944,11 +728,6 @@
         }
         window.__MORPH_AGENT_SETTINGS__ = data;
         isSettingsLoaded = true;
-        try {
-          sessionStorage.setItem('morph_agent_settings', JSON.stringify(data));
-          localStorage.setItem('morph_agent_settings', JSON.stringify(data));
-        } catch (e) { }
-
         applyStealthSettings(data);
 
         while (pendingCalls.length > 0) pendingCalls.shift()();
@@ -961,8 +740,8 @@
       function getMockPos() {
         const s = window.__MORPH_AGENT_SETTINGS__ || {};
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
-        const lat = parseFloat(coords.lat) || 40.7128;
-        const lng = parseFloat(coords.lng) || -74.0060;
+        const lat = Number.isFinite(Number(coords.lat)) ? Number(coords.lat) : 40.7128;
+        const lng = Number.isFinite(Number(coords.lng)) ? Number(coords.lng) : -74.0060;
 
         const pos = {
           coords: {

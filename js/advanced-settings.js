@@ -350,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const browser = window.morphApi || window.browser || window.chrome;
     browser.storage.local.get([
       'adBlockEnabled',
+      'adBlockNetworkEnabled',
       'dnsProvider',
       'dnsCustomEndpoint',
       'adBlockCosmeticEnabled',
@@ -383,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update AdBlock Toggles
       if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = adBlockEnabled;
-      if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = adBlockEnabled;
+      if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = res.adBlockNetworkEnabled !== false;
       if (advAdBlockCosmeticToggle) advAdBlockCosmeticToggle.checked = adBlockCosmeticEnabled;
       if (advAdBlockAntiAdblockToggle) advAdBlockAntiAdblockToggle.checked = adBlockAntiAdblockEnabled;
 
@@ -404,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateDnsAndStatsUI(dnsProvider, dnsCustomEndpoint, adBlockStats, adBlockEnabled);
 
       // Initialize and render Filters Hub
-      initFiltersState(result.filtersState);
+      initFiltersState(res.filtersState);
       renderFilterCategories(filterSearchQuery);
     });
 
@@ -485,13 +486,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     userFiltersState = defaultCats.map(cat => {
-      const savedCat = savedState.find(c => c.id === cat.id);
+      const savedCat = savedState.find(c => c?.id === cat.id);
       if (!savedCat) return JSON.parse(JSON.stringify(cat));
       const subfilters = (cat.subfilters || []).map(sub => {
-        const savedSub = (savedCat.subfilters || []).find(s => s.id === sub.id);
+        const savedSub = (Array.isArray(savedCat.subfilters) ? savedCat.subfilters : []).find(s => s?.id === sub.id);
         return {
           ...sub,
-          enabled: savedSub !== undefined ? !!savedSub.enabled : sub.enabled
+          enabled: typeof savedSub?.enabled === 'boolean' ? savedSub.enabled : sub.enabled
         };
       });
       return {
@@ -537,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </span>
               ` : ''}
               <label class="toggle-switch" title="Toggle all in ${cat.name}">
-                <input type="checkbox" disabled title="Subscription engine not implemented" class="cat-master-toggle" data-cat-id="${cat.id}" ${enabledSubs > 0 ? 'checked' : ''}>
+                <input type="checkbox" aria-label="Toggle all ${cat.name} filters" class="cat-master-toggle" data-cat-id="${cat.id}" ${enabledSubs > 0 ? 'checked' : ''}>
                 <span class="toggle-slider"></span>
               </label>
               <svg class="filter-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -572,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="filter-subitem-desc">${sub.desc || ''}</div>
                 </div>
                 <label class="toggle-switch">
-                  <input type="checkbox" disabled title="Subscription engine not implemented" class="subfilter-toggle" data-cat-id="${cat.id}" data-sub-id="${sub.id}" ${sub.enabled ? 'checked' : ''}>
+                  <input type="checkbox" aria-label="${sub.name}" class="subfilter-toggle" data-cat-id="${cat.id}" data-sub-id="${sub.id}" ${sub.enabled ? 'checked' : ''}>
                   <span class="toggle-slider"></span>
                 </label>
               </div>
@@ -1120,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Terminal Diagnostic Trace Log
         if (auditConsoleLog) {
           const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
-          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.7.0</span>\n`;
+          let logHtml = `<span class="log-cmd">[${nowStr}] MorphAgent Diagnostic Engine v4.8.2</span>\n`;
           tests.forEach(t => {
             logHtml += `<span class="${t.passed ? 'log-pass' : 'log-warn'}">[${t.passed ? 'PASS' : 'WARN'}] ${t.logCode.padEnd(16)}</span> :: ${escapeHtml(t.logDetail)}\n`;
           });
@@ -1156,6 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
       timingShield: true,
       mediaQueryProtect: true,
       adBlockEnabled: true,
+      adBlockNetworkEnabled: true,
       adBlockCosmeticEnabled: true,
       adBlockAntiAdblockEnabled: true,
       dnsProvider: 'adguard'
@@ -1319,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         if (areaName === 'local') {
+          if (changes.adBlockStats) updateAdBlockCountersUI(changes.adBlockStats.newValue || {});
           if (changes.theme) {
             applyTheme(changes.theme.newValue || 'dark');
           }
@@ -1331,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (changes.autoHarmonizeTzEnabled || changes.geoTimezone || changes.geoLocale) {
             loadTimezoneHarmonizationSettings();
           }
-          if (changes.adBlockEnabled || changes.dnsProvider || changes.dnsCustomEndpoint || changes.adBlockCosmeticEnabled || changes.adBlockAntiAdblockEnabled || changes.adBlockStats || changes.trackersBlockEnabled || changes.removeTrackingParamsEnabled || changes.hideSearchQueriesEnabled || changes.sendDntGpcEnabled || changes.webrtcPreventLeakEnabled || changes.removeXClientDataEnabled || changes.filtersState || changes.filtersLastChecked) {
+          if (changes.adBlockEnabled || changes.adBlockNetworkEnabled || changes.dnsProvider || changes.dnsCustomEndpoint || changes.adBlockCosmeticEnabled || changes.adBlockAntiAdblockEnabled || changes.trackersBlockEnabled || changes.removeTrackingParamsEnabled || changes.hideSearchQueriesEnabled || changes.sendDntGpcEnabled || changes.webrtcPreventLeakEnabled || changes.removeXClientDataEnabled || changes.filtersState || changes.filtersLastChecked) {
             loadDnsAndAdBlockSettings();
           }
         }
@@ -1482,14 +1485,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (advAdBlockMasterToggle) {
       advAdBlockMasterToggle.addEventListener('change', () => {
         const active = advAdBlockMasterToggle.checked;
-        if (advAdBlockDnrToggle) advAdBlockDnrToggle.checked = active;
         browser.storage.local.set({ adBlockEnabled: active }, () => {
           browser.runtime.sendMessage({
             type: 'update-global-settings',
             data: { adBlockEnabled: active }
           }).catch(() => { });
           loadDnsAndAdBlockSettings();
-          showStatus(active ? 'AdGuard AdBlock & Tracker Shield activated' : 'AdGuard AdBlock Shield paused', active ? 'success' : 'info');
+          showStatus(active ? 'Ad and tracker shield activated' : 'Ad and tracker shield paused', active ? 'success' : 'info');
         });
       });
     }
@@ -1497,11 +1499,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (advAdBlockDnrToggle) {
       advAdBlockDnrToggle.addEventListener('change', () => {
         const active = advAdBlockDnrToggle.checked;
-        if (advAdBlockMasterToggle) advAdBlockMasterToggle.checked = active;
-        browser.storage.local.set({ adBlockEnabled: active }, () => {
+        browser.storage.local.set({ adBlockNetworkEnabled: active }, () => {
           browser.runtime.sendMessage({
             type: 'update-global-settings',
-            data: { adBlockEnabled: active }
+            data: { adBlockNetworkEnabled: active }
           }).catch(() => { });
           loadDnsAndAdBlockSettings();
           showStatus(`Network DNR ad filtering ${active ? 'enabled' : 'disabled'}`);
@@ -1530,7 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'update-global-settings',
             data: { adBlockAntiAdblockEnabled: active }
           }).catch(() => { });
-          showStatus(`Anti-adblock defuser & video skip ${active ? 'enabled' : 'disabled'}`);
+          showStatus(`YouTube ad skipping ${active ? 'enabled' : 'disabled'}`);
         });
       });
     }
@@ -1557,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'update-global-settings',
             data: { trackersBlockEnabled: active }
           }).catch(() => { });
-          showStatus(active ? 'AdGuard Tracking Protection filter activated' : 'Tracking Protection filter paused');
+          showStatus(active ? 'Bundled tracking protection activated' : 'Tracking Protection filter paused');
         });
       });
     }
@@ -1639,17 +1640,21 @@ document.addEventListener('DOMContentLoaded', () => {
       checkFilterUpdatesBtn.addEventListener('click', () => {
         checkFilterUpdatesBtn.disabled = true;
         if (filterUpdateSpinner) filterUpdateSpinner.classList.add('spin-icon');
-        showStatus('Checking for filter rule updates...');
+        showStatus('Reapplying bundled filters...');
 
         browser.runtime.sendMessage({ type: 'check-filter-updates' }, (res) => {
           setTimeout(() => {
             checkFilterUpdatesBtn.disabled = false;
             if (filterUpdateSpinner) filterUpdateSpinner.classList.remove('spin-icon');
-            const timeStr = (res && res.timestamp) ? res.timestamp : 'Sep 28, 2026, 09:56 PM';
+            if (browser.runtime.lastError || !res?.success) {
+              showStatus(res?.error || 'Could not apply filters', 'error');
+              return;
+            }
+            const timeStr = res.timestamp;
             if (filtersLastCheckedTag) {
               filtersLastCheckedTag.textContent = `Last checked: ${timeStr}`;
             }
-            showStatus('All filter subscriptions up to date (296 rules active)', 'success');
+            showStatus(`Bundled filters applied (${res.rulesCount} network rules active)`, 'success');
           }, 650);
         });
       });
@@ -2046,13 +2051,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (geoSpoofRuleCheckbox.checked) {
       if (geoCoordsPresetSelect.value === 'custom') {
         geoCoords = {
-          lat: parseFloat(geoLatRuleInput.value) || 40.7128,
-          lng: parseFloat(geoLngRuleInput.value) || -74.0060
+          lat: parseFloat(geoLatRuleInput.value),
+          lng: parseFloat(geoLngRuleInput.value)
         };
       } else {
         const [lat, lng] = geoCoordsPresetSelect.value.split(',');
         geoCoords = { lat: parseFloat(lat), lng: parseFloat(lng) };
       }
+    }
+
+    if (geoCoords && (!Number.isFinite(geoCoords.lat) || !Number.isFinite(geoCoords.lng) || Math.abs(geoCoords.lat) > 90 || Math.abs(geoCoords.lng) > 180)) {
+      showStatus('Enter valid latitude (−90 to 90) and longitude (−180 to 180)', 'error');
+      return;
     }
 
     const rule = {
@@ -2649,10 +2659,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const localKeys = [
       'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled',
       'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue',
-      'geoCoords', 'activeCategory', 'uiState', 'theme',
+      'geoCoords', 'geoTimezone', 'geoLocale', 'activeCategory', 'uiState', 'theme',
+      'ghostModeEnabled', 'ghostInterval', 'proxyConfig',
       'hardwareHarmonizeEnabled', 'customHardwareCores', 'customDeviceMemory',
       'autoHarmonizeTzEnabled', 'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint',
-      'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats'
+      'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
+      'filtersState', 'adBlockNetworkEnabled', 'adBlockWhitelist', 'trackersBlockEnabled', 'removeTrackingParamsEnabled',
+      'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled'
     ];
 
     browser.storage.local.get(localKeys, (localResult) => {
@@ -2779,6 +2792,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       browser.storage.local.set({
         adBlockEnabled: true,
+        adBlockNetworkEnabled: true,
+        filtersState: null,
+        adBlockWhitelist: [],
         dnsProvider: 'adguard',
         dnsCustomEndpoint: '',
         adBlockCosmeticEnabled: true,
@@ -2915,12 +2931,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash;
     if (hash) {
       const target = hash.replace('#', '');
-      const btn = document.querySelector(`.sidebar-link[data-target="${target}"]`);
+      const btn = [...document.querySelectorAll('.sidebar-link[data-target]')].find(button => button.dataset.target === target);
       if (btn) {
         btn.click();
       }
     }
   }
+
+  window.addEventListener('hashchange', handleHashNavigation);
 
   function loadProxySettings() {
     const browser = window.morphApi || window.browser || window.chrome;
@@ -3131,16 +3149,17 @@ document.addEventListener('DOMContentLoaded', () => {
           type: 'set-browser-proxy',
           data: pConfig
         }).then(res => {
-          if (res && res.success === false && res.error) {
-            showStatus(`Proxy applied with notice: ${res.error}`, 'info');
-          } else {
-            showStatus('Proxy & Stealth Network settings applied successfully!', 'success');
+          if (!res?.success) {
+            showStatus(res?.error || 'Could not apply proxy settings', 'error');
+            refreshProxySettings();
+            return;
           }
+          showStatus('Proxy settings applied successfully', 'success');
           updateKPIs(pConfig);
         }).catch(err => {
           console.warn('[MorphAgent] Save proxy error:', err);
-          showStatus('Proxy settings saved to storage', 'success');
-          updateKPIs(pConfig);
+          showStatus('Could not apply proxy settings', 'error');
+          refreshProxySettings();
         });
       });
     }
@@ -3155,12 +3174,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setProxyModeUI('direct');
 
-        browser.runtime.sendMessage({ type: 'clear-browser-proxy' }).then(() => {
+        browser.runtime.sendMessage({ type: 'clear-browser-proxy' }).then(res => {
+          if (!res?.success) {
+            showStatus(res?.error || 'Could not disconnect proxy', 'error');
+            refreshProxySettings();
+            return;
+          }
           showStatus('Proxy disconnected, direct connection restored', 'info');
           updateKPIs({ enabled: false, mode: 'direct' });
         }).catch(() => {
-          showStatus('Direct connection restored', 'info');
-          updateKPIs({ enabled: false, mode: 'direct' });
+          showStatus('Could not disconnect proxy', 'error');
+          refreshProxySettings();
         });
       });
     }
@@ -3183,7 +3207,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Initial Load from Storage
+    refreshProxySettings();
+    function refreshProxySettings() {
     browser.storage.local.get(['proxyConfig'], (res) => {
       const cfg = (res && res.proxyConfig) ? res.proxyConfig : {
         enabled: false,
@@ -3225,6 +3250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       updateKPIs(cfg);
     });
+    }
   }
 
   function showStatus(message, type = 'success') {

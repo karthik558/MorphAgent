@@ -53,3 +53,7 @@ test('extension pages contain no CSP-blocked inline scripts or event handlers', 
     assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(source));
   }
 });
+
+test('user-agent rules include initial document navigation', () => {
+  assert.ok(buildUARules(base).every(rule => rule.condition.resourceTypes.includes('main_frame')));
+});

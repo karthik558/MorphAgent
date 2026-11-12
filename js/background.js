@@ -1,7 +1,7 @@
-// background.js - MorphAgent 4.7.0
+// background.js - MorphAgent 4.8.2
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 import './adblock-rules.js';
-import { buildUARules, siteDomain } from './network-rules.mjs';
+import { buildUARules, buildScriptRules, siteDomain } from './network-rules.mjs';
 
 const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : {});
 
@@ -19,6 +19,7 @@ let activeCategory = 'desktop';
 
 // AdBlock & Secure DNS Engine State
 let adBlockEnabled = true;
+let adBlockNetworkEnabled = true;
 let dnsProvider = 'adguard';
 let dnsCustomEndpoint = '';
 let adBlockCosmeticEnabled = true;
@@ -46,12 +47,12 @@ function applyWebRTCLeakPolicy(enabled) {
     const policy = enabled ? 'disable_non_proxied_udp' : 'default';
     try {
       api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }).then(() => {
-        console.log(`[MorphAgent 4.7] WebRTC IP handling policy applied: ${policy}`);
+        console.log(`[MorphAgent 4.8.2] WebRTC IP handling policy applied: ${policy}`);
       }).catch(err => {
-        console.warn('[MorphAgent 4.7] WebRTC IP handling policy error:', err);
+        console.warn('[MorphAgent 4.8.2] WebRTC IP handling policy error:', err);
       });
     } catch (e) {
-      console.warn('[MorphAgent 4.7] WebRTC IP handling policy exception:', e);
+      console.warn('[MorphAgent 4.8.2] WebRTC IP handling policy exception:', e);
     }
   }
 }
@@ -121,7 +122,7 @@ async function launchProxyiumUrl(rawUrl, country = 'pl', openInNewTab = true) {
 // Browser-Level Proxy Settings Controller (Chrome / Firefox proxy API)
 function applyBrowserProxy(pConfig) {
   if (!api.proxy || !api.proxy.settings) {
-    console.log('[MorphAgent 4.7] Browser proxy API not available in this context');
+    console.log('[MorphAgent 4.8.2] Browser proxy API not available in this context');
     return Promise.resolve({ success: false, reason: 'Proxy API unavailable' });
   }
 
@@ -131,7 +132,8 @@ function applyBrowserProxy(pConfig) {
         await api.proxy.settings.clear({ scope: 'regular' });
         return { success: true };
       }
-      const firefox = typeof browser !== 'undefined';
+      // Chromium also exposes browser; getBrowserInfo is Firefox-specific.
+      const firefox = typeof api.runtime.getBrowserInfo === 'function';
       let config;
       if (pConfig.mode === 'system') {
         config = firefox ? { proxyType: 'system' } : { mode: 'system' };
@@ -214,8 +216,9 @@ function updateBadge(ua, category) {
 // Update Chrome Manifest V3 DeclarativeNetRequest Dynamic Rules
 let ruleUpdateQueue = Promise.resolve();
 function updateDeclarativeNetRequestRules(targetUA) {
-  ruleUpdateQueue = ruleUpdateQueue.then(() => synchronizeRules(targetUA));
-  return ruleUpdateQueue;
+  const update = ruleUpdateQueue.then(() => synchronizeRules(targetUA));
+  ruleUpdateQueue = update.catch(() => {});
+  return update;
 }
 async function synchronizeRules(targetUA) {
   if (!api.declarativeNetRequest || !api.declarativeNetRequest.updateDynamicRules) return;
@@ -230,6 +233,8 @@ async function synchronizeRules(targetUA) {
       websiteRules, blockList, whiteList, listMode
     }));
 
+    addRules.push(...buildScriptRules({ enabled: jsBlockEnabled, websiteRules, blockList, whiteList, listMode }));
+
     // 2. AdGuard Ad & Tracker Blocker Engine (Rules starting at ID: 1000)
     {
       const adBlockEngine = (typeof globalThis !== 'undefined' && globalThis.MorphAgentAdBlock)
@@ -237,6 +242,9 @@ async function synchronizeRules(targetUA) {
         : null;
       if (adBlockEngine && typeof adBlockEngine.generateDNRAdBlockRules === 'function') {
         const adRules = adBlockEngine.generateDNRAdBlockRules(1000, {
+          adBlockEnabled,
+          adBlockNetworkEnabled,
+          filtersState,
           trackersBlockEnabled,
           removeTrackingParamsEnabled,
           hideSearchQueriesEnabled,
@@ -244,7 +252,7 @@ async function synchronizeRules(targetUA) {
           removeXClientDataEnabled
         });
         const { adBlockWhitelist = [] } = await api.storage.local.get('adBlockWhitelist');
-        const exclusions = adBlockWhitelist.map(siteDomain).filter(Boolean);
+        const exclusions = (Array.isArray(adBlockWhitelist) ? adBlockWhitelist : []).map(siteDomain).filter(Boolean);
         addRules.push(...adRules.filter(rule => adBlockEnabled || rule.action.type !== 'block').map(rule => {
           if (rule.action.type === 'block' && exclusions.length) {
             rule.condition.excludedInitiatorDomains = exclusions;
@@ -259,9 +267,11 @@ async function synchronizeRules(targetUA) {
       removeRuleIds,
       addRules
     });
-    console.log(`[MorphAgent 4.7] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
+    console.log(`[MorphAgent 4.8.2] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
+    return addRules.length;
   } catch (e) {
-    console.warn('[MorphAgent 4.7] DNR update failed:', e);
+    console.warn('[MorphAgent 4.8.2] DNR update failed:', e);
+    throw e;
   }
 }
 
@@ -293,7 +303,7 @@ async function loadSettings() {
     const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode']);
     const localData = await api.storage.local.get([
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
-      'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
+      'adBlockEnabled', 'adBlockNetworkEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
       'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked',
       'proxyConfig', 'ghostModeEnabled', 'ghostInterval'
     ]);
@@ -309,6 +319,7 @@ async function loadSettings() {
     uaSpoofEnabled = localData.uaSpoofEnabled !== undefined ? !!localData.uaSpoofEnabled : true;
     activeCategory = localData.activeCategory || 'desktop';
 
+    adBlockNetworkEnabled = localData.adBlockNetworkEnabled !== false;
     if (localData.adBlockEnabled !== undefined) adBlockEnabled = !!localData.adBlockEnabled;
     if (localData.dnsProvider !== undefined) dnsProvider = localData.dnsProvider;
     if (localData.dnsCustomEndpoint !== undefined) dnsCustomEndpoint = localData.dnsCustomEndpoint;
@@ -358,7 +369,7 @@ async function loadSettings() {
     updateBadge(cachedUA, activeCategory);
     updateDeclarativeNetRequestRules(cachedUA);
 
-    console.log('[MorphAgent 4.7] Settings loaded:', {
+    console.log('[MorphAgent 4.8.2] Settings loaded:', {
       rulesCount: websiteRules.length,
       blockListCount: blockList.length,
       jsBlock: jsBlockEnabled,
@@ -366,7 +377,7 @@ async function loadSettings() {
       activeCategory
     });
   } catch (error) {
-    console.error('[MorphAgent 4.7] Settings load error:', error);
+    console.error('[MorphAgent 4.8.2] Settings load error:', error);
   }
 }
 
@@ -406,6 +417,7 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.jsBlockEnabled !== undefined) {
       jsBlockEnabled = !!changes.jsBlockEnabled.newValue;
+      updateDeclarativeNetRequestRules(cachedUA);
     }
     if (changes.jsProtectEnabled !== undefined) {
       jsProtectEnabled = !!changes.jsProtectEnabled.newValue;
@@ -414,6 +426,10 @@ api.storage.onChanged.addListener((changes, areaName) => {
       uaSpoofEnabled = !!changes.uaSpoofEnabled.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
+    }
+    if (changes.adBlockNetworkEnabled) {
+      adBlockNetworkEnabled = changes.adBlockNetworkEnabled.newValue !== false;
+      updateDeclarativeNetRequestRules(cachedUA);
     }
     if (changes.adBlockEnabled !== undefined) {
       adBlockEnabled = !!changes.adBlockEnabled.newValue;
@@ -541,7 +557,7 @@ if (api.webRequest && api.webRequest.onBeforeSendHeaders) {
       })
     );
   } catch (e) {
-    console.log('[MorphAgent 4.7] webRequest blocking listener skipped or MV3 active');
+    console.log('[MorphAgent 4.8.2] webRequest blocking listener skipped or MV3 active');
   }
 }
 
@@ -595,7 +611,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       'touchSpoofEnabled',
       'jsBlockEnabled',
       'jsProtectEnabled',
-      'rtcProtectEnabled',
+      'webrtcPreventLeakEnabled',
       'ghostModeEnabled',
       'ghostInterval',
       'geoSpoofEnabled',
@@ -698,8 +714,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     filtersLastChecked = timestampStr;
     api.storage.local.set({ filtersLastChecked: timestampStr });
-    updateDeclarativeNetRequestRules(cachedUA).then(() => {
-      sendResponse({ success: true, timestamp: timestampStr, rulesCount: 296 });
+    updateDeclarativeNetRequestRules(cachedUA).then((rulesCount) => {
+      sendResponse({ success: true, timestamp: timestampStr, rulesCount });
     }).catch(err => {
       sendResponse({ success: false, error: err.message, timestamp: timestampStr });
     });
@@ -853,7 +869,7 @@ function setupContextMenus() {
     api.contextMenus.removeAll(() => {
       api.contextMenus.create({
         id: 'morph-agent-root',
-        title: 'MorphAgent 4.7 Stealth',
+        title: 'MorphAgent 4.8.2 Stealth',
         contexts: ['all']
       });
 
@@ -1026,7 +1042,7 @@ function setupContextMenus() {
       });
     });
   } catch (e) {
-    console.warn('[MorphAgent 4.7] Context menu setup skipped:', e);
+    console.warn('[MorphAgent 4.8.2] Context menu setup skipped:', e);
   }
 }
 
@@ -1184,7 +1200,7 @@ if (api.alarms && api.alarms.onAlarm) {
         activeCategory = randomUA.category;
         updateDeclarativeNetRequestRules(cachedUA);
         updateBadge(cachedUA, activeCategory);
-        console.log('[MorphAgent 4.7 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
+        console.log('[MorphAgent 4.8.2 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
       });
     }
   });

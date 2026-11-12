@@ -2,7 +2,7 @@ const fs = require('fs');
 
 const baseManifest = {
   name: "MorphAgent",
-  version: "4.7.0",
+  version: "4.8.2",
   description: "Modern User Agent & Anti-Fingerprinting Suite",
   icons: {
     "16": "icons/icon.png",
@@ -31,7 +31,7 @@ const baseManifest = {
   },
   action: {
     default_popup: "popup.html",
-    default_title: "MorphAgent 4.7",
+    default_title: "MorphAgent 4.8.2",
     default_icon: {
       "16": "icons/icon.png",
       "48": "icons/icon.png",
@@ -49,7 +49,7 @@ const baseManifest = {
     },
     {
       matches: ["<all_urls>"],
-      js: ["js/content.js"],
+      js: ["js/adblock-rules.js", "js/content.js"],
       run_at: "document_start",
       all_frames: true,
       match_about_blank: true

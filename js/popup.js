@@ -238,11 +238,22 @@ function startPopup() {
     });
   }
 
-  if (ghostModeToggle && ghostControls) {
-    ghostModeToggle.addEventListener('change', () => {
-      ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
-    });
+  async function saveBrowserWideControls(event) {
+    event.stopPropagation();
+    if (ghostControls) ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
+    if (!isInitialized) return;
+    const interval = Number(ghostInterval.value);
+    if (!Number.isInteger(interval) || interval < 1 || interval > 1440) { showStatus('Use a rotation interval from 1 to 1440 minutes'); return; }
+    try {
+      const response = await browser.runtime.sendMessage({ type: 'set-settings', data: {
+        webrtcPreventLeakEnabled: rtcProtectToggle.checked,
+        ghostModeEnabled: ghostModeToggle.checked,
+        ghostInterval: interval
+      } });
+      showStatus(response?.success ? 'Saved for all websites' : 'Could not save settings');
+    } catch { showStatus('Could not save settings'); }
   }
+  for (const control of [rtcProtectToggle, ghostModeToggle, ghostInterval]) control?.addEventListener('change', saveBrowserWideControls);
 
   if (geoPreset && customGeoInputs && geoLat && geoLng) {
     geoPreset.addEventListener('change', () => {
@@ -260,6 +271,50 @@ function startPopup() {
         }
       }
     });
+  }
+
+  // Site exceptions affect both network and cosmetic filtering.
+  const siteShieldButton = document.getElementById('site-shield-toggle');
+  const shieldRuleStatus = document.getElementById('shield-rule-status');
+  let shieldHostname = '';
+  async function refreshSiteShield() {
+    try {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const url = new URL(tab?.url || '');
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Open a website to manage its protection');
+      shieldHostname = url.hostname;
+      const { adBlockWhitelist = [] } = await browser.storage.local.get('adBlockWhitelist');
+      const excluded = adBlockWhitelist.some(domain => shieldHostname === domain || shieldHostname.endsWith('.' + domain));
+      siteShieldButton.textContent = excluded ? 'Resume on site' : 'Pause on site';
+      const siteName = document.getElementById('shield-site-name');
+      siteName.textContent = shieldHostname;
+      siteName.title = shieldHostname;
+      siteShieldButton.setAttribute('aria-label', `${excluded ? 'Resume' : 'Pause'} ad blocking for ${shieldHostname}`);
+      siteShieldButton.disabled = false;
+      siteShieldButton.dataset.excluded = String(excluded);
+    } catch {
+      siteShieldButton.textContent = 'Unavailable';
+      document.getElementById('shield-site-name').textContent = 'Open a website to use site controls';
+      siteShieldButton.disabled = true;
+    }
+    try {
+      const response = await browser.runtime.sendMessage({ type: 'get-dnr-rules' });
+      shieldRuleStatus.textContent = response?.success ? `${response.count} network rules active` : 'Network rules unavailable';
+    } catch { shieldRuleStatus.textContent = 'Network rules unavailable'; }
+  }
+  if (siteShieldButton) {
+    siteShieldButton.addEventListener('click', async () => {
+      siteShieldButton.disabled = true;
+      try {
+        const { adBlockWhitelist = [] } = await browser.storage.local.get('adBlockWhitelist');
+        const resume = siteShieldButton.dataset.excluded === 'true';
+        const next = resume ? adBlockWhitelist.filter(domain => shieldHostname !== domain && !shieldHostname.endsWith('.' + domain)) : [...new Set([...adBlockWhitelist, shieldHostname])];
+        await browser.storage.local.set({ adBlockWhitelist: next });
+        await browser.runtime.sendMessage({ type: 'reload-dnr-rules' });
+        await refreshSiteShield();
+      } catch { shieldRuleStatus.textContent = 'Could not change site protection. Try again.'; siteShieldButton.disabled = false; }
+    });
+    refreshSiteShield();
   }
 
   // AdBlock & DNS Event Listeners & Helpers
@@ -290,6 +345,10 @@ function startPopup() {
 
   function applyDnsAndAdblockData(res) {
     const data = res || {};
+    if (rtcProtectToggle) rtcProtectToggle.checked = data.webrtcPreventLeakEnabled !== false;
+    if (ghostModeToggle) ghostModeToggle.checked = !!data.ghostModeEnabled;
+    if (ghostInterval) ghostInterval.value = data.ghostInterval || 15;
+    if (ghostControls) ghostControls.style.display = data.ghostModeEnabled ? 'block' : 'none';
     if (adblockToggle) {
       adblockToggle.checked = data.adBlockEnabled !== false;
     }
@@ -306,7 +365,7 @@ function startPopup() {
   // Load DNS and AdBlock settings on popup startup from storage.local safely
   try {
     if (browser && browser.storage && browser.storage.local) {
-      const getReq = browser.storage.local.get(['adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint'], (res) => {
+      const getReq = browser.storage.local.get(['adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'webrtcPreventLeakEnabled', 'ghostModeEnabled', 'ghostInterval'], (res) => {
         if (browser.runtime && browser.runtime.lastError) return;
         applyDnsAndAdblockData(res);
       });
@@ -596,7 +655,7 @@ function startPopup() {
   let isInitialized = false;
 
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.7.0' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.8.2' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
@@ -658,6 +717,12 @@ function startPopup() {
         if (changes.dnsCustomEndpoint && dnsCustomEndpoint) {
           dnsCustomEndpoint.value = changes.dnsCustomEndpoint.newValue || '';
         }
+        if (changes.ghostModeEnabled && ghostModeToggle) {
+          ghostModeToggle.checked = !!changes.ghostModeEnabled.newValue;
+          ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
+        }
+        if (changes.ghostInterval && ghostInterval) ghostInterval.value = changes.ghostInterval.newValue || 15;
+        if (changes.webrtcPreventLeakEnabled && rtcProtectToggle) rtcProtectToggle.checked = changes.webrtcPreventLeakEnabled.newValue !== false;
         if (changes.adBlockEnabled && adblockToggle) {
           adblockToggle.checked = changes.adBlockEnabled.newValue !== false;
         }
@@ -1068,13 +1133,6 @@ function startPopup() {
     jsBlockToggle.checked = !!rule.jsBlocked;
     jsProtectToggle.checked = !!rule.jsProtected;
 
-    if (rtcProtectToggle) rtcProtectToggle.checked = rule.rtcProtectEnabled !== false;
-    if (ghostModeToggle) {
-      ghostModeToggle.checked = !!rule.ghostModeEnabled;
-      if (ghostControls) ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
-      if (ghostInterval) ghostInterval.value = rule.ghostInterval || 15;
-    }
-
     if (uaSpoofToggle) {
       uaSpoofToggle.checked = rule.uaSpoofEnabled !== false;
       updateUASpoofUIState();
@@ -1164,7 +1222,7 @@ function startPopup() {
         jsBlockToggle.checked = !!settings.jsBlockEnabled;
         jsProtectToggle.checked = !!settings.jsProtectEnabled;
 
-        if (rtcProtectToggle) rtcProtectToggle.checked = settings.rtcProtectEnabled !== false;
+        if (rtcProtectToggle) rtcProtectToggle.checked = settings.webrtcPreventLeakEnabled !== false;
         if (ghostModeToggle) {
           ghostModeToggle.checked = !!settings.ghostModeEnabled;
           if (ghostControls) ghostControls.style.display = ghostModeToggle.checked ? 'block' : 'none';
@@ -1286,7 +1344,7 @@ function startPopup() {
     const touchSpoofEnabled = touchToggle.checked;
     const jsBlockEnabled = jsBlockToggle.checked;
     const jsProtectEnabled = jsProtectToggle.checked;
-    const rtcProtectEnabled = rtcProtectToggle ? rtcProtectToggle.checked : true;
+    const webrtcPreventLeakEnabled = rtcProtectToggle ? rtcProtectToggle.checked : true;
     const ghostModeEnabled = ghostModeToggle ? ghostModeToggle.checked : false;
     const ghostIntervalVal = ghostInterval ? parseInt(ghostInterval.value, 10) || 15 : 15;
     const uaSpoofEnabled = uaSpoofToggle ? uaSpoofToggle.checked : true;
@@ -1300,9 +1358,13 @@ function startPopup() {
       }
     } else {
       geoCoords = {
-        lat: geoLat ? (parseFloat(geoLat.value) || 40.7128) : 40.7128,
-        lng: geoLng ? (parseFloat(geoLng.value) || -74.0060) : -74.0060
+        lat: parseFloat(geoLat?.value),
+        lng: parseFloat(geoLng?.value)
       };
+    }
+    if (geoSpoofEnabled && (!Number.isFinite(geoCoords.lat) || !Number.isFinite(geoCoords.lng) || Math.abs(geoCoords.lat) > 90 || Math.abs(geoCoords.lng) > 180)) {
+      showStatus('Enter valid latitude (−90 to 90) and longitude (−180 to 180)');
+      return;
     }
     const applyScope = currentScope;
 
@@ -1331,7 +1393,7 @@ function startPopup() {
         touchSpoofEnabled,
         jsBlockEnabled,
         jsProtectEnabled,
-        rtcProtectEnabled,
+        webrtcPreventLeakEnabled,
         ghostModeEnabled,
         ghostInterval: ghostIntervalVal,
         uaSpoofEnabled,
@@ -1406,9 +1468,6 @@ function startPopup() {
             touchSpoofEnabled: touchSpoofEnabled,
             jsBlocked: jsBlockEnabled,
             jsProtected: jsProtectEnabled,
-            rtcProtectEnabled,
-            ghostModeEnabled,
-            ghostInterval: ghostIntervalVal,
             uaSpoofEnabled,
             geoSpoofEnabled,
             geoPresetValue,
@@ -1494,7 +1553,7 @@ function startPopup() {
       touchSpoofEnabled: false,
       jsBlockEnabled: false,
       jsProtectEnabled: false,
-      rtcProtectEnabled: true,
+      webrtcPreventLeakEnabled: true,
       ghostModeEnabled: false,
       ghostInterval: 15,
       geoSpoofEnabled: false,

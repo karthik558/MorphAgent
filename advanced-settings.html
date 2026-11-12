@@ -385,7 +385,7 @@
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">AdGuard Triple-Shield Engine Configuration</h3>
+                <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">MorphAgent Shield Configuration</h3>
               </div>
               <label class="toggle-switch-wrapper green" style="cursor: pointer;">
                 <span class="toggle-switch green">
@@ -416,7 +416,7 @@
                   <input type="checkbox" id="advAdBlockAntiAdblockToggle" checked>
                   <span class="toggle-slider"></span>
                 </span>
-                Anti-Adblock Defuser & Video Skip
+                YouTube Ad Skipping (best effort)
               </label>
             </div>
 
@@ -447,7 +447,7 @@
             <label class="settings-toggle-row" for="advBlockTrackersToggle">
               <div class="settings-toggle-text">
                 <div class="settings-toggle-title">Block trackers</div>
-                <div class="settings-toggle-desc">Blocks trackers and web analytics using AdGuard Tracking Protection filter</div>
+                <div class="settings-toggle-desc">Blocks trackers and web analytics using bundled tracking rules</div>
               </div>
               <span class="toggle-switch">
                 <input type="checkbox" id="advBlockTrackersToggle" checked>
@@ -458,7 +458,7 @@
             <label class="settings-toggle-row" for="advRemoveTrackingParamsToggle">
               <div class="settings-toggle-text">
                 <div class="settings-toggle-title">Remove tracking parameters from URLs</div>
-                <div class="settings-toggle-desc">Removes tracking parameters from page URLs using AdGuard URL Tracking filter</div>
+                <div class="settings-toggle-desc">Removes tracking parameters from page URLs using bundled URL rules</div>
               </div>
               <span class="toggle-switch">
                 <input type="checkbox" id="advRemoveTrackingParamsToggle" checked>
@@ -522,15 +522,15 @@
                 <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Filters</h3>
               </div>
               <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <button class="btn btn-outline" disabled title="Filters are bundled with extension releases" id="checkFilterUpdatesBtn" style="height: 30px; font-size: 11px; padding: 4px 12px;">
+                <button class="btn btn-outline" title="Reapply the bundled rules" id="checkFilterUpdatesBtn" style="height: 30px; font-size: 11px; padding: 4px 12px;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="filterUpdateSpinner"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                  Check for updates
+                  Reapply filters
                 </button>
                 <span style="font-size: 11px; color: var(--text-tertiary);" id="filtersLastCheckedTag">Bundled rules · updated with extension releases</span>
               </div>
             </div>
 
-            <p class="feature-desc">The catalog below is a reference. Subscription toggles, remote lists, and custom rule compilation are not implemented. Protection uses the bundled rules and the working privacy controls above.</p>
+            <p class="feature-desc">These bundled filters control network blocking and page element hiding. Changes apply to open pages. Lists update with extension releases; remote subscriptions and custom rules are not supported.</p>
             <!-- Search Filters -->
             <div class="filter-search-container">
               <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

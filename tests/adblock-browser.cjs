@@ -1,0 +1,84 @@
+// Optional real-browser acceptance check: CHROME_PATH=/path/to/chrome node tests/adblock-browser.cjs
+const assert = require('node:assert/strict');
+const http = require('node:http');
+const path = require('node:path');
+const puppeteer = require('puppeteer');
+const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100, timeout: 10000});
+(async () => {
+  const server = http.createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><body><div class="ad-banner">Ad</div><p id="content">Article</p><div class="cookie-banner">Consent</div>'); });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: true, ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}), enableExtensions: [path.resolve(__dirname, '..')] });
+    const worker = await browser.waitForTarget(t => t.type() === 'service_worker');
+    const origin = 'chrome-extension://' + new URL(worker.url()).hostname;
+    const settings = await browser.newPage();
+    const errors = [];
+    settings.on('console', m => { if (m.type() === 'warn' || m.type() === 'error') console.log(m.text()); });
+    settings.on('pageerror', e => errors.push(e.message));
+    await settings.goto(origin + '/advanced-settings.html#section-dns-adblock');
+    await settings.waitForSelector('.subfilter-toggle');
+    assert.equal(await settings.$$eval('.subfilter-toggle:disabled', els => els.length), 0);
+    const fixture = await browser.newPage();
+    await fixture.goto(`http://127.0.0.1:${server.address().port}/`);
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display === 'none');
+    assert.notEqual(await fixture.$eval('.cookie-banner', e => getComputedStyle(e).display), 'none');
+    const toggleAds = () => settings.$eval('[data-sub-id="ads"]', e => e.click());
+    await toggleAds();
+    await wait(settings, async () => !(await chrome.declarativeNetRequest.getDynamicRules()).some(r => r.condition.urlFilter === '||doubleclick.net^'));
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display !== 'none');
+    await settings.reload();
+    await settings.waitForSelector('[data-sub-id="ads"]');
+    assert.equal(await settings.$eval('[data-sub-id="ads"]', e => e.checked), false);
+    await toggleAds();
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display === 'none');
+    await wait(settings, async () => (await chrome.declarativeNetRequest.getDynamicRules()).some(r => r.condition.urlFilter === '||doubleclick.net^'));
+    console.log('PASS: filter toggle persistence and live cosmetics');
+    await settings.$eval('#advBlockTrackersToggle', e => e.click());
+    await wait(settings, async () => {
+      const rules = await chrome.declarativeNetRequest.getDynamicRules();
+      return rules.some(r => r.condition.urlFilter === '||doubleclick.net^') && !rules.some(r => r.condition.urlFilter === '||google-analytics.com^');
+    });
+    console.log('PASS: tracker independence');
+    await settings.$eval('[data-sub-id="annoyances"]', e => e.click());
+    await wait(fixture, () => getComputedStyle(document.querySelector('.cookie-banner')).display === 'none');
+    await settings.$eval('#advAdBlockMasterToggle', e => e.click());
+    await wait(fixture, () => getComputedStyle(document.querySelector('.cookie-banner')).display !== 'none' && getComputedStyle(document.querySelector('.ad-banner')).display !== 'none');
+    await wait(settings, async () => (await chrome.declarativeNetRequest.getDynamicRules()).every(r => r.action.type !== 'block'));
+    await settings.$eval('#advAdBlockMasterToggle', e => e.click());
+    await settings.$eval('#advAdBlockDnrToggle', e => e.click());
+    await wait(settings, async () => (await chrome.declarativeNetRequest.getDynamicRules()).every(r => r.action.type !== 'block'));
+    assert.equal(await settings.$eval('#advAdBlockMasterToggle', e => e.checked), true);
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display === 'none');
+    await settings.$eval('#advAdBlockDnrToggle', e => e.click());
+    // Exercise site exceptions through the popup, with the website as the active tab.
+    console.log('PASS: optional annoyances and shield master');
+    const popup = await browser.newPage();
+    popup.on('pageerror', e => errors.push(e.message));
+    await fixture.bringToFront();
+    await popup.goto(origin + '/popup.html');
+    await wait(popup, () => !document.getElementById('site-shield-toggle').disabled);
+    await popup.$eval('#site-shield-toggle', e => e.click());
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display !== 'none');
+    await wait(popup, () => document.getElementById('site-shield-toggle').textContent.startsWith('Resume'));
+    await popup.$eval('#site-shield-toggle', e => e.click());
+    await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display === 'none');
+    // Controlled YouTube markup checks skip gating, not live ad coverage.
+    const youtube = await browser.newPage();
+    await youtube.setRequestInterception(true);
+    youtube.on('request', request => request.respond({status:200, contentType:'text/html', body:'<!doctype html><body><div id="movie_player" class="ad-showing"><video></video><button class="ytp-ad-skip-button">Skip</button></div>'}));
+    await youtube.goto('https://www.youtube.com/watch?v=morph-fixture');
+    await youtube.evaluate(() => document.querySelector('button').addEventListener('click', () => { document.body.dataset.skipped = 'true'; }));
+    await wait(youtube, () => document.body.dataset.skipped === 'true');
+    assert.deepEqual(await youtube.$eval('video', v => [v.muted, v.playbackRate]), [false, 1]);
+    await settings.$eval('#advAdBlockAntiAdblockToggle', e => e.click());
+    await youtube.evaluate(() => { delete document.body.dataset.skipped; });
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    assert.equal(await youtube.$eval('body', e => e.dataset.skipped), undefined);
+    const response = await settings.evaluate(() => chrome.runtime.sendMessage({type:'check-filter-updates'}));
+    assert.equal(response.success, true);
+    assert.equal(response.rulesCount, await settings.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length));
+    assert.deepEqual(errors, []);
+    console.log('PASS: filter persistence, independent trackers, live cosmetic on/off, master, popup site pause/resume, real DNR counts, no page exceptions');
+  } finally { if (browser) await browser.close(); server.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -10,3 +10,20 @@
 .device-card.active svg { filter: none; }
 .device-card.active span { font-weight: 650; }
 .device-card:disabled { opacity: .65; cursor: not-allowed; }
+
+/* Compact protection controls. */
+.shield-footer a { color: var(--accent-red); text-decoration: none; font-size: 12px; font-weight: 600; }
+.shield-footer a:hover { text-decoration: underline; }
+.shield-card { padding: 12px; margin-bottom: 20px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; }
+.shield-heading, .shield-site-row, .shield-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.shield-heading > div { min-width: 0; }
+.shield-heading h2 { font-size: 13px; font-weight: 650; }
+.shield-heading p, .shield-footer { font-size: 11px; color: var(--text-secondary); }
+.shield-heading .toggle-switch { flex-shrink: 0; }
+.shield-site-row { padding: 12px 0; }
+#shield-site-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 12px; }
+.shield-site-button { flex-shrink: 0; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-main); color: var(--text-primary); cursor: pointer; font-size: 12px; }
+.shield-site-button:hover:not(:disabled) { border-color: var(--accent-red); background: var(--bg-hover); }
+.shield-footer { align-items: baseline; padding-top: 10px; border-top: 1px solid var(--border-light); }
+.shield-footer a { flex-shrink: 0; }
+#shield-rule-status { min-width: 0; overflow-wrap: anywhere; }

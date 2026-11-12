@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**
 > Manifest V3 for Chromium and Firefox with configurable privacy protections
 
-![Version](https://img.shields.io/badge/version-4.7.0-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-4.8.2-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
@@ -74,20 +74,22 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
 
 ---
 
-## What's New in Version 4.7
+## What's New in Version 4.8.2
 
 1. **Built-in Ad & Tracker Filtering**
    - **Zero-Latency C++ Network Interception**: 220+ top programmatic ad exchanges, tracking pixels (Meta, TikTok, Twitter, LinkedIn), telemetry engines (Hotjar, Clarity, Mixpanel), and in-browser cryptominers blocked via native MV3 DeclarativeNetRequest dynamic rules.
    - **Cross-Browser Dual Engine**: Chrome MV3 `declarativeNetRequest` + Firefox MV3 `declarativeNetRequest` filtering.
-   - **Scriptlet Interception**: Block patterns catching inline ad scripts (`pagead2`, `fbevents.js`, `prebid.js`, `gtm.js`).
+   - Independent bundled controls for ads, trackers, cryptominers, social widgets, and cookie/newsletter notices. Optional cosmetic groups are off by default.
 
-2. **Advanced Anti-AdBlock Defuser & Height Probe Spoofing**
-   - Defuses DOM probe sizing tests (`.adsbox`, `.ad-banner`, `#ad-detector`) by dynamically proxying `HTMLElement.prototype.offsetHeight` and `offsetWidth` to return rendered dimensions, preventing anti-adblock detection walls.
-   - High-fidelity stubs for `googletag`, `adsbygoogle`, `ga`, `gtag`, `_gaq`, and `fbq`.
-   - Popunder & intrusive redirect blocker intercepting unprompted `window.open` spawners.
+2. **Live Filter Controls**
+   - Category and individual switches persist across reloads and update network and cosmetic filtering.
+   - The popup can pause or resume the shield for the current site and shows the installed network rule count.
+   - Filter lists ship with extension releases. Remote subscriptions and custom rule compilation are not supported.
 
-3. **YouTube & HTML5 Video Ad Controls**
-   - High-frequency 100ms loop coupled with a MutationObserver automatically muting, accelerating (16x rate), fast-forwarding, and clicking skip buttons on pre-roll/mid-roll video ads.
+3. **Google & YouTube Ad Controls**
+   - Google sponsored-result elements and YouTube ad containers are hidden with cosmetic filters.
+   - Best-effort YouTube skipping only touches a player explicitly marked as showing an ad, preserving volume and playback speed.
+   - Server-inserted ads and changes to site markup can bypass these rules; this is not guaranteed universal ad blocking. Reload existing tabs after upgrading from the old injected script.
 
 4. **DNS Provider Reference**
    - Synchronized saved references for DNS-over-HTTPS (DoH) providers (AdGuard DNS, Cloudflare 1.1.1.1, Quad9, NextDNS, CleanBrowsing, Direct OS, Custom) across Popup and Advanced Settings.
@@ -272,3 +274,13 @@ DNS preferences do not change the browser resolver; configure Secure DNS in brow
 2. Named profile presets with preview, export, and one-click rollback.
 3. Temporary per-site exceptions that expire automatically.
 4. A rule tester showing which profile and filters apply to a URL before saving.
+
+### Ad-blocking regression checks
+
+Run `npm test` for rule and compatibility tests. With Puppeteer available, run `CHROME_PATH=/path/to/chrome node tests/adblock-browser.cjs` for isolated Chromium UI and local-page acceptance checks. The browser check does not certify live YouTube coverage or Firefox runtime behavior.
+
+### Popup and feature verification
+
+The popup includes a compact site shield card. Existing spoofing controls now clear on page reload when disabled. JavaScript blocking uses response CSP before page parsing; changing spoofing or script blocking requires a page reload. Page JavaScript settings are loaded asynchronously from extension storage and cannot guarantee interception before every early fingerprinting script.
+
+`CHROME_PATH=/path/to/chrome node tests/features-browser.cjs` checks initial request headers and JavaScript user agents, touch on/off, global and site-specific script blocking, exclusions, hardware and timezone switches, zero coordinates, WebRTC policy, Ghost Mode alarms, local HTTP proxy routing/rejection/disconnect, navigation, light/dark popup layout, and settings export/import. The tests use an isolated Chromium profile and local fixtures. External Proxyium connectivity, live site ad coverage, Firefox runtime behavior, and every low-level fingerprinting defense are not certified by this suite.

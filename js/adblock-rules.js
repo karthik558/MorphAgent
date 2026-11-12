@@ -1,6 +1,6 @@
-// adblock-rules.js - MorphAgent 4.7.0
+// adblock-rules.js - MorphAgent 4.8.2
 // Universal High-Efficiency Ad, Tracker, Telemetry & DNS Rule Engine
-// Parity with uBlock Origin / AdGuard core blocklists & MV3 DeclarativeNetRequest
+// Bundled network and cosmetic rules for MV3 DeclarativeNetRequest
 
 (function (root, factory) {
   const mod = factory();
@@ -80,7 +80,7 @@
     }
   };
 
-  // Comprehensive 100% Coverage Ad, Tracking, Telemetry & Fingerprinting Domain List
+  // Bundled Ad, Tracking, Telemetry & Fingerprinting Domain List
   const AD_TRACKER_DOMAINS = [
     // --- Google Ads, DoubleClick, Syndication & Telemetry ---
     'doubleclick.net',
@@ -107,7 +107,6 @@
     'fundingchoicesmessages.google.com',
     'firebase-settings.crashlytics.com',
     's.youtube.com',
-    'redirector.googlevideo.com',
 
     // --- Microsoft & Bing Ads ---
     'ads.microsoft.com',
@@ -152,9 +151,6 @@
     'pixel.facebook.com',
     'an.facebook.com',
     'tr.facebook.com',
-    'graph.facebook.com',
-    'graph.instagram.com',
-    'i.instagram.com',
 
     // --- TikTok / ByteDance Ad & Telemetry Network ---
     'ads-api.tiktok.com',
@@ -213,7 +209,6 @@
 
     // --- Video Ad Serving, Streaming & In-Stream Networks ---
     'g.jwpsrv.com',
-    'ssl.p.jwpcdn.com',
     'bea4.v.fwmrm.net',
     '2975c.v.fwmrm.net',
     'smartclip.com',
@@ -430,10 +425,9 @@
     '*pr_advertising*',
     '*/banners/pr_advertising*',
     '*advertising_ads_banner*',
-    '*/banners/*'
   ];
 
-  // CSS Selectors for 100% Zero-Flicker Cosmetic Element Hiding
+  // CSS Selectors for Bundled Cosmetic Element Hiding
   const COSMETIC_AD_SELECTORS = [
     // Standard Google / AdSense / DFP Units
     'ins.adsbygoogle',
@@ -462,11 +456,6 @@
     '[data-ads]',
     '[id^="yandex_rtb_"]',
     '#yandex_rtb_R-A-491776-1',
-    '.includeWrapper',
-    '.include',
-    '.include > img',
-    '.include > object',
-    '.include > embed',
     'img[src*="pr_advertising"]',
     'img[src*="/banners/"]',
     'object[data*="pr_advertising"]',
@@ -529,8 +518,6 @@
     '.ytp-ad-text',
     '.ytp-ad-preview-container',
     '#player-ads',
-    '.video-ads',
-    '.ytp-ad-module',
 
     // Sticky, Floating & Popup Ad Elements
     '.popup-ad',
@@ -605,93 +592,52 @@
     'duckduckgo.com', 'baidu.com'
   ];
 
-  // Curated Filter Subscriptions Hub (8 Categories)
+  // Each visible switch owns a real bundled group, not a remote subscription.
+  const TRACKER_DOMAINS = AD_TRACKER_DOMAINS.filter(domain =>
+    /analytics|tracking|telemetry|metrics|metrika|sentry|bugsnag|hotjar|clarity|segment|mixpanel|amplitude|chartbeat|newrelic|nr-data|mouseflow|fullstory|logrocket|posthog|fingerprint|scorecard|quantserve|quantcount|statcounter|heapanalytics|google.*tagmanager/.test(domain));
+  const MINER_DOMAINS = ['coinhive.com', 'crypto-loot.com', 'webminepool.com', 'jsecoin.com', 'minr.pw', 'coin-have.com', 'authedmine.com', 'mineralt.io'];
+  const AD_DOMAINS = [...new Set(AD_TRACKER_DOMAINS)].filter(domain => !TRACKER_DOMAINS.includes(domain) && !MINER_DOMAINS.includes(domain));
+  const FILTER_GROUPS = {
+    ads: { domains: AD_DOMAINS, selectors: COSMETIC_AD_SELECTORS },
+    trackers: { domains: [...new Set(TRACKER_DOMAINS)], selectors: [] },
+    miners: { domains: MINER_DOMAINS, selectors: [] },
+    social: { domains: [], selectors: COSMETIC_SOCIAL_SELECTORS },
+    annoyances: { domains: [], selectors: COSMETIC_ANNOYANCE_SELECTORS }
+  };
   const DEFAULT_FILTER_CATEGORIES = [
-    {
-      id: 'adblocking',
-      name: 'Ad blocking',
-      description: 'Blocks ads',
-      subfilters: [
-        { id: 'adguard_base', name: 'AdGuard Base filter', desc: 'EasyList + AdGuard main ad filter rules', enabled: true, rulesCount: 78420 },
-        { id: 'adguard_mobile', name: 'AdGuard Mobile Ads filter', desc: 'Blocks ads on mobile versions of websites', enabled: true, rulesCount: 14210 }
-      ]
-    },
-    {
-      id: 'privacy',
-      name: 'Privacy',
-      description: 'Blocks trackers',
-      subfilters: [
-        { id: 'adguard_tracking', name: 'AdGuard Tracking Protection filter', desc: 'Blocks trackers and web analytics using AdGuard Tracking Protection filter', enabled: true, rulesCount: 39510 },
-        { id: 'adguard_url_tracking', name: 'AdGuard URL Tracking filter', desc: 'Removes tracking parameters from page URLs using AdGuard URL Tracking filter', enabled: true, rulesCount: 8940 },
-        { id: 'easyprivacy', name: 'EasyPrivacy', desc: 'International tracking protection list', enabled: true, rulesCount: 42100 }
-      ]
-    },
-    {
-      id: 'social',
-      name: 'Social widgets',
-      description: 'Blocks social media elements, such as Like and Share buttons',
-      subfilters: [
-        { id: 'adguard_social', name: 'AdGuard Social Media filter', desc: 'Blocks social widgets, Like and Share buttons', enabled: true, rulesCount: 12450 },
-        { id: 'fanboy_social', name: "Fanboy's Social Blocking List", desc: 'Neutralizes embedded social page widgets', enabled: true, rulesCount: 18920 }
-      ]
-    },
-    {
-      id: 'annoyances',
-      name: 'Annoyances',
-      description: 'Blocks annoying web elements, such as cookie notices or in-page popups',
-      subfilters: [
-        { id: 'adguard_cookies', name: 'AdGuard Cookie Notices filter', desc: 'Blocks cookie notices and GDPR/CCPA overlays', enabled: true, rulesCount: 15300 },
-        { id: 'adguard_popups', name: 'AdGuard Popups filter', desc: 'Blocks annoying newsletter popups and promotional overlays', enabled: true, rulesCount: 11200 },
-        { id: 'adguard_mobile_app', name: 'AdGuard Mobile App Banners filter', desc: 'Hides "Open in App" banners and sticky nag bars', enabled: true, rulesCount: 6400 },
-        { id: 'adguard_other_annoyances', name: 'AdGuard Other Annoyances filter', desc: 'Blocks push notification prompts and auto-play widgets', enabled: true, rulesCount: 9800 },
-        { id: 'adguard_widgets', name: 'AdGuard Widgets filter', desc: 'Hides live support chat widgets and feedback tabs', enabled: true, rulesCount: 8100 },
-        { id: 'fanboy_anti_elements', name: "Fanboy's Annoyance List (Full)", desc: 'Comprehensive elements (may break legacy site navigation)', enabled: false, rulesCount: 45200 }
-      ]
-    },
-    {
-      id: 'security',
-      name: 'Security',
-      description: 'Blocks requests to phishing and malicious websites',
-      subfilters: [
-        { id: 'adguard_phishing', name: 'AdGuard Phishing & Malware Protection', desc: 'Blocks confirmed phishing and deceptive domains', enabled: true, rulesCount: 22400 },
-        { id: 'malware_domains', name: 'Malware Domains Blocklist', desc: 'Known payload distribution and exploit kit servers', enabled: true, rulesCount: 19800 },
-        { id: 'nocoin_crypto', name: 'NoCoin Cryptomining Filter', desc: 'Blocks in-browser WebAssembly and JS cryptocurrency miners', enabled: true, rulesCount: 3120 },
-        { id: 'scam_shield', name: 'Scam & Rogue Software Shield', desc: 'Protects against tech support scams and counterfeit pages', enabled: true, rulesCount: 8900 },
-        { id: 'safe_browsing', name: 'Safe Browsing Database Sync', desc: 'Real-time telemetry against deceptive URL endpoints', enabled: true, rulesCount: 14750 }
-      ]
-    },
-    {
-      id: 'other',
-      name: 'Other',
-      description: "This group contains various filters that don't fit into other categories",
-      subfilters: [
-        { id: 'useful_ads', name: 'Filter unblocking useful search ads', desc: 'Allows non-intrusive search results ads', enabled: true, rulesCount: 1500 },
-        { id: 'adguard_experimental', name: 'AdGuard Experimental filter', desc: 'Cutting-edge DNR and procedural cosmetic rules', enabled: true, rulesCount: 4200 }
-      ]
-    },
-    {
-      id: 'language',
-      name: 'Language-specific',
-      description: 'Blocks ads on websites in specified languages',
-      subfilters: [
-        { id: 'lang_chinese', name: 'Chinese Filter List', desc: 'Blocks ads on Chinese websites (ChinaList / AdGuard Chinese)', enabled: false, rulesCount: 18200 },
-        { id: 'lang_russian', name: 'Russian Filter List', desc: 'RU AdList + Yandex AdFox blocklist', enabled: false, rulesCount: 24100 },
-        { id: 'lang_german', name: 'German Filter List', desc: 'EasyList Germany + German cosmetic rules', enabled: false, rulesCount: 11400 },
-        { id: 'lang_french', name: 'French Filter List', desc: 'Liste FR + AdGuard French', enabled: false, rulesCount: 10900 },
-        { id: 'lang_spanish', name: 'Spanish Filter List', desc: 'EasyList Spanish + AdGuard Spanish', enabled: false, rulesCount: 8700 },
-        { id: 'lang_japanese', name: 'Japanese Filter List', desc: 'AdGuard Japanese + ABP Japanese', enabled: false, rulesCount: 14600 }
-      ]
-    },
-    {
-      id: 'custom',
-      name: 'Custom',
-      description: 'Allows you to add filters from a file or URL',
-      notice: 'To use custom filters, enable Allow user scripts in your browser’s extension settings',
-      subfilters: [
-        { id: 'custom_user_list', name: 'User Custom Rules & Subscriptions', desc: 'Custom filter list from URL or manual user rules', enabled: true, rulesCount: 0 }
-      ]
-    }
+    { id: 'adblocking', name: 'Ad blocking', description: 'Bundled ad domains and page elements', subfilters: [
+      { id: 'ads', name: 'Ads and sponsored content', desc: 'Network ads and cosmetic filters, including Google and YouTube ad elements', enabled: true }
+    ] },
+    { id: 'privacy', name: 'Privacy', description: 'Bundled analytics protection', subfilters: [
+      { id: 'trackers', name: 'Analytics and trackers', desc: 'Known tracking domains; also requires Block trackers above', enabled: true }
+    ] },
+    { id: 'security', name: 'Security', description: 'Bundled mining domain protection', subfilters: [
+      { id: 'miners', name: 'Cryptomining domains', desc: 'Blocks known in-browser mining services', enabled: true }
+    ] },
+    { id: 'social', name: 'Social widgets', description: 'Optional page element hiding', subfilters: [
+      { id: 'social', name: 'Social sharing widgets', desc: 'Hide embedded Like and Share widgets', enabled: false }
+    ] },
+    { id: 'annoyances', name: 'Annoyances', description: 'Optional page element hiding', subfilters: [
+      { id: 'annoyances', name: 'Cookie notices and newsletter popups', desc: 'Hides notices without granting consent; some pages may remain locked', enabled: false }
+    ] }
   ];
+  for (const cat of DEFAULT_FILTER_CATEGORIES) for (const sub of cat.subfilters) {
+    const group = FILTER_GROUPS[sub.id];
+    sub.rulesCount = group.domains.length + group.selectors.length;
+  }
+  function filterEnabled(state, id) {
+    const defaults = DEFAULT_FILTER_CATEGORIES.flatMap(cat => cat.subfilters);
+    const saved = Array.isArray(state) ? state.flatMap(cat => Array.isArray(cat?.subfilters) ? cat.subfilters : []).find(sub => sub?.id === id) : null;
+    return typeof saved?.enabled === 'boolean' ? saved.enabled : defaults.find(sub => sub.id === id)?.enabled === true;
+  }
+  function cosmeticSelectors(options = {}, hostname = '') {
+    if (options.adBlockEnabled === false || options.adBlockCosmeticEnabled === false) return [];
+    const selectors = Object.entries(FILTER_GROUPS).flatMap(([id, group]) => filterEnabled(options.filtersState, id) ? group.selectors : []);
+    if (filterEnabled(options.filtersState, 'ads') && /^(www\.)?google\.(com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/.test(hostname)) {
+      selectors.push('#tads', '#tadsb', '#bottomads', '[data-text-ad]', '[data-sponsored]');
+    }
+    return selectors;
+  }
 
   // Generate DeclarativeNetRequest Dynamic Rules for Native MV3 Interception
   function generateDNRAdBlockRules(baseId = 1000, options = {}) {
@@ -803,39 +749,23 @@
       });
     }
 
-    // Domain Block Rules (Priority 2) - Activated if trackersBlockEnabled !== false or adBlockEnabled
-    if (options.trackersBlockEnabled !== false) {
-      AD_TRACKER_DOMAINS.forEach((domain, idx) => {
-        rules.push({
-          id: baseId + idx,
-          priority: 2,
-          action: { type: 'block' },
-          condition: {
-            urlFilter: `||${domain}^`,
-            resourceTypes
-          }
-        });
+    let id = baseId;
+    for (const [name, group] of Object.entries(FILTER_GROUPS)) {
+      if (options.adBlockEnabled === false || options.adBlockNetworkEnabled === false || !filterEnabled(options.filtersState, name)) continue;
+      if (name === 'trackers' && options.trackersBlockEnabled === false) continue;
+      for (const domain of group.domains) rules.push({
+        id: id++, priority: 2, action: { type: 'block' },
+        condition: { urlFilter: `||${domain}^`, resourceTypes }
       });
     }
-
-    // Generic Script & Resource Patterns (Priority 3 - higher precedence)
-    const scriptBaseId = baseId + AD_TRACKER_DOMAINS.length;
-    SCRIPT_BLOCK_PATTERNS.forEach((pattern, idx) => {
-      rules.push({
-        id: scriptBaseId + idx,
-        priority: 3,
-        action: { type: 'block' },
-        condition: {
-          urlFilter: pattern,
-          resourceTypes
-        }
-      });
-    });
 
     return rules;
   }
 
   return {
+    filterEnabled,
+    cosmeticSelectors,
+    FILTER_GROUPS,
     DNS_PROVIDERS,
     AD_TRACKER_DOMAINS,
     SCRIPT_BLOCK_PATTERNS,
