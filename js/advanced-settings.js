@@ -894,7 +894,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tzOffset = new Date().getTimezoneOffset();
         const langs = (navigator.languages && navigator.languages.length) ? navigator.languages.join(', ') : 'en-US';
 
-        let detectedGpu = 'Apple M2 Pro (ANGLE / OpenGL 4.1)';
+        let detectedGpu = 'Unavailable';
         try {
           const canvasTest = document.createElement('canvas');
           const gl = canvasTest.getContext('webgl') || canvasTest.getContext('experimental-webgl');
@@ -1065,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
           auditScoreVal.style.color = score >= 90 ? 'var(--accent-green)' : 'var(--status-warning)';
         }
         if (auditRatingText) {
-          auditRatingText.textContent = score >= 90 ? 'Optimal · Zero Critical Leaks' : 'Warning · Leaks Detected';
+          auditRatingText.textContent = score >= 90 ? 'Configuration checks passed' : 'Review configuration';
         }
         if (auditTestedCount) {
           auditTestedCount.textContent = `${passedCount} / ${tests.length}`;
@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (auditLeakRiskSub) {
           const anomalies = tests.length - passedCount;
-          auditLeakRiskSub.textContent = anomalies === 0 ? '0 Leaks Detected · Host Consistent' : `${anomalies} Vectors Require Harmonization`;
+          auditLeakRiskSub.textContent = anomalies === 0 ? 'No configuration warnings; use Privacy Tools to inspect a website' : `${anomalies} Vectors Require Harmonization`;
         }
         if (auditProfileSyncVal) {
           auditProfileSyncVal.textContent = hwHarmonize && autoTz ? 'Harmonized' : 'Partial Cloaking';
@@ -2388,6 +2388,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderLocations() {
     const geoCoordsPreset = document.getElementById('geoCoordsPreset');
     if (geoCoordsPreset) {
+      const selected = geoCoordsPreset.value;
       // Remove old custom options
       const customOptions = geoCoordsPreset.querySelectorAll('option.custom-loc-option');
       customOptions.forEach(opt => opt.remove());
@@ -2406,6 +2407,15 @@ document.addEventListener('DOMContentLoaded', () => {
           geoCoordsPreset.appendChild(option);
         }
       });
+      if ([...geoCoordsPreset.options].some(option => option.value === selected)) {
+        geoCoordsPreset.value = selected;
+      } else {
+        const [lat, lng] = selected.split(',');
+        geoLatRuleInput.value = lat;
+        geoLngRuleInput.value = lng;
+        geoCoordsPreset.value = 'custom';
+        geoCoordsPreset.dispatchEvent(new Event('change', {bubbles:true}));
+      }
     }
 
     if (customLocations.length === 0) {
@@ -2431,7 +2441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${loc.lng}</td>
         <td>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-loc='${JSON.stringify(loc)}'>Edit</button>
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-loc='${escapeHtml(JSON.stringify(loc))}'>Edit</button>
             <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-loc-id="${loc.id}">Delete</button>
           </div>
         </td>
@@ -2481,7 +2491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${rule.geoSpoofEnabled ? '&#10003; Yes' : 'No'}</td>
         <td>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule='${JSON.stringify(rule)}'>Edit</button>
+            <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule='${escapeHtml(JSON.stringify(rule))}'>Edit</button>
             <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule-id="${rule.id}">Delete</button>
           </div>
         </td>
@@ -2698,63 +2708,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const settings = JSON.parse(e.target.result);
-
-        if (settings.websiteRules && Array.isArray(settings.websiteRules)) {
-          websiteRules = settings.websiteRules;
-        }
-
-        if (settings.blockList && Array.isArray(settings.blockList)) {
-          blockList = settings.blockList;
-        }
-
-        if (settings.whiteList && Array.isArray(settings.whiteList)) {
-          whiteList = settings.whiteList;
-        }
-
-        if (settings.listMode) {
-          listMode = settings.listMode;
-        }
-        if (settings.customLocations && Array.isArray(settings.customLocations)) {
-          customLocations = settings.customLocations;
-        }
-
-        // Save sync settings
-        saveSettings();
-
-        // Save global local settings if present
-        if (settings.globalSettings && typeof settings.globalSettings === 'object') {
-          const browser = window.morphApi || window.browser || window.chrome;
-          browser.storage.local.set(settings.globalSettings, () => {
-            // Notify background script to update badge/rules if needed
-            browser.runtime.sendMessage({ type: 'set-settings', data: settings.globalSettings }).catch(() => { });
-
-            // Apply theme locally if changed
-            if (settings.globalSettings.theme) {
-              applyTheme(settings.globalSettings.theme);
-            }
-
-            renderRules();
-            renderBlockList();
-            renderLocations();
-            showStatus('Settings imported successfully!');
-          });
-        } else {
-          renderRules();
-          renderBlockList();
-          renderLocations();
-          showStatus('Settings imported successfully!');
-        }
-
-      } catch (error) {
-        console.error(error);
-        showStatus('Invalid settings file', 'error');
-      }
-    };
-    reader.readAsText(file);
+    if (file.size > 1024 * 1024) {showStatus('Settings file exceeds 1 MB', 'error'); return;}
+    file.text().then(async text => {
+      const {previewImport} = await import('./privacy-tools.mjs');
+      await previewImport(JSON.parse(text));
+    }).catch(error => showStatus(error.message, 'error'));
 
     // Clear the file input
     event.target.value = '';

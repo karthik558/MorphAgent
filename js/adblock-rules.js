@@ -581,7 +581,7 @@
   const TRACKING_URL_PARAMS = [
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
     'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'mc_eid', 'yclid',
-    '_hsenc', '_openstat', 'igshid', 'si', 'ref_', 'dclid', 'twclid',
+    '_hsenc', '_openstat', 'igshid', 'dclid', 'twclid',
     'wickedid', 'sc_clid', 'matomo_campaign', 'pk_campaign', 'gad_source'
   ];
 

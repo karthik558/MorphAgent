@@ -27,12 +27,12 @@ test('per-site user agents override global headers; exclusions remain respected'
   ] });
   assert.ok(rules[1].priority > rules[0].priority);
   assert.deepEqual(rules[1].condition.requestDomains, ['work.example']);
-  assert.ok(rules.every(r => r.condition.excludedRequestDomains.includes('native.example')));
+  assert.ok(rules[0].condition.excludedRequestDomains.includes('native.example'));
   assert.ok(rules.every(r => r.condition.excludedRequestDomains.includes('private.example')));
 });
 test('Safari and Firefox do not send fabricated Chromium client hints', () => {
   assert.ok(uaHeaders('Firefox/130.0').slice(1).every(h => h.operation === 'remove'));
-  assert.ok(uaHeaders('Chrome/130.0').slice(1).every(h => h.operation === 'set'));
+  assert.ok(uaHeaders('Chrome/130.0').slice(1,4).every(h => h.operation === 'set'));
 });
 test('domain parsing keeps hostname boundaries and rejects malformed patterns', () => {
   assert.equal(siteDomain('https://Example.com/path'), 'example.com');

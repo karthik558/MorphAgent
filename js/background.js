@@ -1,6 +1,7 @@
 // background.js - MorphAgent 4.8.2
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 import './adblock-rules.js';
+import {activeExceptions, exceptionDomains} from './configuration.mjs';
 import { buildUARules, buildScriptRules, siteDomain } from './network-rules.mjs';
 
 const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : {});
@@ -46,7 +47,7 @@ function applyWebRTCLeakPolicy(enabled) {
   if (api.privacy && api.privacy.network && api.privacy.network.webRTCIPHandlingPolicy) {
     const policy = enabled ? 'disable_non_proxied_udp' : 'default';
     try {
-      api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }).then(() => {
+      (enabled ? api.privacy.network.webRTCIPHandlingPolicy.set({ value: policy }) : api.privacy.network.webRTCIPHandlingPolicy.clear({})).then(() => {
         console.log(`[MorphAgent 4.8.2] WebRTC IP handling policy applied: ${policy}`);
       }).catch(err => {
         console.warn('[MorphAgent 4.8.2] WebRTC IP handling policy error:', err);
@@ -130,6 +131,7 @@ function applyBrowserProxy(pConfig) {
     try {
       if (!pConfig?.enabled || pConfig.mode === 'direct') {
         await api.proxy.settings.clear({ scope: 'regular' });
+        applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
         return { success: true };
       }
       // Chromium also exposes browser; getBrowserInfo is Firefox-specific.
@@ -228,12 +230,14 @@ async function synchronizeRules(targetUA) {
     const removeRuleIds = existingRules.map(r => r.id);
     const addRules = [];
 
+    const {temporaryExceptions = []} = await api.storage.local.get('temporaryExceptions');
+    const excludedFor = scope => exceptionDomains(temporaryExceptions, scope);
     addRules.push(...buildUARules({
       enabled: uaSpoofEnabled, ua: targetUA,
-      websiteRules, blockList, whiteList, listMode
+      websiteRules, blockList, whiteList, listMode, exclusions: excludedFor('fingerprint')
     }));
 
-    addRules.push(...buildScriptRules({ enabled: jsBlockEnabled, websiteRules, blockList, whiteList, listMode }));
+    addRules.push(...buildScriptRules({ enabled: jsBlockEnabled, websiteRules, blockList, whiteList, listMode, exclusions: excludedFor('scripts') }));
 
     // 2. AdGuard Ad & Tracker Blocker Engine (Rules starting at ID: 1000)
     {
@@ -252,9 +256,9 @@ async function synchronizeRules(targetUA) {
           removeXClientDataEnabled
         });
         const { adBlockWhitelist = [] } = await api.storage.local.get('adBlockWhitelist');
-        const exclusions = (Array.isArray(adBlockWhitelist) ? adBlockWhitelist : []).map(siteDomain).filter(Boolean);
+        const exclusions = (Array.isArray(adBlockWhitelist) ? adBlockWhitelist : []).map(siteDomain).filter(Boolean).concat(excludedFor('filters'));
         addRules.push(...adRules.filter(rule => adBlockEnabled || rule.action.type !== 'block').map(rule => {
-          if (rule.action.type === 'block' && exclusions.length) {
+          if (exclusions.length) {
             rule.condition.excludedInitiatorDomains = exclusions;
             rule.condition.excludedRequestDomains = exclusions;
           }
@@ -275,24 +279,27 @@ async function synchronizeRules(targetUA) {
   }
 }
 
+// Serialize local event writes so concurrent frames cannot discard each other's records.
+let threatLogQueue = Promise.resolve();
 // Threat Analytics Storage Receiver
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'log-threat' && message.data) {
+  if (message.type === 'log-threat' && message.data && sender.tab && typeof message.data.type === 'string') {
+    const safeText = value => typeof value === 'string' ? value.slice(0, 1000) : '';
     const threat = {
       id: Date.now() + '-' + Math.random().toString(36).substring(2, 7),
-      timestamp: message.data.timestamp || Date.now(),
-      type: message.data.type,
-      domain: message.data.domain,
-      actionTaken: message.data.actionTaken || 'Intercepted & Neutralized',
-      details: message.data.details || '',
+      timestamp: Date.now(),
+      type: safeText(message.data.type),
+      domain: (() => {try {return new URL(sender.url || sender.tab.url).hostname;} catch {return '';}})(),
+      actionTaken: 'Page API activity reported',
+      details: safeText(message.data.details),
       tabId: sender.tab ? sender.tab.id : null
     };
 
-    api.storage.local.get(['threatLogs']).then(result => {
+    threatLogQueue = threatLogQueue.catch(() => {}).then(() => api.storage.local.get(['threatLogs'])).then(result => {
       let logs = result.threatLogs || [];
       logs.unshift(threat);
       if (logs.length > 500) logs = logs.slice(0, 500); // Cap at 500 entries
-      api.storage.local.set({ threatLogs: logs });
+      return api.storage.local.set({ threatLogs: logs });
     });
   }
 });
@@ -358,7 +365,7 @@ async function loadSettings() {
       } else await api.alarms.clear('ghostModeRotate');
     }
 
-    applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
+    applyWebRTCLeakPolicy(webrtcPreventLeakEnabled || (proxyConfig.enabled && proxyConfig.mode !== 'direct'));
 
     jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
 
@@ -405,7 +412,8 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
   }
   if (areaName === 'local') {
-    if (changes.adBlockWhitelist) updateDeclarativeNetRequestRules(cachedUA);
+    if (changes.ghostModeEnabled || changes.ghostInterval) synchronizeGhostAlarm();
+    if (changes.adBlockWhitelist || changes.temporaryExceptions) updateDeclarativeNetRequestRules(cachedUA);
     if (changes.selectedUA) {
       cachedUA = changes.selectedUA.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
@@ -453,7 +461,7 @@ api.storage.onChanged.addListener((changes, areaName) => {
     }
     if (changes.webrtcPreventLeakEnabled !== undefined) {
       webrtcPreventLeakEnabled = !!changes.webrtcPreventLeakEnabled.newValue;
-      applyWebRTCLeakPolicy(webrtcPreventLeakEnabled);
+      applyWebRTCLeakPolicy(webrtcPreventLeakEnabled || (proxyConfig.enabled && proxyConfig.mode !== 'direct'));
     }
     if (changes.removeXClientDataEnabled !== undefined) {
       removeXClientDataEnabled = !!changes.removeXClientDataEnabled.newValue;
@@ -665,14 +673,6 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       if (message.data.adBlockAntiAdblockEnabled !== undefined) {
         adBlockAntiAdblockEnabled = !!message.data.adBlockAntiAdblockEnabled;
-      }
-      if (message.data.ghostModeEnabled !== undefined && api.alarms) {
-        if (message.data.ghostModeEnabled) {
-          const interval = message.data.ghostInterval || 15;
-          api.alarms.create('ghostModeRotate', { periodInMinutes: interval });
-        } else {
-          api.alarms.clear('ghostModeRotate');
-        }
       }
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
@@ -1308,8 +1308,10 @@ if (api.contextMenus && api.contextMenus.onClicked) {
 
 // Ghost Mode Alarm Listener
 if (api.alarms && api.alarms.onAlarm) {
-  api.alarms.onAlarm.addListener((alarm) => {
+  api.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'ghostModeRotate') {
+      const state = await api.storage.local.get('ghostModeEnabled');
+      if (!state.ghostModeEnabled) return;
       const randomUA = TOP_10_UAS[Math.floor(Math.random() * TOP_10_UAS.length)];
       api.storage.local.set({
         selectedUA: randomUA.ua,
@@ -1326,3 +1328,26 @@ if (api.alarms && api.alarms.onAlarm) {
     }
   });
 }
+async function synchronizeGhostAlarm() {
+  const state = await api.storage.local.get(['ghostModeEnabled','ghostInterval']);
+  if (state.ghostModeEnabled) await api.alarms.create('ghostModeRotate', {periodInMinutes:Math.max(1, Number(state.ghostInterval) || 15)});
+  else await api.alarms.clear('ghostModeRotate');
+}
+// Expiry is owned by the background, including after service-worker restarts.
+let exceptionQueue = Promise.resolve();
+function maintainExceptions(restart = false) {
+  exceptionQueue = exceptionQueue.catch(() => {}).then(async () => {
+    const {temporaryExceptions = []} = await api.storage.local.get('temporaryExceptions');
+    const active = activeExceptions(temporaryExceptions).filter(e => !restart || e.expiresAt !== null);
+    if (JSON.stringify(active) !== JSON.stringify(temporaryExceptions)) await api.storage.local.set({temporaryExceptions:active});
+    await api.alarms.clear('exceptionExpiry');
+    const times = active.map(e => e.expiresAt).filter(Number.isFinite);
+    if (times.length) await api.alarms.create('exceptionExpiry', {when:Math.min(...times)});
+    await updateDeclarativeNetRequestRules(cachedUA);
+  });
+  return exceptionQueue;
+}
+api.alarms.onAlarm.addListener(alarm => {if (alarm.name === 'exceptionExpiry') maintainExceptions();});
+api.runtime.onStartup.addListener(() => maintainExceptions(true));
+api.storage.onChanged.addListener((changes, area) => {if (area === 'local' && changes.temporaryExceptions) maintainExceptions();});
+maintainExceptions();

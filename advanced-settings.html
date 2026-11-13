@@ -74,6 +74,7 @@
           </button>
 
           <div class="sidebar-category">SYSTEM & TOOLS</div>
+          <button class="sidebar-link" data-target="section-tools">Privacy Tools</button>
           <button class="sidebar-link" data-target="section-tab-settings">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             Tab Settings
@@ -1313,6 +1314,32 @@
       </section>
 
       <!-- Import / Export Section -->
+      <section id="section-tools" class="settings-section">
+        <h2>Privacy Tools</h2>
+        <p>Preview rules, check effective protection, and test compatibility. Changes require a website reload.</p>
+        <div class="settings-card tools-grid">
+          <h3>Website rules and temporary exceptions</h3>
+          <label for="tools-url">Website URL or domain</label><input id="tools-url" placeholder="https://example.com" type="text">
+          <div><button class="btn btn-outline" id="tools-test">Test URL rules</button> <button class="btn btn-outline" id="tools-health">Protection health</button></div>
+          <label for="tools-scope">Pause protection</label><select id="tools-scope"><option value="all">All site protections</option><option value="scripts">JavaScript blocking</option><option value="filters">Ad and tracking filters</option><option value="fingerprint">Fingerprint and location spoofing</option></select>
+          <label for="tools-duration">Duration</label><select id="tools-duration"><option value="10">10 minutes</option><option value="60">1 hour</option><option value="0">Until browser restart</option></select>
+          <div><button class="btn btn-outline" id="tools-pause">Pause site</button> <button class="btn btn-outline" id="tools-resume">Resume site</button></div>
+          <pre id="tools-exceptions"></pre>
+          <h3>Guided troubleshooting</h3><p>Test one protection group at a time. Each trial expires after 10 minutes. “Fixed” saves that exception for one hour. Existing exceptions should be removed first with Resume site.</p>
+          <div><button class="btn btn-outline" id="tools-troubleshoot">Start troubleshooting</button> <button class="btn btn-outline" id="tools-fixed">Fixed</button> <button class="btn btn-outline" id="tools-next">Still broken</button></div>
+          <h3>Configuration presets</h3>
+          <label for="tools-name">New preset name</label><input id="tools-name" maxlength="80"><button class="btn btn-outline" id="tools-save">Save current configuration</button>
+          <label for="tools-presets">Saved presets</label><select id="tools-presets"></select>
+          <div><button class="btn btn-outline" id="tools-preview">Preview preset</button> <button class="btn btn-outline" id="tools-export">Export preset</button> <button class="btn btn-outline" id="tools-delete">Delete preset</button></div>
+          <p>Import JSON through Import / Export to preview changes here. Applying a preview saves a local rollback backup, including proxy settings.</p>
+          <div><button class="btn btn-primary" id="tools-apply" disabled>Apply preview</button> <button class="btn btn-outline" id="tools-undo">Undo last apply</button></div>
+          <h3>Live fingerprint consistency</h3>
+          <label for="tools-tabs">Website tab</label><select id="tools-tabs"></select>
+          <div><button class="btn btn-outline" id="tools-tabs-refresh">Refresh tabs</button> <button class="btn btn-outline" id="tools-inspect">Inspect selected tab</button></div>
+          <p>Reads observable JavaScript values without requesting your real GPS location. IP location and browser engine differences may still reveal inconsistencies.</p>
+          <h3>Results</h3><pre id="tools-result" role="status" aria-live="polite">Choose an action above.</pre>
+        </div>
+      </section>
       <section id="section-import-export" class="settings-section">
         <div class="section-header-box">
           <div class="section-icon-badge">
@@ -1368,5 +1395,6 @@
   <script src="js/advanced-settings.js"></script>
   <script src="js/ui-accessibility.js"></script>
   <script src="js/select-controls.js"></script>
+  <script type="module" src="js/privacy-tools.mjs"></script>
 </body>
 </html>

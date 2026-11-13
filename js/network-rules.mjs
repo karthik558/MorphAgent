@@ -20,16 +20,24 @@ export function uaHeaders(ua) {
   for (const name of ['Sec-CH-UA', 'Sec-CH-UA-Mobile', 'Sec-CH-UA-Platform']) {
     headers.push(hints ? { header: name, operation: 'set', value: hints[name] } : { header: name, operation: 'remove' });
   }
+  for (const name of ['Sec-CH-UA-Arch','Sec-CH-UA-Bitness','Sec-CH-UA-Model','Sec-CH-UA-Platform-Version','Sec-CH-UA-Full-Version','Sec-CH-UA-Full-Version-List','Sec-CH-UA-WoW64','Sec-CH-UA-Form-Factors']) headers.push({header:name, operation:'remove'});
   return headers;
 }
 
-export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], whiteList = [], listMode }) {
+// Intersect a site rule with allowlisted subtrees without broadening website access.
+function allowedDomains(domain, allowed) {
+  if (!allowed) return [domain];
+  return [...new Set(allowed.flatMap(item => domain === item || domain.endsWith('.'+item) ? [domain] : item.endsWith('.'+domain) ? [item] : []))];
+}
+
+export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], whiteList = [], listMode, exclusions = [] }) {
   if (!enabled || !ua) return [];
   const domains = list => [...new Set(list.map(item => siteDomain(item.website)).filter(Boolean))];
-  const excluded = ['proxyium.com', ...(listMode === 'blacklist' ? domains(blockList) : [])];
+  const excluded = ['proxyium.com', ...exclusions, ...(listMode === 'blacklist' ? domains(blockList) : [])];
   const allowed = listMode === 'whitelist' ? domains(whiteList) : null;
   if (allowed && !allowed.length) return [];
   const siteRules = websiteRules.map(rule => ({ ...rule, domain: siteDomain(rule.website) })).filter(rule => rule.domain);
+  const baseExcluded = [...excluded];
   excluded.push(...siteRules.filter(rule => rule.uaSpoofEnabled === false).map(rule => rule.domain));
   const condition = {
     excludedRequestDomains: [...new Set(excluded)],
@@ -39,21 +47,22 @@ export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], w
   if (allowed) condition.requestDomains = allowed;
   const rules = [{ id: 1, priority: 1, action: { type: 'modifyHeaders', requestHeaders: uaHeaders(ua) }, condition }];
   siteRules.forEach((rule, index) => {
-    if (!rule.userAgent || rule.uaSpoofEnabled === false) return;
-    if (allowed && !allowed.some(domain => rule.domain === domain || rule.domain.endsWith('.' + domain))) return;
+    if (rule.uaSpoofEnabled === false) return;
+    const requestDomains = allowedDomains(rule.domain, allowed);
+    if (!requestDomains.length) return;
     rules.push({ id: 100000 + index, priority: 10000 - index,
-      action: { type: 'modifyHeaders', requestHeaders: uaHeaders(rule.userAgent) },
-      condition: { ...condition, requestDomains: [rule.domain] } });
+      action: { type: 'modifyHeaders', requestHeaders: uaHeaders(rule.userAgent || ua) },
+      condition: { ...condition, excludedRequestDomains:[...baseExcluded, ...siteRules.slice(0,index).map(site=>site.domain)], requestDomains } });
   });
   return rules;
 }
 
 // Response CSP must arrive before parsing; a content-script meta tag is too late.
-export function buildScriptRules({ enabled, websiteRules = [], blockList = [], whiteList = [], listMode }) {
+export function buildScriptRules({ enabled, websiteRules = [], blockList = [], whiteList = [], listMode, exclusions = [] }) {
   const domains = list => [...new Set(list.map(item => siteDomain(item.website)).filter(Boolean))];
   const allowed = listMode === 'whitelist' ? domains(whiteList) : null;
   if (allowed && !allowed.length) return [];
-  const excluded = ['proxyium.com', ...(listMode === 'blacklist' ? domains(blockList) : [])];
+  const excluded = ['proxyium.com', ...exclusions, ...(listMode === 'blacklist' ? domains(blockList) : [])];
   const sites = websiteRules.map(rule => ({...rule, domain: siteDomain(rule.website)})).filter(rule => rule.domain);
   const rules = [];
   const makeRule = (id, condition) => ({id, priority: 1, action: {type: 'modifyHeaders', responseHeaders: [
@@ -64,10 +73,11 @@ export function buildScriptRules({ enabled, websiteRules = [], blockList = [], w
     excludedRequestDomains: [...new Set([...excluded, ...sites.filter(rule => !rule.jsBlocked).map(rule => rule.domain)])]
   }));
   sites.forEach((rule, index) => {
-    if (!rule.jsBlocked || (allowed && !allowed.some(domain => rule.domain === domain || rule.domain.endsWith('.' + domain)))) return;
+    const requestDomains = allowedDomains(rule.domain, allowed);
+    if (!rule.jsBlocked || !requestDomains.length) return;
     // The first matching site rule owns the page, as in content.js.
     const earlier = sites.slice(0, index).map(site => site.domain);
-    rules.push(makeRule(200001 + index, {requestDomains: [rule.domain], excludedRequestDomains: [...new Set([...excluded, ...earlier])]}));
+    rules.push(makeRule(200001 + index, {requestDomains, excludedRequestDomains: [...new Set([...excluded, ...earlier])]}));
   });
   return rules;
 }

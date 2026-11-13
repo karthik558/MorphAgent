@@ -13,7 +13,7 @@
 
     function applyStealthSettings(s) {
       if (!s) return;
-      if (window.location.hostname && window.location.hostname.includes('proxyium.com')) {
+      if (window.location.hostname && (window.location.hostname === 'proxyium.com' || window.location.hostname.endsWith('.proxyium.com'))) {
         s.touchSpoofEnabled = false;
         s.geoSpoofEnabled = false;
       }
@@ -67,7 +67,7 @@
             const trackingParams = [
               'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
               'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'mc_eid', 'yclid',
-              '_hsenc', '_openstat', 'igshid', 'si', 'ref_', 'dclid', 'twclid',
+              '_hsenc', '_openstat', 'igshid', 'dclid', 'twclid',
               'wickedid', 'sc_clid', 'matomo_campaign', 'pk_campaign', 'gad_source'
             ];
             let changed = false;
@@ -127,51 +127,46 @@
         else if (ua.includes('Firefox')) { brandName = 'Mozilla Firefox'; const m = ua.match(/Firefox\/([0-9.]+)/); if (m) { fullVer = m[1]; majorVer = fullVer.split('.')[0]; } }
 
         if (ua.includes('Windows')) osName = 'Windows';
-        else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
         else if (ua.includes('iPhone') || ua.includes('iPad')) osName = 'iOS';
+        else if (ua.includes('Mac OS X') || ua.includes('Macintosh')) osName = 'macOS';
         else if (ua.includes('Android')) osName = 'Android';
         else if (ua.includes('Linux')) osName = 'Linux';
 
         const brands = [
-          { brand: 'Not(A:Brand', version: '99' },
-          { brand: brandName, version: majorVer },
-          { brand: 'Chromium', version: majorVer }
+          { brand: 'Chromium', version: majorVer },
+          { brand: brandName, version: majorVer }
         ];
 
         const fullVersionList = [
-          { brand: 'Not(A:Brand', version: '99.0.0.0' },
-          { brand: brandName, version: fullVer },
-          { brand: 'Chromium', version: fullVer }
+          { brand: 'Chromium', version: fullVer },
+          { brand: brandName, version: fullVer }
         ];
 
         const userAgentDataObj = {
           brands: brands,
-          mobile: isMobile,
+          mobile: /Mobile/.test(ua),
           platform: osName,
           getHighEntropyValues: function (hints) {
-            return Promise.resolve({
-              brands: brands,
-              mobile: isMobile,
-              platform: osName,
-              platformVersion: '15.0.0',
-              architecture: osName === 'macOS' || osName === 'iOS' || osName === 'Android' ? 'arm' : 'x86',
-              bitness: '64',
-              model: isMobile ? (osName === 'iOS' ? 'iPhone' : 'Galaxy') : '',
-              fullVersionList: fullVersionList,
-              uaFullVersion: fullVer
-            });
+            const values = {
+              platformVersion: (ua.match(/Android ([\d.]+)/)?.[1] || ua.match(/Windows NT ([\d.]+)/)?.[1] || ua.match(/Mac OS X ([\d_]+)/)?.[1]?.replaceAll('_','.') || ''),
+              architecture: /Android|iPhone|iPad|arm|aarch/i.test(ua) ? 'arm' : 'x86',
+              bitness: /Win64|x64|x86_64|aarch64/.test(ua) ? '64' : '',
+              model: ua.match(/Android[^;]*;\s*([^;)]+?)(?: Build\/|\))/)?.[1] || '',
+              fullVersionList, uaFullVersion:fullVer, wow64:/WOW64/.test(ua)
+            };
+            return Promise.resolve({brands,mobile:/Mobile/.test(ua),platform:osName,...Object.fromEntries(Array.from(hints || []).filter(k=>Object.hasOwn(values,k)).map(k=>[k,values[k]]))});
           },
           toJSON: function () {
-            return { brands: brands, mobile: isMobile, platform: osName };
+            return { brands: brands, mobile: /Mobile/.test(ua), platform: osName };
           }
         };
 
-        Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => userAgentDataObj, configurable: true });
+        Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => /(?:Chrome|Chromium)\//.test(ua) ? userAgentDataObj : undefined, configurable: true });
       }
 
       // Touch Spoofing
       if (s.touchSpoofEnabled) {
-        const maxTouchPoints = s.maxTouchPoints || (s.selectedUA && /Android|iPhone|iPad/i.test(s.selectedUA) ? 5 : 0);
+        const maxTouchPoints = s.maxTouchPoints ?? (s.selectedUA && /Android|iPhone|iPad/i.test(s.selectedUA) ? 5 : 0);
         Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => maxTouchPoints, configurable: true });
       }
 
@@ -266,11 +261,13 @@
         if (s.timingShieldEnabled && !window.__MORPH_TIMING_PROTECTED && window.performance && performance.now) {
           window.__MORPH_TIMING_PROTECTED = true;
           const origNow = performance.now;
+          let lastNow = 0;
           performance.now = function () {
             emitThreat('Timing (performance.now)');
             const now = origNow.call(this);
             const jitter = (Math.random() * 0.1) - 0.05; // +/- 0.05ms
-            return now + jitter;
+            lastNow = Math.max(lastNow, now + jitter);
+            return lastNow;
           };
         }
 
@@ -562,25 +559,26 @@
       // Timezone & Locale Auto-Harmonizer Engine
       if (s.geoSpoofEnabled && s.autoHarmonizeTzEnabled !== false) {
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
-        const lat = Number.isFinite(Number(coords.lat)) ? Number(coords.lat) : 40.7128;
-        const lng = Number.isFinite(Number(coords.lng)) ? Number(coords.lng) : -74.0060;
+        const lat = Number.isFinite(Number(coords.lat)) && Math.abs(Number(coords.lat)) <= 90 ? Number(coords.lat) : 0;
+        const lng = Number.isFinite(Number(coords.lng)) && Math.abs(Number(coords.lng)) <= 180 ? Number(coords.lng) : 0;
 
         const tzInfo = resolveTimezoneAndLocale(lat, lng, s.geoTimezone, s.geoLocale);
 
+        const NativeDateTimeFormat = Intl.DateTimeFormat;
         Date.prototype.getTimezoneOffset = function () {
-          return tzInfo.offset;
+          if (!Number.isFinite(this.getTime())) return NaN;
+          const parts = new NativeDateTimeFormat('en-US', {timeZone:tzInfo.timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(this);
+          const p=Object.fromEntries(parts.map(v=>[v.type,v.value]));
+          return (Math.floor(this.getTime()/1000)*1000-Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second))/60000;
         };
-
-        if (window.Intl && Intl.DateTimeFormat) {
-          const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-          Intl.DateTimeFormat.prototype.resolvedOptions = function () {
-            const options = originalResolvedOptions.apply(this, arguments);
-            options.timeZone = tzInfo.timeZone;
-            if (options.locale && tzInfo.locale) {
-              options.locale = tzInfo.locale;
-            }
-            return options;
-          };
+        const optionsFor = options => ({...options,timeZone:options?.timeZone ?? tzInfo.timeZone});
+        Intl.DateTimeFormat = new Proxy(NativeDateTimeFormat, {
+          construct(target,args) {return Reflect.construct(target,[args[0],optionsFor(args[1])]);},
+          apply(target,thisArg,args) {return Reflect.apply(target,thisArg,[args[0],optionsFor(args[1])]);}
+        });
+        for (const method of ['toLocaleString','toLocaleDateString','toLocaleTimeString']) {
+          const original=Date.prototype[method];
+          Date.prototype[method]=function(locales,options) {return Reflect.apply(original,this,[locales,optionsFor(options)]);};
         }
 
         // Harmonize navigator.languages and navigator.language
@@ -722,7 +720,7 @@
       }
 
       if (data) {
-        if (window.location.hostname && window.location.hostname.includes('proxyium.com')) {
+        if (window.location.hostname && (window.location.hostname === 'proxyium.com' || window.location.hostname.endsWith('.proxyium.com'))) {
           data.touchSpoofEnabled = false;
           data.geoSpoofEnabled = false;
         }
@@ -740,8 +738,8 @@
       function getMockPos() {
         const s = window.__MORPH_AGENT_SETTINGS__ || {};
         const coords = s.geoCoords || { lat: 40.7128, lng: -74.0060 };
-        const lat = Number.isFinite(Number(coords.lat)) ? Number(coords.lat) : 40.7128;
-        const lng = Number.isFinite(Number(coords.lng)) ? Number(coords.lng) : -74.0060;
+        const lat = Number.isFinite(Number(coords.lat)) && Math.abs(Number(coords.lat)) <= 90 ? Number(coords.lat) : 0;
+        const lng = Number.isFinite(Number(coords.lng)) && Math.abs(Number(coords.lng)) <= 180 ? Number(coords.lng) : 0;
 
         const pos = {
           coords: {
@@ -771,6 +769,7 @@
       Geolocation.prototype.getCurrentPosition = new Proxy(Geolocation.prototype.getCurrentPosition, {
         apply(target, thisArg, args) {
           const success = args[0];
+          if (typeof success !== 'function') throw new TypeError('A geolocation success callback is required');
           const error = args[1];
           const options = args[2];
 
@@ -793,7 +792,7 @@
               const index = pendingCalls.indexOf(run);
               if (index > -1) {
                 pendingCalls.splice(index, 1);
-                Reflect.apply(target, thisArg, args);
+                if (typeof error === 'function') error({code:2,message:'Privacy settings unavailable',PERMISSION_DENIED:1,POSITION_UNAVAILABLE:2,TIMEOUT:3});
               }
             }, 1000);
           }
@@ -806,23 +805,27 @@
       Geolocation.prototype.watchPosition = new Proxy(Geolocation.prototype.watchPosition, {
         apply(target, thisArg, args) {
           const success = args[0];
+          if (typeof success !== 'function') throw new TypeError('A geolocation success callback is required');
           const error = args[1];
           const options = args[2];
           const id = watchCounter++;
+          const record = {kind:'pending',handle:null,initial:null};
+          activeWatches.set(id, record);
 
           const run = () => {
+            if (!activeWatches.has(id)) return;
             const s = window.__MORPH_AGENT_SETTINGS__ || {};
             if (s.geoSpoofEnabled) {
               if (typeof success === 'function') {
-                setTimeout(() => success(getMockPos()), 0);
+                record.initial = setTimeout(() => {if (activeWatches.has(id)) success(getMockPos());}, 0);
                 const interval = setInterval(() => {
                   success(getMockPos());
                 }, 1000);
-                activeWatches.set(id, interval);
+                record.kind='mock'; record.handle=interval;
               }
             } else {
               const realId = Reflect.apply(target, thisArg, args);
-              activeWatches.set(id, realId);
+              record.kind='native'; record.handle=realId;
             }
           };
 
@@ -834,8 +837,8 @@
               const index = pendingWatches.indexOf(run);
               if (index > -1) {
                 pendingWatches.splice(index, 1);
-                const realId = Reflect.apply(target, thisArg, args);
-                activeWatches.set(id, realId);
+                if (activeWatches.has(id) && typeof error === 'function') error({code:2,message:'Privacy settings unavailable'});
+                activeWatches.delete(id);
               }
             }, 1000);
           }
@@ -848,10 +851,9 @@
           const id = args[0];
           if (activeWatches.has(id)) {
             const val = activeWatches.get(id);
-            if (typeof val === 'number') {
-              clearInterval(val);
-              Reflect.apply(target, thisArg, [val]);
-            }
+            clearTimeout(val.initial);
+            if (val.kind === 'mock') clearInterval(val.handle);
+            if (val.kind === 'native') Reflect.apply(target, thisArg, [val.handle]);
             activeWatches.delete(id);
             return;
           }
@@ -920,11 +922,12 @@
 
       if (origGetBattery) {
         const spoofBattery = function (...args) {
-          emitThreat('Battery API');
+          // Battery wrapper lives outside applyStealthSettings; emit only when protection runs.
           return new Promise((resolve, reject) => {
             const checkAndResolve = () => {
               const s = window.__MORPH_AGENT_SETTINGS__ || {};
               if (s.jsProtectEnabled) {
+                window.dispatchEvent(new CustomEvent('morph-threat-detected', {detail:{type:'Battery API',details:'Battery values masked'}}));
                 const domainHash = Array.from(window.location.hostname || "localhost").reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 100000, 0);
                 const hashVal = isNaN(domainHash) ? 0 : domainHash;
                 resolve({

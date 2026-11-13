@@ -685,25 +685,34 @@ function startPopup() {
     window.profiles = profilesStructured;
   }
 
-  function loadCustomLocations() {
-    if (!geoPreset || !browser || !browser.storage || !browser.storage.sync) return;
-    try {
-      browser.storage.sync.get(['customLocations'], (data) => {
-        const customLocs = (data && data.customLocations) ? data.customLocations : [];
-        customLocs.forEach(loc => {
-          const option = document.createElement('option');
-          option.value = `${loc.lat},${loc.lng}`;
-          option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
-          // Insert before the 'custom' option (which is the last one)
-          geoPreset.insertBefore(option, geoPreset.lastElementChild);
-        });
-      });
-    } catch (e) { }
+  async function loadCustomLocations(locations) {
+    if (!geoPreset || !browser?.storage?.sync) return;
+    const customLocs = locations ?? (await browser.storage.sync.get('customLocations')).customLocations ?? [];
+    const selected = geoPreset.value;
+    geoPreset.querySelectorAll('option.custom-loc-option').forEach(option => option.remove());
+    const customOption = geoPreset.querySelector('option[value="custom"]');
+    customLocs.forEach(loc => {
+      const option = document.createElement('option');
+      option.value = `${loc.lat},${loc.lng}`;
+      option.textContent = `${loc.name} (${loc.lat}, ${loc.lng})`;
+      option.className = 'custom-loc-option';
+      geoPreset.insertBefore(option, customOption);
+    });
+    if ([...geoPreset.options].some(option => option.value === selected)) {
+      geoPreset.value = selected;
+    } else {
+      // Keep the current coordinate inputs when a saved preset is removed.
+      geoPreset.value = 'custom';
+      geoPreset.dispatchEvent(new Event('change', {bubbles:true}));
+    }
   }
 
   // Real-time synchronization across popup and open pages
   if (browser && browser.storage && browser.storage.onChanged) {
     browser.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'sync' && changes.customLocations) {
+        loadCustomLocations(changes.customLocations.newValue || []).catch(console.warn);
+      }
       if (areaName === 'local') {
         if (changes.theme) {
           const updatedTheme = changes.theme.newValue || 'dark';
@@ -1143,9 +1152,9 @@ function startPopup() {
       geoControls.classList.toggle('visible', geoToggle.checked);
       geoControls.style.display = geoToggle.checked ? 'block' : 'none';
       if (geoPreset && rule.geoPresetValue) {
-        geoPreset.value = rule.geoPresetValue;
+        geoPreset.value = [...geoPreset.options].some(option => option.value === rule.geoPresetValue) ? rule.geoPresetValue : 'custom';
         if (customGeoInputs) {
-          const isCustom = rule.geoPresetValue === 'custom';
+          const isCustom = geoPreset.value === 'custom';
           customGeoInputs.classList.toggle('visible', isCustom);
           customGeoInputs.style.display = isCustom ? 'flex' : 'none';
         }
@@ -1238,9 +1247,9 @@ function startPopup() {
           geoControls.classList.toggle('visible', geoToggle.checked);
           geoControls.style.display = geoToggle.checked ? 'block' : 'none';
           if (geoPreset && settings.geoPresetValue) {
-            geoPreset.value = settings.geoPresetValue;
+            geoPreset.value = [...geoPreset.options].some(option => option.value === settings.geoPresetValue) ? settings.geoPresetValue : 'custom';
             if (customGeoInputs) {
-              const isCustom = settings.geoPresetValue === 'custom';
+              const isCustom = geoPreset.value === 'custom';
               customGeoInputs.classList.toggle('visible', isCustom);
               customGeoInputs.style.display = isCustom ? 'flex' : 'none';
             }
@@ -1694,7 +1703,8 @@ function startPopup() {
     }
 
     // Load saved settings
-    setTimeout(() => {
+    setTimeout(async () => {
+      try { await loadCustomLocations(); } catch (error) { console.warn('Could not load custom locations:', error); }
       loadSettings();
     }, 50);
   }

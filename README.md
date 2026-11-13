@@ -117,7 +117,7 @@ MorphAgent is a professional-grade browser spoofing and anti-fingerprinting exte
    Domain-seeded noise algorithm for `toDataURL()`, `toBlob()`, and `getImageData()`. Spoofs `UNMASKED_VENDOR_WEBGL` and `UNMASKED_RENDERER_WEBGL` across WebGL 1.0 & 2.0 with cryptographic sub-pixel variation.
 
 5. **Ghost Mode (Intelligent Auto-Rotation)**
-   When enabled, a background timer automatically rotates your entire browser identity (User Agent, Touch Points, Canvas Seed) at configurable intervals to break persistent cross-site tracking sessions.
+   When enabled, a background timer automatically rotates your user agent and touch settings at configurable intervals to break persistent cross-site tracking sessions.
 
 6. **ClientRects & DOM Bounding Box Spoofing**
    Intercepts `getBoundingClientRect` to inject microscopic noise, destroying OS-level font rendering and layout tracking vectors.
@@ -226,7 +226,7 @@ Install it directly from the [Firefox Add-ons Store](https://addons.mozilla.org/
 ## Privacy & Stealth
 
 - **Local Storage Only** — Zero telemetry, zero analytics, zero external dependencies.
-- **100% Native Cloaking** — All spoofed JavaScript methods pass `Function.prototype.toString()` native code checks.
+- **Page-level masking** — Selected APIs are wrapped; this cannot guarantee native behavior or undetectability across browser engines.
 - **Block List & Per-Site Rules** — Exclude sensitive domains (e.g., banking portals) with wildcard matching.
 
 ---
@@ -268,12 +268,31 @@ Both packages use Manifest V3. Chrome uses a module service worker (Chrome 111+)
 
 DNS preferences do not change the browser resolver; configure Secure DNS in browser settings. Filtering lists are bundled, not equivalent to full AdGuard/uBlock subscriptions. Page-level JavaScript protection cannot guarantee interception before every page script, or undetectable fingerprints. Test important sites after changing spoofing or proxy settings.
 
-### Suggested next features
+### Privacy Tools
 
-1. A permission and compatibility panel showing effective website access, active rules, and proxy control conflicts.
-2. Named profile presets with preview, export, and one-click rollback.
-3. Temporary per-site exceptions that expire automatically.
-4. A rule tester showing which profile and filters apply to a URL before saving.
+Open **Advanced Settings → Privacy Tools** for:
+
+1. **URL rule tester**: previews effective network user agent, JavaScript blocking, matching website rules, conflicts, and filter settings using the network rule builders.
+2. **Protection health**: checks website permissions, installed network rules, proxy ownership, WebRTC policy, and the Ghost Mode alarm.
+3. **Temporary exceptions**: pause all site protections or only scripts, filters, or fingerprint/location spoofing for 10 minutes, one hour, or until browser restart. Browser-wide proxy and WebRTC policies remain active. Network rules restore on expiry; reload existing pages to restore page-level protections.
+4. **Named presets**: save up to 30 local configurations, preview differences, apply, export, delete, or undo the last application.
+5. **Validated imports**: JSON imports now show a preview before applying, reject invalid settings, and automatically save a rollback backup. Logs and counters are not imported. Reload the settings page after applying or restoring configuration before further editing.
+6. **Live consistency checks**: inspect a selected website tab for user agent, client hints, platform, touch, screen, timezone, language, and hardware inconsistencies. No real GPS request is made by this inspector.
+7. **Guided troubleshooting**: temporarily test script blocking, filtering, and fingerprint protection separately. Each trial expires in 10 minutes; selecting “Fixed” retains only that group’s exception for one hour. Remove existing exceptions first.
+
+Presets, backups, and exceptions stay in local extension storage. Site rule settings retain their existing browser-sync behavior. No new service or dependency is required.
+
+### Protection correctness and limits
+
+- Non-Chromium identities no longer advertise fabricated Chromium JavaScript client hints. High-entropy request headers are removed while spoofing to avoid exposing native hardware details.
+- Explicit zero touch points are honored. Site rules respect the global user-agent switch. Overlapping network user-agent rules honor first-match priority.
+- GPS calls fail with a position-unavailable error if settings cannot load, instead of falling back to real GPS. Canceling a location watch also cancels queued mock callbacks.
+- Timezone formatting and offsets use the selected IANA timezone, including daylight-saving transitions and explicit caller timezone overrides. Automatic coordinate-to-timezone lookup is approximate; choose an explicit timezone when accuracy matters. Native Date string methods and workers may still expose differences.
+- WebRTC leak policy stays enabled while a native proxy is active. Turning it off clears the extension’s policy rather than overriding another controller. Browser and proxy support still determine actual network routing.
+- Ghost Mode rotates user agent and touch settings; it does not change public IP, clear site storage, or guarantee an undetectable identity. Reload existing tabs after a rotation to align page values with new request headers.
+- Generic `si` and `ref_` query parameters are preserved to avoid breaking unrelated site functionality. Detection logs describe page API activity, not proof that a tracker was neutralized.
+
+Chromium acceptance tests cover the new UI workflows, timed exception expiry, preset rollback, client hints, zero touch points, daylight-saving offsets, location watch cancellation, startup GPS failure, battery API, and proxy/WebRTC policy. Firefox runtime, remote proxy services, every website, and worker/iframe fingerprint surfaces are not certified by these tests.
 
 ### Ad-blocking regression checks
 

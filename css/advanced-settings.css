@@ -1866,3 +1866,8 @@ html.light-mode .mode-tab.active {
     grid-template-columns: 1fr !important;
   }
 }
+
+.tools-grid {display:grid;gap:12px;padding:20px;}
+.tools-grid pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:480px;overflow:auto;font-size:13px;}
+.tools-grid input,.tools-grid select {width:100%;max-width:100%;padding:10px;color:var(--text-primary);background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;}
+.tools-grid button {margin:3px;}

@@ -17,6 +17,7 @@
 
   // Retrieve settings and initialize stealth suite
   api.storage.local.get([
+    'temporaryExceptions',
     'selectedUA',
     'uaSpoofEnabled',
     'touchSpoofEnabled',
@@ -82,6 +83,7 @@
         settings.jsBlockEnabled = false;
         settings.jsProtectEnabled = false;
         settings.geoSpoofEnabled = false;
+        settings.hardwareHarmonizeEnabled = false;
         settings.mediaQuerySpoofEnabled = false;
         settings.timingShieldEnabled = false;
       } else {
@@ -90,7 +92,7 @@
           const rulePattern = rule.website || '';
           if (rulePattern && matchesSite(currentHostname, rulePattern)) {
             settings.selectedUA = rule.userAgent || settings.selectedUA;
-            settings.uaSpoofEnabled = rule.uaSpoofEnabled !== false;
+            settings.uaSpoofEnabled = settings.uaSpoofEnabled !== false && rule.uaSpoofEnabled !== false;
             settings.maxTouchPoints = rule.touchPoints || 0;
             settings.touchSpoofEnabled = rule.touchSpoofEnabled !== undefined ? !!rule.touchSpoofEnabled : false;
             settings.jsBlockEnabled = !!rule.jsBlocked;
@@ -104,6 +106,14 @@
         }
       }
 
+      const exceptions = (settings.temporaryExceptions || []).filter(e => (e.expiresAt === null || e.expiresAt > Date.now()) && matchesSite(currentHostname, e.domain));
+      const paused = scope => exceptions.some(e => e.scope === 'all' || e.scope === scope);
+      if (paused('fingerprint')) for (const key of ['uaSpoofEnabled','touchSpoofEnabled','jsProtectEnabled','geoSpoofEnabled','hardwareHarmonizeEnabled','mediaQuerySpoofEnabled','timingShieldEnabled']) settings[key] = false;
+      if (paused('scripts')) settings.jsBlockEnabled = false;
+      if (paused('filters')) {
+        settings.adBlockWhitelist = [...(settings.adBlockWhitelist || []), currentHostname];
+        for (const key of ['removeTrackingParamsEnabled','hideSearchQueriesEnabled','sendDntGpcEnabled']) settings[key] = false;
+      }
       applyProtection(settings);
 
       // Dispatch immediately from isolated world to ensure inject.js receives it (CSP safe)
@@ -121,7 +131,7 @@
       const trackingParams = [
         'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
         'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'mc_eid', 'yclid',
-        '_hsenc', '_openstat', 'igshid', 'si', 'ref_', 'dclid', 'twclid',
+        '_hsenc', '_openstat', 'igshid', 'dclid', 'twclid',
         'wickedid', 'sc_clid', 'matomo_campaign', 'pk_campaign', 'gad_source'
       ];
       let changed = false;
