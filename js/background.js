@@ -847,9 +847,9 @@ const TOP_10_UAS = [
   { id: 'ua-win-edge', title: 'Windows - Edge', ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0', category: 'desktop' },
   { id: 'ua-mac-safari', title: 'macOS - Safari', ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15', category: 'desktop' },
   { id: 'ua-mac-chrome', title: 'macOS - Chrome', ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' },
-  { id: 'ua-ios-safari', title: 'iOS - Safari (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
-  { id: 'ua-ios-chrome', title: 'iOS - Chrome (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.0.0 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
-  { id: 'ua-android-chrome', title: 'Android - Chrome', ua: 'Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36', touch: true, category: 'mobile' },
+  { id: 'ua-ios-safari', title: 'iOS - Safari (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
+  { id: 'ua-ios-chrome', title: 'iOS - Chrome (iPhone)', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1', touch: true, category: 'mobile' },
+  { id: 'ua-android-chrome', title: 'Android - Chrome', ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36', touch: true, category: 'mobile' },
   { id: 'ua-linux-firefox', title: 'Linux - Firefox', ua: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0', category: 'desktop' },
   { id: 'ua-chromeos-chrome', title: 'ChromeOS - Chrome', ua: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' }
 ];

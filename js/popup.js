@@ -783,7 +783,7 @@ function startPopup() {
       let newUA = profile.ua;
       if (browserType === 'chrome') {
         if (newUA.includes('iPhone') || newUA.includes('iPad')) {
-          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1');
+          newUA = newUA.replace(/Version\/[0-9.]+(\s+Mobile\/[A-Z0-9]+)?\s+Safari\/[0-9.]+/, 'CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1');
         } else {
           newUA = newUA.replace(/Version\/[0-9.]+\s+Safari\/[0-9.]+/, 'Chrome/145.0.0.0 Safari/537.36');
         }

@@ -1,5 +1,6 @@
 // Enhanced Device/Browser Profiles for UA Spoofing (2026 Edition)
 // Organized by categories with platform subcategories
+// Mobile catalog reviewed 2026-11-13; sources and UA-template limits: docs/device-catalog.md
 
 // Browser types with their typical patterns
 const browserTypes = {
@@ -48,121 +49,121 @@ const profiles = {
       ios: {
         name: 'iOS Devices',
         variants: [
-          // iPhone 18 Series (Latest 2026 Release)
+          // Current Apple lineup (verified November 2026)
           {
-            name: 'iPhone 18 Pro Max (iOS 27.0)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 18 Pro Max (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 18 Pro (iOS 27.0)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 18 Pro (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 18 Air (iOS 27.0)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPhone Duo (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 18 Plus (iOS 27.0)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPhone Air (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 18 (iOS 27.0)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17 (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 18 Chrome Profiles
           {
-            name: 'iPhone 18 Pro Max (Chrome 146)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/146.0.7680.120 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 18 Pro Max (Chrome 158)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 18 Pro (Chrome 146)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/146.0.7680.120 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 18 Pro (Chrome 158)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 18 Firefox Profiles
           {
             name: 'iPhone 18 Pro Max (Firefox 144)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/144.0 Mobile/15E148 Safari/604.1',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/144.0 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
             name: 'iPhone 18 Pro (Firefox 144)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/144.0 Mobile/15E148 Safari/604.1',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/144.0 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 18 Edge Profiles
           {
             name: 'iPhone 18 Pro Max (Edge 146)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/146.0.3250.70 Mobile/15E148 Safari/604.1',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/146.0.3250.70 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
             name: 'iPhone 18 Pro (Edge 146)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/146.0.3250.70 Mobile/15E148 Safari/604.1',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/146.0.3250.70 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 17 Series
           {
-            name: 'iPhone 17 Pro Max (iOS 26.4)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17 Pro Max (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 17 Pro (iOS 26.4)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17 Pro (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 17 Air (iOS 26.4)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17e (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 17 Pro Max (Chrome 145)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17 Pro Max (Chrome 158)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 17 Pro (Chrome 145)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/145.0.7632.112 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 17 Pro (Chrome 158)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/158.0.8127.35 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
             name: 'iPhone 17 Pro Max (Firefox 142)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/142.0 Mobile/15E148 Safari/604.1',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/142.0 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 16 Series
           {
-            name: 'iPhone 16 Pro Max (iOS 26.2)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 16 Pro Max (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 16 Pro (iOS 26.1)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 16 Pro (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone 16 (iOS 18.5)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 16 (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           // iPhone 15 & SE Series
           {
-            name: 'iPhone 15 Pro Max (iOS 18.4)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 15 Pro Max (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           },
           {
-            name: 'iPhone SE 4th Gen (iOS 26.2)',
-            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1',
+            name: 'iPhone 16e (iOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 5
           }
         ]
@@ -170,6 +171,37 @@ const profiles = {
       android: {
         name: 'Android Devices',
         variants: [
+          // Verified 2026 releases; explicit device/OS testing templates.
+          {
+            name: 'Google Pixel 11 Pro XL (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 11 Pro XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
+          {
+            name: 'Google Pixel 11 Pro (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 11 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
+          {
+            name: 'Google Pixel 11 (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
+          {
+            name: 'Google Pixel 11 Pro Fold (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 11 Pro Fold) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
+          {
+            name: 'Samsung Galaxy Z Fold8 Ultra (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; SM-F976U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
+          {
+            name: 'Samsung Galaxy Z Fold8 (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; SM-F971U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
+            touchPoints: 10
+          },
           // Microsoft Surface Duo Series (Dual-Screen Foldables)
           {
             name: 'Surface Duo 3 (Android 16)',
@@ -188,8 +220,8 @@ const profiles = {
           },
           // Latest Foldable Devices (2026)
           {
-            name: 'Google Pixel 10 Pro Fold (Android 16)',
-            ua: 'Mozilla/5.0 (Linux; Android 16; Pixel 10 Pro Fold) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 10 Pro Fold (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 10 Pro Fold) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 10
           },
           {
@@ -233,30 +265,30 @@ const profiles = {
             ua: 'Mozilla/5.0 (Linux; Android 15; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36',
             touchPoints: 10
           },
-          // Latest Google Pixel Series (2026)
+          // Earlier Pixel models with Android 17 support
           {
-            name: 'Google Pixel 10 Pro XL (Android 16)',
-            ua: 'Mozilla/5.0 (Linux; Android 16; Pixel 10 Pro XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 10 Pro XL (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 10 Pro XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 10
           },
           {
-            name: 'Google Pixel 10 Pro (Android 16)',
-            ua: 'Mozilla/5.0 (Linux; Android 16; Pixel 10 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 10 Pro (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 10 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 10
           },
           {
-            name: 'Google Pixel 10 (Android 16)',
-            ua: 'Mozilla/5.0 (Linux; Android 16; Pixel 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 10 (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 5
           },
           {
-            name: 'Google Pixel 9 Pro XL (Android 16)',
-            ua: 'Mozilla/5.0 (Linux; Android 16; Pixel 9 Pro XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 9 Pro XL (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 9 Pro XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 10
           },
           {
-            name: 'Google Pixel 9 (Android 15)',
-            ua: 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36',
+            name: 'Google Pixel 9 (Android 17)',
+            ua: 'Mozilla/5.0 (Linux; Android 17; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36',
             touchPoints: 5
           },
           // Latest OnePlus Devices (2026)
@@ -315,38 +347,38 @@ const profiles = {
         variants: [
           // Latest 2026 iPad Models
           {
-            name: 'iPad Pro 13" M5 (iPadOS 27.0)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPad Pro 13" M5 (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad Pro 11" M5 (iPadOS 27.0)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 27_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1',
+            name: 'iPad Pro 11" M5 (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad Air 13" M4 (iPadOS 26.4)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPad Air 13" M4 (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad Air 11" M4 (iPadOS 26.4)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPad Air 11" M4 (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad Mini 8th Gen (iPadOS 26.4)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 26_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.4 Mobile/15E148 Safari/604.1',
+            name: 'iPad mini (A20 Pro) (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad Pro 13" M4 (iPadOS 18.5)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+            name: 'iPad Pro 13" M4 (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           },
           {
-            name: 'iPad 10th Gen (iPadOS 18.4)',
-            ua: 'Mozilla/5.0 (iPad; CPU OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1',
+            name: 'iPad 10th Gen (iPadOS 27.2.1)',
+            ua: 'Mozilla/5.0 (iPad; CPU OS 27_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1',
             touchPoints: 10
           }
         ]
