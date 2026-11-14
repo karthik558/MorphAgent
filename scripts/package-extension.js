@@ -7,7 +7,7 @@ module.exports = function packageExtension(target) {
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'morph-agent-'));
   const output = path.join(root, `morph-agent-${target}.zip`);
   try {
-    for (const entry of ['js', 'css', 'icons', 'popup.html', 'advanced-settings.html', 'LICENSE']) {
+    for (const entry of ['js', 'css', 'icons', 'rules', 'popup.html', 'advanced-settings.html', 'spoof_test.html', 'LICENSE']) {
       fs.cpSync(path.join(root, entry), path.join(staging, entry), { recursive: true });
     }
     fs.copyFileSync(path.join(root, `manifest.${target}.json`), path.join(staging, 'manifest.json'));

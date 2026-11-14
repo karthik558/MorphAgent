@@ -139,6 +139,12 @@
                         <h3>11. Font Enumeration Hash</h3>
                         <div id="font-info"><pre id="font-out">Checking...</pre></div>
                     </div>
+
+                    <div class="test-card">
+                        <h3>12. Profile diff</h3>
+                        <pre id="profile-diff">Checking the active website…</pre>
+                        <button type="button" id="profile-diff-run" class="btn btn-outline" style="margin-top:12px;">Check active tab</button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -299,6 +305,75 @@
         document.body.appendChild(fontTest);
         document.getElementById('font-out').innerText = `OffsetWidth: ${fontTest.offsetWidth}\nOffsetHeight: ${fontTest.offsetHeight}`;
         fontTest.remove();
+
+        async function readProfileDiff() {
+            const output = document.getElementById('profile-diff');
+            const api = window.browser || window.chrome;
+            if (!api || !api.storage || !api.scripting || !api.tabs) {
+                output.textContent = 'Open this lab from the extension to compare a website with the matched profile.';
+                return;
+            }
+            const stored = await api.storage.local.get(['selectedUA', 'identityBundle']);
+            const bundle = stored.identityBundle;
+            const intended = bundle ? [
+                `User agent: ${bundle.ua || stored.selectedUA || ''}`,
+                `Screen: ${bundle.screen ? bundle.screen.width + '×' + bundle.screen.height : '(not matched)'}`,
+                `Cores / memory: ${bundle.cores || '-'} / ${bundle.memory || '-'}`,
+                `Language: ${(bundle.languages && bundle.languages[0]) || '(location spoof owns language)'}`,
+                `GPU: ${bundle.webgl ? bundle.webgl.renderer : '-'}`,
+                `WebGPU: ${bundle.webgpu ? bundle.webgpu.vendor : '-'}`,
+                `Workers: ${bundle.coverWorkers ? 'same-origin classic workers' : 'off'}`
+            ] : [`User agent: ${stored.selectedUA || '(none)'}`, 'Match a profile in the popup to store the expected screen, GPU, and language.'];
+            let visible = 'Open a website, then run this check. This lab page is part of the extension, so it shows the browser’s own values.';
+            try {
+                const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+                if (tab && tab.id && /^https?:/i.test(tab.url || '')) {
+                    const [probe] = await api.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        world: 'MAIN',
+                        func: () => new Promise(resolve => {
+                            const page = {
+                                ua: navigator.userAgent,
+                                language: navigator.language,
+                                cores: navigator.hardwareConcurrency,
+                                memory: navigator.deviceMemory,
+                                screen: screen.width + '×' + screen.height,
+                                usb: typeof navigator.usb,
+                                gpu: !!(navigator.gpu)
+                            };
+                            let worker = null;
+                            try {
+                                const blob = new Blob(['postMessage({ua:navigator.userAgent,cores:navigator.hardwareConcurrency,language:navigator.language})'], { type: 'text/javascript' });
+                                const job = new Worker(URL.createObjectURL(blob));
+                                const timer = setTimeout(() => { job.terminate(); resolve({ page, worker }); }, 700);
+                                job.onmessage = event => { clearTimeout(timer); worker = event.data; job.terminate(); resolve({ page, worker }); };
+                                job.onerror = () => { clearTimeout(timer); resolve({ page, worker: null }); };
+                            } catch (error) {
+                                resolve({ page, worker: null });
+                            }
+                        })
+                    });
+                    const value = probe && probe.result;
+                    if (value) {
+                        visible = [
+                            `Page user agent: ${value.page.ua}`,
+                            `Page language: ${value.page.language}`,
+                            `Page screen: ${value.page.screen}`,
+                            `Page cores / memory: ${value.page.cores} / ${value.page.memory}`,
+                            `Page WebGPU present: ${value.page.gpu}`,
+                            `Page USB: ${value.page.usb}`,
+                            `Blob worker user agent: ${value.worker ? value.worker.ua : 'unavailable'}`,
+                            'Blob and cross-origin workers keep the browser worker. Same-origin classic workers use the matched profile.'
+                        ].join('\n');
+                    }
+                }
+            } catch (error) {
+                visible = `Could not read the active tab (${error.message}).`;
+            }
+            output.textContent = `Intended\n${intended.join('\n')}\n\nVisible on the active website\n${visible}`;
+        }
+        document.getElementById('profile-diff-run').addEventListener('click', readProfileDiff);
+        readProfileDiff();
     </script>
 </body>
 </html>

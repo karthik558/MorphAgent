@@ -49,26 +49,6 @@
     </header>
 
     <main class="main-content">
-      <section class="shield-card" aria-labelledby="shield-title">
-        <div class="shield-heading">
-          <div>
-            <h2 id="shield-title">Ad & tracker shield</h2>
-            <p id="adblock-status-desc">Block ads and tracking requests</p>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="adblock-toggle" aria-label="Ad and tracker shield" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="shield-site-row">
-          <span id="shield-site-name">Current website</span>
-          <button type="button" class="shield-site-button" id="site-shield-toggle" disabled>Loading…</button>
-        </div>
-        <div class="shield-footer">
-          <span id="shield-rule-status" role="status"></span>
-          <a href="advanced-settings.html#section-dns-adblock" target="_blank">Manage filters <span aria-hidden="true">↗</span></a>
-        </div>
-      </section>
       <div class="threat-banner" id="threat-banner" style="display: none;">
         <svg class="threat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <div class="threat-text">
@@ -109,6 +89,7 @@
           <div class="section-label">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             PROFILE
+            <button type="button" class="shield-site-button section-inline-btn" id="rotate-identity-btn">Rotate</button>
           </div>
           <div class="select-stack">
             <div class="select-wrapper">
@@ -353,6 +334,43 @@
               </div>
             </div>
 
+            <div class="feature-row" id="shield-card" style="flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; justify-content:space-between; width:100%; gap:10px;">
+                <div class="feature-left">
+                  <div class="feature-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div class="feature-text">
+                    <div class="feature-title-row">
+                      <span class="feature-title" id="shield-title">Ad & tracker shield</span>
+                    </div>
+                    <span class="feature-desc" id="adblock-status-desc">Block ads and tracking requests</span>
+                  </div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="adblock-toggle" aria-label="Ad and tracker shield" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="shield-details">
+                <div class="shield-site-row">
+                  <span id="shield-site-name">Current website</span>
+                  <button type="button" class="shield-site-button" id="site-shield-toggle" disabled>Loading…</button>
+                </div>
+                <div class="shield-counts" id="shield-counts">
+                  <span id="count-ads">Ads 0</span>
+                  <span id="count-trackers">Trackers 0</span>
+                  <span id="count-elements">Elements 0</span>
+                </div>
+                <div id="block-log"></div>
+                <div class="shield-footer">
+                  <span id="shield-rule-status" role="status"></span>
+                  <button type="button" class="shield-site-button" id="pick-element-btn">Pick element</button>
+                  <a href="advanced-settings.html#section-dns-adblock" target="_blank">Manage filters <span aria-hidden="true">↗</span></a>
+                </div>
+              </div>
+            </div>
+
             <!-- Proxyium Web Proxy Tunnel -->
             <div class="feature-row tunnel-feature-row">
               <div class="tunnel-header-row">
@@ -464,6 +482,7 @@
   
   <script src="js/browser-api.js"></script>
   <script src="js/profiles.js"></script>
+  <script type="module" src="js/identity.mjs"></script>
   <script src="js/popup.js"></script>
   <script src="js/ui-accessibility.js"></script>
   <script src="js/select-controls.js"></script>

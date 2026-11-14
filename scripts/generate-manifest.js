@@ -20,7 +20,28 @@ const baseManifest = {
     "proxy",
     "privacy"
   ],
+  commands: {
+    "apply-current-tab": {
+      suggested_key: { default: "Alt+Shift+M", mac: "Alt+Shift+M" },
+      description: "Apply the MorphAgent profile to the current site"
+    },
+    "pause-shield-site": {
+      suggested_key: { default: "Alt+Shift+P", mac: "Alt+Shift+P" },
+      description: "Pause or resume the shield on this site"
+    },
+    "open-profile-lab": {
+      suggested_key: { default: "Alt+Shift+L", mac: "Alt+Shift+L" },
+      description: "Open the MorphAgent profile lab"
+    }
+  },
   host_permissions: ["<all_urls>"],
+  declarative_net_request: {
+    rule_resources: [
+      { id: "morph-ads", enabled: true, path: "rules/ads.json" },
+      { id: "morph-trackers", enabled: true, path: "rules/trackers.json" },
+      { id: "morph-miners", enabled: true, path: "rules/miners.json" }
+    ]
+  },
   background: {
     service_worker: "js/background.js",
     type: "module"
@@ -65,6 +86,7 @@ const baseManifest = {
 
 const v3Manifest = {
   ...baseManifest,
+  permissions: [...baseManifest.permissions, "declarativeNetRequestFeedback"],
   manifest_version: 3,
   minimum_chrome_version: "111"
 };

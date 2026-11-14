@@ -73,9 +73,16 @@
       sync();
       trigger.focus({ preventScroll: true });
     }
+    function closedLabel(text) {
+      const full = text || 'Choose an option';
+      if (select.id !== 'profile-select') return full;
+      const short = full.replace(/\s*\((?:Android|One UI)[^)]*\)/gi, '').replace(/\s{2,}/g, ' ').trim();
+      return short || full;
+    }
     function sync() {
-      label.textContent = select.selectedOptions[0]?.textContent || 'Choose an option';
-      trigger.title = label.textContent;
+      const full = select.selectedOptions[0]?.textContent || 'Choose an option';
+      label.textContent = closedLabel(full);
+      trigger.title = full;
       trigger.disabled = select.disabled || !select.options.length;
       if (trigger.disabled) close();
       if (!menu.hidden) render();
@@ -101,11 +108,14 @@
       opened = { trigger, close, menu };
       render();
       const rect = trigger.getBoundingClientRect();
+      const bounds = document.documentElement.getBoundingClientRect();
+      const limit = Math.max(160, Math.min(bounds.width || innerWidth, innerWidth) - 16);
       const below = innerHeight - rect.bottom - 8;
       const above = rect.top - 8;
       const upward = below < 160 && above > below;
-      menu.style.width = `${Math.min(Math.max(rect.width, 240), innerWidth - 16)}px`;
-      menu.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - parseFloat(menu.style.width) - 8))}px`;
+      const width = Math.min(Math.max(rect.width, 120), limit);
+      menu.style.width = `${width}px`;
+      menu.style.left = `${Math.max(8, Math.min(rect.left, (bounds.width || innerWidth) - width - 8))}px`;
       menu.style.maxHeight = `${Math.max(40, Math.min(260, upward ? above : below))}px`;
       menu.style.top = upward ? 'auto' : `${rect.bottom + 4}px`;
       menu.style.bottom = upward ? `${innerHeight - rect.top + 4}px` : 'auto';

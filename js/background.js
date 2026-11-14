@@ -2,7 +2,8 @@
 // Universal Cross-Browser Background Engine (Chrome MV3 & Firefox MV2/MV3)
 import './adblock-rules.js';
 import {activeExceptions, exceptionDomains} from './configuration.mjs';
-import { buildUARules, buildScriptRules, siteDomain } from './network-rules.mjs';
+import { buildUARules, buildScriptRules, buildSiteAllowRules, siteDomain } from './network-rules.mjs';
+import { badgeFor, cosmeticRule, buildBundle } from './identity.mjs';
 
 const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : {});
 
@@ -29,8 +30,13 @@ let adBlockStats = {
   totalBlocked: 0,
   adsBlocked: 0,
   trackersBlocked: 0,
-  perDomain: {}
+  perDomain: {},
+  byCategory: { ads: 0, trackers: 0, cosmetic: 0, network: 0 }
 };
+let recentBlocks = [];
+let acceptLanguage = '';
+let enabledStaticRules = 0;
+let listCounts = null;
 
 // Tracking Protection & Filters Hub State
 let trackersBlockEnabled = true;
@@ -208,11 +214,68 @@ function getClientHintsHeaders(ua) {
 function updateBadge(ua, category) {
   try {
     const actionAPI = api.action || api.browserAction;
-    if (!actionAPI) return;
-    actionAPI.setBadgeText({ text: '' });
+    if (!actionAPI || !actionAPI.setBadgeText) return;
+    const text = uaSpoofEnabled ? String(badgeFor(ua, category) || '').slice(0, 4) : '';
+    actionAPI.setBadgeText({ text });
+    if (text && actionAPI.setBadgeBackgroundColor) actionAPI.setBadgeBackgroundColor({ color: '#E11D2E' });
+    void paintActiveBadge(text);
   } catch (e) {
     // Action API optional
   }
+}
+
+async function paintActiveBadge(text) {
+  const actionAPI = api.action || api.browserAction;
+  if (!actionAPI || !actionAPI.setBadgeText || !api.tabs) return;
+  try {
+    const { adBlockWhitelist = [] } = await api.storage.local.get('adBlockWhitelist');
+    const tabs = await api.tabs.query({ active: true });
+    for (const tab of tabs) {
+      let paused = false;
+      try {
+        const host = new URL(tab.url).hostname;
+        paused = adBlockWhitelist.some(domain => host === domain || host.endsWith('.' + domain));
+      } catch { /* System pages have no site shield. */ }
+      actionAPI.setBadgeText({ text: paused ? 'Off' : text, tabId: tab.id });
+    }
+  } catch { /* Badge text is optional. */ }
+}
+
+async function loadListCounts() {
+  if (listCounts) return listCounts;
+  try {
+    listCounts = await fetch(api.runtime.getURL('rules/counts.json')).then(response => response.json());
+  } catch {
+    listCounts = { ads: 0, trackers: 0, miners: 0, total: 0 };
+  }
+  return listCounts;
+}
+
+async function syncStaticRulesets() {
+  if (!api.declarativeNetRequest || !api.declarativeNetRequest.updateEnabledRulesets) return enabledStaticRules;
+  const counts = await loadListCounts();
+  const engine = globalThis.MorphAgentAdBlock;
+  const categoryOn = id => !engine || engine.filterEnabled(filtersState, id);
+  const network = adBlockEnabled && adBlockNetworkEnabled;
+  const selected = {
+    'morph-ads': network && categoryOn('ads'),
+    'morph-trackers': network && trackersBlockEnabled !== false && categoryOn('trackers'),
+    'morph-miners': network && categoryOn('miners')
+  };
+  const enableRulesetIds = [];
+  const disableRulesetIds = [];
+  let total = 0;
+  for (const [id, on] of Object.entries(selected)) {
+    (on ? enableRulesetIds : disableRulesetIds).push(id);
+    if (on) total += counts[id.slice(6)] || 0;
+  }
+  try {
+    await api.declarativeNetRequest.updateEnabledRulesets({ enableRulesetIds, disableRulesetIds });
+    enabledStaticRules = total;
+  } catch (error) {
+    console.warn('[MorphAgent] Static block lists:', error);
+  }
+  return enabledStaticRules;
 }
 
 // Update Chrome Manifest V3 DeclarativeNetRequest Dynamic Rules
@@ -234,7 +297,8 @@ async function synchronizeRules(targetUA) {
     const excludedFor = scope => exceptionDomains(temporaryExceptions, scope);
     addRules.push(...buildUARules({
       enabled: uaSpoofEnabled, ua: targetUA,
-      websiteRules, blockList, whiteList, listMode, exclusions: excludedFor('fingerprint')
+      websiteRules, blockList, whiteList, listMode, exclusions: excludedFor('fingerprint'),
+      acceptLanguage
     }));
 
     addRules.push(...buildScriptRules({ enabled: jsBlockEnabled, websiteRules, blockList, whiteList, listMode, exclusions: excludedFor('scripts') }));
@@ -267,12 +331,17 @@ async function synchronizeRules(targetUA) {
       }
     }
 
+    const { adBlockWhitelist: shieldSites = [] } = await api.storage.local.get('adBlockWhitelist');
+    const shieldExclusions = [...new Set((Array.isArray(shieldSites) ? shieldSites : []).map(siteDomain).filter(Boolean).concat(excludedFor('filters')))];
+    addRules.push(...buildSiteAllowRules(shieldExclusions));
+
     await api.declarativeNetRequest.updateDynamicRules({
       removeRuleIds,
       addRules
     });
-    console.log(`[MorphAgent 4.8.2] DNR rules synchronized: ${addRules.length} rules active (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
-    return addRules.length;
+    const staticCount = await syncStaticRulesets();
+    console.log(`[MorphAgent 4.8.2] DNR rules synchronized: ${addRules.length} dynamic + ${staticCount} static (UA: ${uaSpoofEnabled ? 'Active' : 'Off'}, AdBlock: ${adBlockEnabled ? 'Active' : 'Off'}).`);
+    return addRules.length + staticCount;
   } catch (e) {
     console.warn('[MorphAgent 4.8.2] DNR update failed:', e);
     throw e;
@@ -312,7 +381,7 @@ async function loadSettings() {
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
       'adBlockEnabled', 'adBlockNetworkEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
       'trackersBlockEnabled', 'removeTrackingParamsEnabled', 'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled', 'filtersState', 'filtersLastChecked',
-      'proxyConfig', 'ghostModeEnabled', 'ghostInterval'
+      'proxyConfig', 'ghostModeEnabled', 'ghostInterval', 'identityBundle', 'recentBlocks'
     ]);
     websiteRules = (syncData.websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com'));
     if (syncData.websiteRules && syncData.websiteRules.length !== websiteRules.length) {
@@ -332,7 +401,10 @@ async function loadSettings() {
     if (localData.dnsCustomEndpoint !== undefined) dnsCustomEndpoint = localData.dnsCustomEndpoint;
     if (localData.adBlockCosmeticEnabled !== undefined) adBlockCosmeticEnabled = !!localData.adBlockCosmeticEnabled;
     if (localData.adBlockAntiAdblockEnabled !== undefined) adBlockAntiAdblockEnabled = !!localData.adBlockAntiAdblockEnabled;
-    if (localData.adBlockStats) adBlockStats = localData.adBlockStats;
+    if (localData.adBlockStats) adBlockStats = { byCategory: { ads: 0, trackers: 0, cosmetic: 0, network: 0 }, ...localData.adBlockStats };
+    if (!adBlockStats.byCategory) adBlockStats.byCategory = { ads: 0, trackers: 0, cosmetic: 0, network: 0 };
+    recentBlocks = Array.isArray(localData.recentBlocks) ? localData.recentBlocks.slice(0, 40) : [];
+    acceptLanguage = localData.identityBundle && typeof localData.identityBundle.acceptLanguage === 'string' ? localData.identityBundle.acceptLanguage : '';
 
     // Clean up legacy syncGeoWithProxyium if found in storage
     if (localData.proxyConfig && localData.proxyConfig.syncGeoWithProxyium) {
@@ -413,7 +485,16 @@ api.storage.onChanged.addListener((changes, areaName) => {
   }
   if (areaName === 'local') {
     if (changes.ghostModeEnabled || changes.ghostInterval) synchronizeGhostAlarm();
-    if (changes.adBlockWhitelist || changes.temporaryExceptions) updateDeclarativeNetRequestRules(cachedUA);
+    if (changes.adBlockWhitelist || changes.temporaryExceptions) {
+      updateDeclarativeNetRequestRules(cachedUA);
+      updateBadge(cachedUA, activeCategory);
+    }
+    if (changes.identityBundle) {
+      const bundle = changes.identityBundle.newValue;
+      acceptLanguage = bundle && typeof bundle.acceptLanguage === 'string' ? bundle.acceptLanguage : '';
+      updateDeclarativeNetRequestRules(cachedUA);
+      updateBadge(cachedUA, activeCategory);
+    }
     if (changes.selectedUA) {
       cachedUA = changes.selectedUA.newValue;
       updateDeclarativeNetRequestRules(cachedUA);
@@ -633,7 +714,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       'adBlockCosmeticEnabled',
       'adBlockAntiAdblockEnabled',
       'adBlockStats',
-      'proxyConfig'
+      'proxyConfig',
+      'identityBundle',
+      'recentBlocks'
     ]).then(res => {
       res.adBlockEnabled = res.adBlockEnabled !== undefined ? res.adBlockEnabled : adBlockEnabled;
       res.dnsProvider = res.dnsProvider || dnsProvider;
@@ -641,6 +724,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       res.adBlockCosmeticEnabled = res.adBlockCosmeticEnabled !== undefined ? res.adBlockCosmeticEnabled : adBlockCosmeticEnabled;
       res.adBlockAntiAdblockEnabled = res.adBlockAntiAdblockEnabled !== undefined ? res.adBlockAntiAdblockEnabled : adBlockAntiAdblockEnabled;
       res.adBlockStats = res.adBlockStats || adBlockStats;
+      res.recentBlocks = res.recentBlocks || recentBlocks;
       res.proxyConfig = res.proxyConfig || proxyConfig;
       if (res.proxyConfig) {
         res.proxyConfig.syncGeoWithProxyium = false;
@@ -674,6 +758,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.data.adBlockAntiAdblockEnabled !== undefined) {
         adBlockAntiAdblockEnabled = !!message.data.adBlockAntiAdblockEnabled;
       }
+      if (message.data.identityBundle !== undefined) {
+        acceptLanguage = message.data.identityBundle && typeof message.data.identityBundle.acceptLanguage === 'string' ? message.data.identityBundle.acceptLanguage : '';
+      }
       updateDeclarativeNetRequestRules(cachedUA);
       updateBadge(cachedUA, activeCategory);
       sendResponse({ success: true });
@@ -681,8 +768,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   } else if (message.type === 'get-dnr-rules') {
     if (api.declarativeNetRequest && api.declarativeNetRequest.getDynamicRules) {
-      api.declarativeNetRequest.getDynamicRules().then(rules => {
-        sendResponse({ success: true, count: rules.length, rules: rules.slice(0, 50) });
+      api.declarativeNetRequest.getDynamicRules().then(async rules => {
+        if (!enabledStaticRules) await syncStaticRulesets();
+        sendResponse({ success: true, count: rules.length + enabledStaticRules, dynamic: rules.length, static: enabledStaticRules, rules: rules.slice(0, 50) });
       }).catch(err => {
         sendResponse({ success: false, error: err.message });
       });
@@ -732,7 +820,12 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       adBlockStats.adsBlocked += count;
     }
     adBlockStats.perDomain[domain] = (adBlockStats.perDomain[domain] || 0) + count;
-    api.storage.local.set({ adBlockStats });
+    const category = message.data.category || (isTracker ? 'trackers' : 'cosmetic');
+    adBlockStats.byCategory = adBlockStats.byCategory || { ads: 0, trackers: 0, cosmetic: 0, network: 0 };
+    adBlockStats.byCategory[category] = (adBlockStats.byCategory[category] || 0) + count;
+    recentBlocks.unshift({ domain, category, count, time: Date.now() });
+    if (recentBlocks.length > 40) recentBlocks.length = 40;
+    api.storage.local.set({ adBlockStats, recentBlocks });
     sendResponse({ success: true, stats: adBlockStats });
     return true;
   } else if (message.type === 'get-adblock-stats') {
@@ -743,10 +836,40 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
       totalBlocked: 0,
       adsBlocked: 0,
       trackersBlocked: 0,
-      perDomain: {}
+      perDomain: {},
+      byCategory: { ads: 0, trackers: 0, cosmetic: 0, network: 0 }
     };
-    api.storage.local.set({ adBlockStats });
+    recentBlocks = [];
+    api.storage.local.set({ adBlockStats, recentBlocks });
     sendResponse({ success: true });
+    return true;
+  } else if (message.type === 'rotate-identity') {
+    rotateIdentity().then(picked => sendResponse(picked || { success: false }));
+    return true;
+  } else if (message.type === 'get-block-log') {
+    matchedNetworkBlocks(message.tabId).then(network => {
+      const recent = recentBlocks.concat(network).sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, 8);
+      sendResponse({ stats: adBlockStats, recent });
+    });
+    return true;
+  } else if (message.type === 'save-cosmetic-rule' && message.data) {
+    const rule = cosmeticRule(message.data.domain, message.data.selector);
+    if (!rule || !siteDomain(rule.domain)) {
+      sendResponse({ success: false });
+      return true;
+    }
+    api.storage.local.get('customCosmeticRules').then(res => {
+      const current = Array.isArray(res.customCosmeticRules) ? res.customCosmeticRules : [];
+      const next = [{ ...rule, id: Date.now() }, ...current.filter(item => !(item.domain === rule.domain && item.selector === rule.selector))].slice(0, 100);
+      return api.storage.local.set({ customCosmeticRules: next });
+    }).then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
+    return true;
+  } else if (message.type === 'remove-cosmetic-rule' && message.data) {
+    api.storage.local.get('customCosmeticRules').then(res => {
+      const current = Array.isArray(res.customCosmeticRules) ? res.customCosmeticRules : [];
+      const next = current.filter(item => item.id !== message.data.id);
+      return api.storage.local.set({ customCosmeticRules: next });
+    }).then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
     return true;
   } else if (message.type === 'get-tab-settings') {
     api.tabs.query({}).then(tabs => {
@@ -854,6 +977,34 @@ const TOP_10_UAS = [
   { id: 'ua-chromeos-chrome', title: 'ChromeOS - Chrome', ua: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', category: 'desktop' }
 ];
 
+function applyRotatedProfile(picked, tab) {
+  const identityBundle = buildBundle(picked.ua, picked.category);
+  return api.storage.local.set({
+    selectedUA: picked.ua,
+    activeCategory: picked.category,
+    touchSpoofEnabled: !!picked.touch,
+    maxTouchPoints: picked.touch ? 5 : 0,
+    identityBundle,
+    hardwareHarmonizeEnabled: true,
+    customHardwareCores: identityBundle ? identityBundle.cores : null,
+    customDeviceMemory: identityBundle ? identityBundle.memory : null
+  }).then(() => {
+    cachedUA = picked.ua;
+    activeCategory = picked.category;
+    acceptLanguage = identityBundle && identityBundle.acceptLanguage || '';
+    updateDeclarativeNetRequestRules(picked.ua);
+    updateBadge(picked.ua, picked.category);
+    if (tab && api.tabs && api.tabs.reload && tab.id) api.tabs.reload(tab.id);
+    return picked;
+  });
+}
+
+function rotateIdentity(tab) {
+  const candidates = TOP_10_UAS.filter(item => item.ua !== cachedUA);
+  const picked = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : TOP_10_UAS[0];
+  return picked ? applyRotatedProfile(picked, tab) : Promise.resolve(null);
+}
+
 const STANDARD_LOCS = [
   { id: 'std-ny', name: 'New York, USA', lat: 40.7128, lng: -74.0060 },
   { id: 'std-lon', name: 'London, UK', lat: 51.5074, lng: -0.1278 },
@@ -862,6 +1013,67 @@ const STANDARD_LOCS = [
   { id: 'std-sf', name: 'San Francisco, USA', lat: 37.7749, lng: -122.4194 },
   { id: 'std-syd', name: 'Sydney, Australia', lat: -33.8688, lng: 151.2093 }
 ];
+
+async function matchedNetworkBlocks(tabId) {
+  if (!api.declarativeNetRequest || !api.declarativeNetRequest.getMatchedRules) return [];
+  try {
+    const result = await api.declarativeNetRequest.getMatchedRules(tabId ? { tabId } : {});
+    return (result.rulesMatchedInfo || []).filter(item => item.rule && item.rule.ruleId >= 1000).slice(-6).map(item => ({
+      domain: 'Network rule',
+      category: 'network',
+      count: 1,
+      time: item.timeStamp || Date.now()
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function toggleSiteShield(tab) {
+  if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('about:') || tab.url.startsWith('edge://')) return;
+  let hostname = '';
+  try { hostname = new URL(tab.url).hostname; } catch { return; }
+  if (!hostname) return;
+  api.storage.local.get(['adBlockWhitelist']).then(res => {
+    const whitelist = res.adBlockWhitelist || [];
+    const isExcluded = whitelist.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+    const next = isExcluded
+      ? whitelist.filter(domain => hostname !== domain && !hostname.endsWith('.' + domain))
+      : [...new Set([...whitelist, hostname])];
+    api.storage.local.set({ adBlockWhitelist: next }).then(() => {
+      if (api.tabs && api.tabs.reload && tab.id) api.tabs.reload(tab.id);
+    });
+  });
+}
+
+function applyProfileToTab(tab) {
+  if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('about:') || tab.url.startsWith('edge://')) return;
+  let hostname = '';
+  try { hostname = new URL(tab.url).hostname; } catch { return; }
+  if (!hostname) return;
+  api.storage.local.get(['selectedUA', 'maxTouchPoints', 'touchSpoofEnabled', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'geoSpoofEnabled', 'geoPresetValue', 'geoCoords', 'uiState']).then(local => {
+    return api.storage.sync.get('websiteRules').then(res => ({ local, rules: res.websiteRules || [] }));
+  }).then(({ local, rules }) => {
+    const next = rules.filter(rule => rule.website !== hostname && !(rule.website || '').includes('proxyium.com'));
+    next.push({
+      id: Date.now(),
+      website: hostname,
+      userAgent: local.selectedUA || cachedUA,
+      touchPoints: local.touchSpoofEnabled ? local.maxTouchPoints || 0 : 0,
+      touchSpoofEnabled: !!local.touchSpoofEnabled,
+      jsBlocked: !!local.jsBlockEnabled,
+      jsProtected: !!local.jsProtectEnabled,
+      uaSpoofEnabled: local.uaSpoofEnabled !== false,
+      geoSpoofEnabled: !!local.geoSpoofEnabled,
+      geoPresetValue: local.geoPresetValue,
+      geoCoords: local.geoCoords,
+      uiState: local.uiState
+    });
+    return api.storage.sync.set({ websiteRules: next });
+  }).then(() => {
+    if (api.tabs && api.tabs.reload && tab.id) api.tabs.reload(tab.id);
+  }).catch(() => {});
+}
 
 function setupContextMenus() {
   if (!api.contextMenus) return;
@@ -1104,28 +1316,30 @@ api.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+if (api.commands && api.commands.onCommand) {
+  api.commands.onCommand.addListener(command => {
+    if (command === 'open-profile-lab' && api.tabs && api.tabs.create) {
+      api.tabs.create({ url: api.runtime.getURL('spoof_test.html') });
+      return;
+    }
+    if (!api.tabs || !api.tabs.query) return;
+    api.tabs.query({ active: true, currentWindow: true }).then(tabs => {
+      const tab = tabs && tabs[0];
+      if (command === 'pause-shield-site') toggleSiteShield(tab);
+      if (command === 'apply-current-tab') applyProfileToTab(tab);
+    }).catch(() => {});
+  });
+}
+
+if (api.tabs && api.tabs.onActivated) {
+  api.tabs.onActivated.addListener(() => updateBadge(cachedUA, activeCategory));
+}
+
 if (api.contextMenus && api.contextMenus.onClicked) {
   api.contextMenus.onClicked.addListener((info, tab) => {
     // Quick Action: Rotate Identity Now
     if (info.menuItemId === 'morph-agent-rotate-ua') {
-      const candidates = TOP_10_UAS.filter(u => u.ua !== cachedUA);
-      const picked = candidates.length > 0
-        ? candidates[Math.floor(Math.random() * candidates.length)]
-        : TOP_10_UAS[Math.floor(Math.random() * TOP_10_UAS.length)];
-      if (picked) {
-        api.storage.local.set({
-          selectedUA: picked.ua,
-          activeCategory: picked.category,
-          touchSpoofEnabled: picked.touch || false,
-          maxTouchPoints: picked.touch ? 5 : 0
-        }).then(() => {
-          cachedUA = picked.ua;
-          activeCategory = picked.category;
-          updateDeclarativeNetRequestRules(picked.ua);
-          updateBadge(picked.ua, picked.category);
-          if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
-        });
-      }
+      rotateIdentity(tab);
       return;
     }
 
@@ -1149,26 +1363,7 @@ if (api.contextMenus && api.contextMenus.onClicked) {
 
     // Quick Action: Toggle Ad & Tracker Shield for this Site
     if (info.menuItemId === 'morph-agent-toggle-shield-site') {
-      if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('moz-extension://') || tab.url.startsWith('about:')) return;
-      try {
-        const hostname = new URL(tab.url).hostname;
-        if (!hostname) return;
-        api.storage.local.get(['adBlockWhitelist']).then(res => {
-          const whitelist = res.adBlockWhitelist || [];
-          const isExcluded = whitelist.some(d => hostname === d || hostname.endsWith('.' + d));
-          const next = isExcluded
-            ? whitelist.filter(d => hostname !== d && !hostname.endsWith('.' + d))
-            : [...new Set([...whitelist, hostname])];
-          api.storage.local.set({ adBlockWhitelist: next }).then(() => {
-            if (typeof synchronizeRules === 'function') {
-              synchronizeRules(cachedUA);
-            }
-            if (api.tabs && api.tabs.reload && tab && tab.id) api.tabs.reload(tab.id);
-          });
-        });
-      } catch (e) {
-        console.warn('[MorphAgent] Failed to toggle site shield:', e);
-      }
+      toggleSiteShield(tab);
       return;
     }
 
@@ -1313,16 +1508,7 @@ if (api.alarms && api.alarms.onAlarm) {
       const state = await api.storage.local.get('ghostModeEnabled');
       if (!state.ghostModeEnabled) return;
       const randomUA = TOP_10_UAS[Math.floor(Math.random() * TOP_10_UAS.length)];
-      api.storage.local.set({
-        selectedUA: randomUA.ua,
-        activeCategory: randomUA.category,
-        touchSpoofEnabled: randomUA.touch || false,
-        maxTouchPoints: randomUA.touch ? 5 : 0
-      }).then(() => {
-        cachedUA = randomUA.ua;
-        activeCategory = randomUA.category;
-        updateDeclarativeNetRequestRules(cachedUA);
-        updateBadge(cachedUA, activeCategory);
+      applyRotatedProfile(randomUA).then(() => {
         console.log('[MorphAgent 4.8.2 Ghost Mode] Automatically rotated User Agent:', randomUA.title);
       });
     }

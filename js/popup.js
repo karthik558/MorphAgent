@@ -301,6 +301,7 @@ function startPopup() {
       const response = await browser.runtime.sendMessage({ type: 'get-dnr-rules' });
       shieldRuleStatus.textContent = response?.success ? `${response.count} network rules active` : 'Network rules unavailable';
     } catch { shieldRuleStatus.textContent = 'Network rules unavailable'; }
+    try { await renderBlockLog(); } catch { /* Block history is optional. */ }
   }
   if (siteShieldButton) {
     siteShieldButton.addEventListener('click', async () => {
@@ -315,6 +316,93 @@ function startPopup() {
       } catch { shieldRuleStatus.textContent = 'Could not change site protection. Try again.'; siteShieldButton.disabled = false; }
     });
     refreshSiteShield();
+  }
+
+  let forkedProfiles = [];
+
+  const rotateIdentityButton = document.getElementById('rotate-identity-btn');
+  if (rotateIdentityButton) {
+    rotateIdentityButton.addEventListener('click', () => {
+      if (!browser.runtime) return;
+      browser.runtime.sendMessage({ type: 'rotate-identity' }, () => window.close());
+    });
+  }
+
+  async function renderBlockLog() {
+    const ads = document.getElementById('count-ads');
+    const trackers = document.getElementById('count-trackers');
+    const elements = document.getElementById('count-elements');
+    const log = document.getElementById('block-log');
+    if (!ads || !log || !browser.runtime) return;
+    let tabId = null;
+    try {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      tabId = tab && tab.id;
+    } catch { /* The popup can open without a normal tab. */ }
+    let payload = { stats: {}, recent: [] };
+    try { payload = await browser.runtime.sendMessage({ type: 'get-block-log', tabId }) || payload; } catch { /* Stats stay at zero. */ }
+    const stats = payload.stats || {};
+    const byCategory = stats.byCategory || {};
+    ads.textContent = `Ads ${stats.adsBlocked || 0}`;
+    trackers.textContent = `Trackers ${stats.trackersBlocked || 0}`;
+    elements.textContent = `Elements ${byCategory.cosmetic || 0}`;
+    log.replaceChildren();
+    try {
+      const stored = await browser.storage.local.get('customCosmeticRules');
+      (stored.customCosmeticRules || []).filter(rule => !shieldHostname || rule.domain === shieldHostname).slice(0, 4).forEach(rule => {
+        const row = document.createElement('div');
+        row.className = 'block-log-row';
+        const label = document.createElement('span');
+        label.textContent = `${rule.domain} · ${rule.selector}`;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', async () => {
+          await browser.runtime.sendMessage({ type: 'remove-cosmetic-rule', data: { id: rule.id } });
+          await renderBlockLog();
+        });
+        row.append(label, remove);
+        log.appendChild(row);
+      });
+    } catch { /* Saved element rules are optional. */ }
+    (payload.recent || []).slice(0, 4).forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'block-log-row';
+      const label = document.createElement('span');
+      label.textContent = `${entry.domain || 'Request'} · ${entry.category || 'block'}`;
+      row.appendChild(label);
+      if (entry.domain && entry.domain.includes('.')) {
+        const allow = document.createElement('button');
+        allow.type = 'button';
+        allow.textContent = 'Allow site';
+        allow.addEventListener('click', async () => {
+          const stored = await browser.storage.local.get('adBlockWhitelist');
+          const adBlockWhitelist = stored.adBlockWhitelist || [];
+          await browser.storage.local.set({ adBlockWhitelist: [...new Set([...adBlockWhitelist, entry.domain])] });
+          try { await browser.runtime.sendMessage({ type: 'reload-dnr-rules' }); } catch { /* The shield reloads on the next popup open. */ }
+          await refreshSiteShield();
+        });
+        row.appendChild(allow);
+      }
+      log.appendChild(row);
+    });
+  }
+
+  const pickElementButton = document.getElementById('pick-element-btn');
+  if (pickElementButton) {
+    pickElementButton.addEventListener('click', async () => {
+      try {
+        const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+        if (!tab || !tab.id || !/^https?:/i.test(tab.url || '')) {
+          if (shieldRuleStatus) shieldRuleStatus.textContent = 'Open a website to pick an element';
+          return;
+        }
+        await browser.tabs.sendMessage(tab.id, { type: 'pick-element' });
+        window.close();
+      } catch {
+        if (shieldRuleStatus) shieldRuleStatus.textContent = 'Reload the page, then pick an element';
+      }
+    });
   }
 
   // AdBlock & DNS Event Listeners & Helpers
@@ -916,6 +1004,8 @@ function startPopup() {
     if (browserType && browserType !== 'all') {
       variants = filterProfilesByBrowser(variants, browserType);
     }
+    const forks = forkedProfiles.filter(item => item.category === category && item.platform === platform);
+    variants = variants.concat(browserType && browserType !== 'all' ? filterProfilesByBrowser(forks, browserType) : forks);
 
     // Cache active variants list for selectProfile lookup
     profileSelect.activeVariants = variants;
@@ -1347,6 +1437,22 @@ function startPopup() {
     }
   }
 
+  function identitySettings(ua) {
+    const identity = globalThis.MorphIdentity;
+    const bundle = identity && ua ? identity.buildBundle(ua, currentCategory || 'desktop') : null;
+    if (!bundle) return {};
+    if (geoToggle && geoToggle.checked) {
+      bundle.languages = null;
+      bundle.acceptLanguage = '';
+    }
+    return {
+      identityBundle: bundle,
+      hardwareHarmonizeEnabled: true,
+      customHardwareCores: bundle.cores,
+      customDeviceMemory: bundle.memory
+    };
+  }
+
   function saveSettings() {
     const selectedUA = customUAInput.value.trim();
     const maxTouchPoints = parseInt(touchPointsInput.value, 10) || 0;
@@ -1413,6 +1519,7 @@ function startPopup() {
         adBlockEnabled: adblockToggle ? adblockToggle.checked : true,
         dnsProvider: dnsProviderSelect ? dnsProviderSelect.value : 'adguard',
         dnsCustomEndpoint: dnsCustomEndpoint ? dnsCustomEndpoint.value.trim() : '',
+        activeCategory: currentCategory || 'desktop',
         uiState: {
           category: currentCategory,
           platform: currentPlatform,
@@ -1420,6 +1527,7 @@ function startPopup() {
           profileIndex: selectedProfile ? selectedProfile.index : null
         }
       };
+      Object.assign(settings, identitySettings(finalUA));
 
       if (browser && browser.runtime && browser.runtime.sendMessage) {
         try {
@@ -1502,6 +1610,7 @@ function startPopup() {
 
               // Save updated rules
               browser.storage.sync.set({ websiteRules }, () => {
+                if (browser.storage.local) browser.storage.local.set(identitySettings(finalUA));
                 showStatus('Saved');
               });
             });
@@ -1568,7 +1677,10 @@ function startPopup() {
       geoSpoofEnabled: false,
       geoPresetValue: '40.7128,-74.0060',
       geoCoords: { lat: 40.7128, lng: -74.0060 },
-      applyScope: 'current'
+      applyScope: 'current',
+      identityBundle: null,
+      customHardwareCores: null,
+      customDeviceMemory: null
     };
 
     // Clear the custom UA input
@@ -1704,6 +1816,10 @@ function startPopup() {
 
     // Load saved settings
     setTimeout(async () => {
+      try {
+        const stored = await browser.storage.local.get('forkedProfiles');
+        forkedProfiles = Array.isArray(stored.forkedProfiles) ? stored.forkedProfiles : [];
+      } catch { forkedProfiles = []; }
       try { await loadCustomLocations(); } catch (error) { console.warn('Could not load custom locations:', error); }
       loadSettings();
     }, 50);

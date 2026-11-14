@@ -1,5 +1,5 @@
 import {siteDomain} from './network-rules.mjs';
-export const localKeys = ('selectedUA uaSpoofEnabled maxTouchPoints touchSpoofEnabled jsBlockEnabled jsProtectEnabled geoSpoofEnabled geoPresetValue geoCoords geoTimezone geoLocale activeCategory uiState theme ghostModeEnabled ghostInterval proxyConfig hardwareHarmonizeEnabled customHardwareCores customDeviceMemory autoHarmonizeTzEnabled adBlockEnabled dnsProvider dnsCustomEndpoint adBlockCosmeticEnabled adBlockAntiAdblockEnabled filtersState adBlockNetworkEnabled adBlockWhitelist trackersBlockEnabled removeTrackingParamsEnabled hideSearchQueriesEnabled sendDntGpcEnabled webrtcPreventLeakEnabled removeXClientDataEnabled').split(' ');
+export const localKeys = ('selectedUA uaSpoofEnabled maxTouchPoints touchSpoofEnabled jsBlockEnabled jsProtectEnabled geoSpoofEnabled geoPresetValue geoCoords geoTimezone geoLocale activeCategory uiState theme ghostModeEnabled ghostInterval proxyConfig hardwareHarmonizeEnabled customHardwareCores customDeviceMemory autoHarmonizeTzEnabled adBlockEnabled dnsProvider dnsCustomEndpoint adBlockCosmeticEnabled adBlockAntiAdblockEnabled filtersState adBlockNetworkEnabled adBlockWhitelist trackersBlockEnabled removeTrackingParamsEnabled hideSearchQueriesEnabled sendDntGpcEnabled webrtcPreventLeakEnabled removeXClientDataEnabled identityBundle forkedProfiles customCosmeticRules').split(' ');
 export const syncKeys = ['websiteRules','blockList','whiteList','listMode','customLocations'];
 const object = v => v && typeof v === 'object' && !Array.isArray(v);
 function coordinates(v) {
@@ -40,6 +40,14 @@ export function validateConfiguration(input) {
     if (key === 'geoTimezone' && value && value !== 'auto') { try {new Intl.DateTimeFormat('en', {timeZone:value});} catch {throw Error('Invalid timezone.');} }
     if (key === 'adBlockWhitelist' && (!Array.isArray(value) || value.some(v => !siteDomain(v)))) throw Error('Invalid filter exceptions.');
     if (key === 'filtersState' && value !== null && (!Array.isArray(value) || value.some(cat => !object(cat) || !Array.isArray(cat.subfilters) || cat.subfilters.some(sub => !object(sub) || typeof sub.id !== 'string' || typeof sub.enabled !== 'boolean')))) throw Error('Invalid filter settings.');
+    if (key === 'identityBundle' && value !== null && !object(value)) throw Error('Invalid identity profile.');
+    if (key === 'identityBundle' && object(value)) {
+      if (value.acceptLanguage && (typeof value.acceptLanguage !== 'string' || !/^[A-Za-z0-9*;=., -]{2,80}$/.test(value.acceptLanguage))) throw Error('Invalid Accept-Language value.');
+      if (value.ua && (typeof value.ua !== 'string' || value.ua.length > 2048)) throw Error('Invalid identity user agent.');
+      if (value.screen && (!object(value.screen) || !Number.isFinite(Number(value.screen.width)) || !Number.isFinite(Number(value.screen.height)))) throw Error('Invalid identity screen.');
+    }
+    if (key === 'forkedProfiles' && (!Array.isArray(value) || value.length > 30 || value.some(item => !object(item) || typeof item.name !== 'string' || typeof item.ua !== 'string' || item.ua.length > 2048))) throw Error('Invalid forked profiles.');
+    if (key === 'customCosmeticRules' && (!Array.isArray(value) || value.length > 100 || value.some(item => !object(item) || !siteDomain(item.domain) || typeof item.selector !== 'string' || item.selector.length > 200 || /[{}<>\\\n]|url\s*\(|expression\s*\(/i.test(item.selector)))) throw Error('Invalid element rules.');
     if (key === 'proxyConfig') {
       if (!object(value) || typeof value.enabled !== 'boolean' || !['direct','system','manual','fixed_servers','pac','pac_script'].includes(value.mode)) throw Error('Invalid proxy configuration.');
       if ('bypassList' in value && typeof value.bypassList !== 'string') throw Error('Invalid proxy bypass list.');

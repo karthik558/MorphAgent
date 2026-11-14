@@ -308,15 +308,26 @@
           } catch (e) { }
         }
 
-        // Spoof Screen Metrics
+        // Spoof Screen Metrics. A matched profile replaces the default desktop size.
+        const screenSpec = s.identityBundle && s.identityBundle.screen;
+        const screenWidth = screenSpec && Number.isFinite(Number(screenSpec.width)) ? Number(screenSpec.width) : 1920;
+        const screenHeight = screenSpec && Number.isFinite(Number(screenSpec.height)) ? Number(screenSpec.height) : 1080;
+        const screenDepth = screenSpec && Number.isFinite(Number(screenSpec.colorDepth)) ? Number(screenSpec.colorDepth) : 24;
         if (window.Screen) {
-          Object.defineProperty(Screen.prototype, 'width', { get: () => 1920, configurable: true });
-          Object.defineProperty(Screen.prototype, 'height', { get: () => 1080, configurable: true });
-          Object.defineProperty(Screen.prototype, 'colorDepth', { get: () => 24, configurable: true });
-          Object.defineProperty(Screen.prototype, 'pixelDepth', { get: () => 24, configurable: true });
+          Object.defineProperty(Screen.prototype, 'width', { get: () => screenWidth, configurable: true });
+          Object.defineProperty(Screen.prototype, 'height', { get: () => screenHeight, configurable: true });
+          Object.defineProperty(Screen.prototype, 'colorDepth', { get: () => screenDepth, configurable: true });
+          Object.defineProperty(Screen.prototype, 'pixelDepth', { get: () => screenDepth, configurable: true });
+          if (screenSpec) {
+            Object.defineProperty(Screen.prototype, 'availWidth', { get: () => screenWidth, configurable: true });
+            Object.defineProperty(Screen.prototype, 'availHeight', { get: () => screenHeight, configurable: true });
+          }
         }
-        Object.defineProperty(window, 'innerWidth', { get: () => 1920, configurable: true });
-        Object.defineProperty(window, 'innerHeight', { get: () => 1080, configurable: true });
+        Object.defineProperty(window, 'innerWidth', { get: () => screenWidth, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { get: () => screenHeight, configurable: true });
+        if (screenSpec && Number.isFinite(Number(screenSpec.devicePixelRatio))) {
+          Object.defineProperty(window, 'devicePixelRatio', { get: () => Number(screenSpec.devicePixelRatio), configurable: true });
+        }
 
         // Spoof Media Devices (Webcams/Mics)
         if (window.MediaDevices && MediaDevices.prototype.enumerateDevices) {
@@ -467,10 +478,11 @@
             const originalGetParameter = ctxProto.getParameter;
             const originalReadPixels = ctxProto.readPixels;
 
+            const webglSpec = s.identityBundle && s.identityBundle.webgl;
             ctxProto.getParameter = function (parameter) {
               emitThreat('WebGL Parameter');
-              if (parameter === 37445) return 'Google Inc. (Intel)';
-              if (parameter === 37446) return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+              if (parameter === 37445) return webglSpec && webglSpec.vendor ? webglSpec.vendor : 'Google Inc. (Intel)';
+              if (parameter === 37446) return webglSpec && webglSpec.renderer ? webglSpec.renderer : 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
               return originalGetParameter.apply(this, arguments);
             };
 
@@ -487,6 +499,81 @@
           };
           spoofWebGL(window.WebGLRenderingContext.prototype);
           spoofWebGL(window.WebGL2RenderingContext ? window.WebGL2RenderingContext.prototype : null);
+        }
+
+        if (window.OffscreenCanvasRenderingContext2D && !window.__MORPH_OFFSCREEN_PROTECTED) {
+          window.__MORPH_OFFSCREEN_PROTECTED = true;
+          const originalOffscreenRead = OffscreenCanvasRenderingContext2D.prototype.getImageData;
+          if (originalOffscreenRead) {
+            OffscreenCanvasRenderingContext2D.prototype.getImageData = function () {
+              const imageData = originalOffscreenRead.apply(this, arguments);
+              if (imageData && imageData.data && imageData.data.length) {
+                imageData.data[0] = (imageData.data[0] + (domainHash % 3)) % 255;
+              }
+              return imageData;
+            };
+          }
+        }
+
+        if (!window.__MORPH_WEBGPU_PROTECTED && navigator.gpu && typeof navigator.gpu.requestAdapter === 'function') {
+          window.__MORPH_WEBGPU_PROTECTED = true;
+          const gpuInfo = (s.identityBundle && s.identityBundle.webgpu) || {
+            vendor: 'intel', architecture: 'gen-9', device: '', description: 'Intel(R) UHD Graphics 630'
+          };
+          const originalRequestAdapter = navigator.gpu.requestAdapter.bind(navigator.gpu);
+          navigator.gpu.requestAdapter = function () {
+            const pending = originalRequestAdapter.apply(navigator.gpu, arguments);
+            if (!pending || typeof pending.then !== 'function') return pending;
+            return pending.then(adapter => {
+              if (!adapter) return adapter;
+              try { Object.defineProperty(adapter, 'info', { configurable: true, get: () => gpuInfo }); } catch (e) { }
+              if (typeof adapter.requestAdapterInfo === 'function') adapter.requestAdapterInfo = function () { return Promise.resolve(gpuInfo); };
+              return adapter;
+            });
+          };
+        }
+
+        if (s.identityBundle && s.identityBundle.coverWorkers && !window.__MORPH_WORKER_COVERED && window.Worker) {
+          window.__MORPH_WORKER_COVERED = true;
+          const nativeWorker = window.Worker;
+          const prelude = `try{const s=${JSON.stringify({
+            ua: s.identityBundle.ua || s.selectedUA || '',
+            cores: s.identityBundle.cores || 0,
+            memory: s.identityBundle.memory || 0,
+            languages: s.identityBundle.languages || []
+          })};const proto=self.WorkerNavigator&&WorkerNavigator.prototype;if(proto){if(s.ua){Object.defineProperty(proto,'userAgent',{get:function(){return s.ua;},configurable:true});}if(s.languages&&s.languages.length){Object.defineProperty(proto,'language',{get:function(){return s.languages[0];},configurable:true});Object.defineProperty(proto,'languages',{get:function(){return s.languages.slice();},configurable:true});}if(s.cores)Object.defineProperty(proto,'hardwareConcurrency',{get:function(){return s.cores;},configurable:true});if(s.memory)Object.defineProperty(proto,'deviceMemory',{get:function(){return s.memory;},configurable:true});}}catch(e){}\n`;
+          function CoveredWorker(url, options) {
+            try {
+              const opts = options || {};
+              if (opts.type === 'module') return new nativeWorker(url, opts);
+              const absolute = new URL(String(url), document.baseURI);
+              if (absolute.origin !== location.origin || absolute.protocol === 'blob:' || absolute.protocol === 'data:') return new nativeWorker(url, opts);
+              const blobUrl = URL.createObjectURL(new Blob([prelude + 'importScripts(' + JSON.stringify(absolute.href) + ');\n'], { type: 'text/javascript' }));
+              return new nativeWorker(blobUrl, opts);
+            } catch (error) {
+              return new nativeWorker(url, options);
+            }
+          }
+          CoveredWorker.prototype = nativeWorker.prototype;
+          window.Worker = CoveredWorker;
+        }
+
+        if (s.identityBundle && Array.isArray(s.identityBundle.voices) && window.SpeechSynthesis && !window.__MORPH_VOICES_PROTECTED) {
+          window.__MORPH_VOICES_PROTECTED = true;
+          const voices = s.identityBundle.voices;
+          SpeechSynthesis.prototype.getVoices = function () { return voices; };
+        }
+
+        if (s.identityBundle && Array.isArray(s.identityBundle.keyboard) && navigator.keyboard && typeof navigator.keyboard.getLayoutMap === 'function' && !window.__MORPH_KEYBOARD_PROTECTED) {
+          window.__MORPH_KEYBOARD_PROTECTED = true;
+          const layout = new Map(s.identityBundle.keyboard);
+          navigator.keyboard.getLayoutMap = function () { return Promise.resolve(layout); };
+        }
+
+        if (s.identityBundle && s.identityBundle.peripherals === 'none') {
+          ['usb', 'hid', 'serial', 'bluetooth'].forEach(key => {
+            try { Object.defineProperty(Navigator.prototype, key, { get: () => undefined, configurable: true }); } catch (e) { }
+          });
         }
 
         // ClientRects Bounding Box Spoofing
@@ -585,6 +672,15 @@
         if (tzInfo.languages && tzInfo.languages.length > 0) {
           Object.defineProperty(Navigator.prototype, 'language', { get: () => tzInfo.languages[0], configurable: true });
           Object.defineProperty(Navigator.prototype, 'languages', { get: () => tzInfo.languages, configurable: true });
+        }
+      }
+
+      const geoOwnsLanguage = s.geoSpoofEnabled && s.autoHarmonizeTzEnabled !== false;
+      if (!geoOwnsLanguage && s.identityBundle && Array.isArray(s.identityBundle.languages) && s.identityBundle.languages.length) {
+        const profileLanguages = s.identityBundle.languages.filter(language => typeof language === 'string').slice(0, 8);
+        if (profileLanguages.length) {
+          Object.defineProperty(Navigator.prototype, 'language', { get: () => profileLanguages[0], configurable: true });
+          Object.defineProperty(Navigator.prototype, 'languages', { get: () => profileLanguages.slice(), configurable: true });
         }
       }
     }

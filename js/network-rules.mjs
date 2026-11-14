@@ -30,7 +30,15 @@ function allowedDomains(domain, allowed) {
   return [...new Set(allowed.flatMap(item => domain === item || domain.endsWith('.'+item) ? [domain] : item.endsWith('.'+domain) ? [item] : []))];
 }
 
-export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], whiteList = [], listMode, exclusions = [] }) {
+function withAcceptLanguage(ua, acceptLanguage) {
+  const headers = uaHeaders(ua);
+  if (typeof acceptLanguage === 'string' && /^[A-Za-z0-9*;=., -]{2,80}$/.test(acceptLanguage)) {
+    headers.push({ header: 'Accept-Language', operation: 'set', value: acceptLanguage });
+  }
+  return headers;
+}
+
+export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], whiteList = [], listMode, exclusions = [], acceptLanguage = '' }) {
   if (!enabled || !ua) return [];
   const domains = list => [...new Set(list.map(item => siteDomain(item.website)).filter(Boolean))];
   const excluded = ['proxyium.com', ...exclusions, ...(listMode === 'blacklist' ? domains(blockList) : [])];
@@ -45,13 +53,13 @@ export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], w
     resourceTypes: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping', 'csp_report', 'media', 'websocket', 'other']
   };
   if (allowed) condition.requestDomains = allowed;
-  const rules = [{ id: 1, priority: 1, action: { type: 'modifyHeaders', requestHeaders: uaHeaders(ua) }, condition }];
+  const rules = [{ id: 1, priority: 1, action: { type: 'modifyHeaders', requestHeaders: withAcceptLanguage(ua, acceptLanguage) }, condition }];
   siteRules.forEach((rule, index) => {
     if (rule.uaSpoofEnabled === false) return;
     const requestDomains = allowedDomains(rule.domain, allowed);
     if (!requestDomains.length) return;
     rules.push({ id: 100000 + index, priority: 10000 - index,
-      action: { type: 'modifyHeaders', requestHeaders: uaHeaders(rule.userAgent || ua) },
+      action: { type: 'modifyHeaders', requestHeaders: withAcceptLanguage(rule.userAgent || ua, acceptLanguage) },
       condition: { ...condition, excludedRequestDomains:[...baseExcluded, ...siteRules.slice(0,index).map(site=>site.domain)], requestDomains } });
   });
   return rules;
@@ -80,4 +88,16 @@ export function buildScriptRules({ enabled, websiteRules = [], blockList = [], w
     rules.push(makeRule(200001 + index, {requestDomains, excludedRequestDomains: [...new Set([...excluded, ...earlier])]}));
   });
   return rules;
+}
+
+const ALLOW_TYPES = ['sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping', 'media', 'websocket', 'other'];
+
+// Lets a paused site load third-party requests that the static block lists would stop.
+export function buildSiteAllowRules(domains = []) {
+  return [...new Set(domains.filter(domain => typeof domain === 'string' && domain.includes('.')))].slice(0, 100).map((domain, index) => ({
+    id: 300000 + index,
+    priority: 100,
+    action: { type: 'allow' },
+    condition: { initiatorDomains: [domain], resourceTypes: ALLOW_TYPES }
+  }));
 }

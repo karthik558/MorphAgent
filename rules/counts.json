@@ -1,0 +1,13 @@
+{
+  "miners": 182,
+  "trackers": 9000,
+  "ads": 18000,
+  "total": 27182,
+  "generatedAt": "2026-11-14",
+  "sources": [
+    "EasyList",
+    "EasyPrivacy",
+    "Peter Lowe",
+    "NoCoin"
+  ]
+}

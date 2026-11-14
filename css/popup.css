@@ -395,9 +395,18 @@ html.mobile .extension-container {
 
 .select-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   width: 100%;
+  min-width: 0;
+}
+
+.select-stack,
+.select-wrapper,
+.form-section,
+.main-content {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .select-wrapper {
@@ -690,9 +699,10 @@ input:checked + .toggle-slider:before {
 /* Action Buttons */
 .action-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   width: 100%;
+  min-width: 0;
 }
 
 .btn {
@@ -700,15 +710,19 @@ input:checked + .toggle-slider:before {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 9px 12px;
   min-height: 36px;
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s var(--ease);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
   border: none;
   user-select: none;
+  white-space: nowrap;
 }
 
 .btn:active {
@@ -748,7 +762,6 @@ input:checked + .toggle-slider:before {
 .btn-solid:hover {
   background: var(--accent-red-hover);
   box-shadow: 0 4px 12px rgba(255, 9, 5, 0.35);
-  transform: translateY(-1px);
 }
 
 .btn-full {

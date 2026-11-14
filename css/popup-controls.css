@@ -11,19 +11,22 @@
 .device-card.active span { font-weight: 650; }
 .device-card:disabled { opacity: .65; cursor: not-allowed; }
 
-/* Compact protection controls. */
+/* Shield uses the same feature row as the other popup controls. */
 .shield-footer a { color: var(--accent-red); text-decoration: none; font-size: 12px; font-weight: 600; }
 .shield-footer a:hover { text-decoration: underline; }
-.shield-card { padding: 12px; margin-bottom: 20px; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px; }
-.shield-heading, .shield-site-row, .shield-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
-.shield-heading > div { min-width: 0; }
-.shield-heading h2 { font-size: 13px; font-weight: 650; }
-.shield-heading p, .shield-footer { font-size: 11px; color: var(--text-secondary); }
-.shield-heading .toggle-switch { flex-shrink: 0; }
-.shield-site-row { padding: 12px 0; }
+#shield-card { align-items: stretch; }
+.shield-details { width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+.shield-site-row, .shield-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.shield-footer { flex-wrap: wrap; font-size: 11px; color: var(--text-secondary); }
 #shield-site-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 12px; }
 .shield-site-button { flex-shrink: 0; padding: 6px 10px; border: 1px solid var(--border-light); border-radius: 6px; background: var(--bg-main); color: var(--text-primary); cursor: pointer; font-size: 12px; }
 .shield-site-button:hover:not(:disabled) { border-color: var(--accent-red); background: var(--bg-hover); }
 .shield-footer { align-items: baseline; padding-top: 10px; border-top: 1px solid var(--border-light); }
 .shield-footer a { flex-shrink: 0; }
 #shield-rule-status { min-width: 0; overflow-wrap: anywhere; }
+.shield-counts, .block-log-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-secondary); font-size: 11px; }
+.shield-counts { padding-bottom: 8px; }
+.block-log-row { padding: 4px 0; }
+.block-log-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.block-log-row button { border: 0; background: transparent; color: var(--accent-red); font-size: 11px; font-weight: 600; cursor: pointer; }
+.section-inline-btn { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; }

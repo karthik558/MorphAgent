@@ -43,7 +43,9 @@
     'hideSearchQueriesEnabled',
     'sendDntGpcEnabled',
     'webrtcPreventLeakEnabled',
-    'removeXClientDataEnabled'
+    'removeXClientDataEnabled',
+    'identityBundle',
+    'customCosmeticRules'
   ]).then((settings) => {
     return api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
@@ -159,7 +161,10 @@
     const excluded = (Array.isArray(options.adBlockWhitelist) ? options.adBlockWhitelist : []).some(site => matchesSite(location.hostname, site));
     const active = options.adBlockEnabled !== false && !excluded;
     const engine = globalThis.MorphAgentAdBlock;
-    const selectors = active ? engine.cosmeticSelectors(options, location.hostname) : [];
+    const customSelectors = active && Array.isArray(options.customCosmeticRules)
+      ? options.customCosmeticRules.filter(rule => rule && matchesSite(location.hostname, rule.domain) && typeof rule.selector === 'string' && rule.selector.length <= 200 && !/[{}<>\\]|url\s*\(|expression\s*\(/i.test(rule.selector)).map(rule => rule.selector)
+      : [];
+    const selectors = active ? engine.cosmeticSelectors(options, location.hostname).concat(customSelectors) : [];
     if (cosmeticObserver) cosmeticObserver.disconnect();
     clearTimeout(cosmeticTimer);
     clearInterval(videoTimer);
@@ -209,7 +214,7 @@
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    const keys = ['adBlockEnabled', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockWhitelist', 'filtersState', 'removeTrackingParamsEnabled'];
+    const keys = ['adBlockEnabled', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockWhitelist', 'filtersState', 'removeTrackingParamsEnabled', 'customCosmeticRules'];
     if (!keys.some(key => key in changes)) return;
     const updated = {};
     for (const key of keys) if (key in changes) updated[key] = changes[key].newValue;
@@ -220,6 +225,9 @@
     api.runtime.onMessage.addListener((message) => {
       if (message.type === 'update-settings' && message.data) {
         window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(message.data) }));
+      }
+      if (message.type === 'pick-element' && window.top === window) {
+        startElementPicker();
       }
     });
   }
@@ -236,6 +244,68 @@
     }
   });
 
+
+  function startElementPicker() {
+    if (document.getElementById('morph-element-picker')) return;
+    const box = document.createElement('div');
+    box.id = 'morph-element-picker';
+    box.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483646;border:2px solid #ff0b2a;background:rgba(255,11,42,0.15);';
+    const bar = document.createElement('div');
+    bar.id = 'morph-element-picker-bar';
+    bar.textContent = 'Click an element to hide it on this site. Esc cancels.';
+    bar.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#181818;color:#fff;border:1px solid #ff0b2a;border-radius:8px;padding:8px 12px;font:12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+    document.documentElement.appendChild(box);
+    document.documentElement.appendChild(bar);
+    const selectorFor = element => {
+      if (!(element instanceof Element) || element === bar || element === box) return '';
+      if (element.id && /^[A-Za-z][\w-]*$/.test(element.id)) {
+        const id = '#' + CSS.escape(element.id);
+        try { if (document.querySelectorAll(id).length === 1) return id; } catch { /* Keep walking. */ }
+      }
+      const parts = [];
+      let node = element;
+      while (node && node.nodeType === 1 && node !== document.body && parts.length < 4) {
+        let part = node.tagName.toLowerCase();
+        const classes = [...node.classList].filter(name => /^[A-Za-z][\w-]*$/.test(name)).slice(0, 2);
+        if (classes.length) part += classes.map(name => '.' + CSS.escape(name)).join('');
+        const parent = node.parentElement;
+        if (parent) {
+          const siblings = [...parent.children].filter(child => child.tagName === node.tagName);
+          if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(node) + 1})`;
+        }
+        parts.unshift(part);
+        node = parent;
+      }
+      return parts.join(' > ');
+    };
+    const stop = () => {
+      document.removeEventListener('mousemove', move, true);
+      document.removeEventListener('click', choose, true);
+      document.removeEventListener('keydown', cancel, true);
+      box.remove();
+      bar.remove();
+    };
+    const move = event => {
+      const target = event.target;
+      if (!(target instanceof Element) || target === bar) return;
+      const rect = target.getBoundingClientRect();
+      box.style.left = rect.left + 'px';
+      box.style.top = rect.top + 'px';
+      box.style.width = rect.width + 'px';
+      box.style.height = rect.height + 'px';
+    };
+    const choose = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const selector = selectorFor(event.target);
+      stop();
+      if (selector) api.runtime.sendMessage({ type: 'save-cosmetic-rule', data: { domain: location.hostname, selector } }).catch(() => {});
+    };
+    const cancel = event => { if (event.key === 'Escape') stop(); };
+    document.addEventListener('mousemove', move, true);
+    document.addEventListener('click', choose, true);
+    document.addEventListener('keydown', cancel, true);
+  }
 
   // =========================================================================
   // Proxyium Anonymous Web Tunnel Engine
