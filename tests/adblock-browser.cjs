@@ -5,7 +5,7 @@ const path = require('node:path');
 const puppeteer = require('puppeteer');
 const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100, timeout: 10000});
 (async () => {
-  const server = http.createServer((req, res) => { if (req.url.split('?')[0].endsWith('.js')) {res.setHeader('Content-Type','application/javascript');res.end('window.adScriptExecutions = (window.adScriptExecutions || 0) + 1;');return;} res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><body><div class="ad-banner">Ad</div><p id="content">Article</p><div class="cookie-banner">Consent</div>'); });
+  const server = http.createServer((req, res) => { if (req.url.split('?')[0].endsWith('.js')) {res.setHeader('Content-Type','application/javascript');res.end('window.adScriptExecutions = (window.adScriptExecutions || 0) + 1;');return;} res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><body><div class="ad-banner">Ad</div><div class="adsbygoogle">Ad</div><div class="banner_ad">Ad</div><div class="banner-728x90">Ad</div><div id="ad-300x250">Ad</div><div id="ad-leaderboard">Ad</div><p id="content">Article</p><div class="cookie-banner">Consent</div>'); });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
@@ -22,6 +22,7 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
     const fixture = await browser.newPage();
     await fixture.goto(`http://127.0.0.1:${server.address().port}/`);
     await wait(fixture, () => getComputedStyle(document.querySelector('.ad-banner')).display === 'none');
+    assert.ok(await fixture.$$eval('.adsbygoogle,.banner_ad,.banner-728x90,#ad-300x250,#ad-leaderboard',els=>els.length===5&&els.every(e=>getComputedStyle(e).display==='none')));
     assert.notEqual(await fixture.$eval('.cookie-banner', e => getComputedStyle(e).display), 'none');
     const toggleAds = () => settings.$eval('[data-sub-id="ads"]', e => e.click());
     await toggleAds();
@@ -83,7 +84,7 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
       script.onload=()=>{script.remove();resolve('loaded');};script.onerror=()=>{script.remove();resolve('blocked');};document.head.append(script);
     }),url);
     const root=`http://127.0.0.1:${server.address().port}`;
-    for (const path of ['/ads.js','/js/widget/ads.js?test=1','/js/pagead.js','/ads/index.js','/ad/add.js']) {
+    for (const path of ['/ads.js','/js/widget/ads.js?test=1','/js/pagead.js','/ads/index.js','/ad/add.js','/advertisement.js']) {
       const url=root+path;assert.equal(await loadScript(url),'blocked',path);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT');
     }
     for (const ext of ['png','gif','swf']) {
@@ -92,10 +93,22 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
       assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT');
     }
     for (const path of ['/index.js','/add.js','/downloads.js']) assert.equal(await loadScript(root+path),'loaded',path);
-    for (const domain of ['ads.reddit.com','sub.ads.reddit.com','ads-dev.pinterest.com','advertising.twitter.com','ads.facebook.com','affiliationjs.s3.amazonaws.com','ads.google.com','crypto-loot.org']) {
+    for (const domain of ['ads.reddit.com','sub.ads.reddit.com','ads-dev.pinterest.com','advertising.twitter.com','ads.facebook.com','affiliationjs.s3.amazonaws.com','ads.google.com','crypto-loot.org','ads.tritondigital.com','admob.googleapis.com','ads.iheart.com','adsrvr.org']) {
       const url=`https://${domain}/morph-filter-fixture.js`;
       assert.equal(await loadScript(url),'blocked',domain);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT',domain);
     }
+    // Trackers were disabled above: their local bait must still load independently.
+    assert.equal(await loadScript(root+'/analytics.js'),'loaded');
+    await settings.$eval('#advBlockTrackersToggle', e => e.click());
+    await wait(settings,async()=>(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||cdn.mxpnl.com^'));
+    for (const url of [root+'/analytics.js',root+'/js/analytics.min.js?v=1','https://cdn.mxpnl.com/test.js','https://sstats.adobe.com/test.js','https://va.vercel-scripts.com/v1/script.js','https://www.facebook.com/tr/?id=1','https://s.pinimg.com/ct/core.js','https://wl.spotify.com/adtrack','https://vid.vidyard.com/ads','https://www.redditstatic.com/ads']) {
+      assert.equal(await loadScript(url),'blocked',url);
+      assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT',url);
+    }
+    for (const path of ['/analytics.json','/myanalytics.js','/app.js?file=/analytics.js']) assert.equal(await loadScript(root+path),'loaded',path);
+    await settings.$eval('#advBlockTrackersToggle', e => e.click());
+    await wait(settings,async()=>!(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||cdn.mxpnl.com^'));
+    assert.equal(await loadScript(root+'/analytics.js'),'loaded');
     // Strict service blocking is on by default; verify the explicit opt-out first.
     await settings.$eval('[data-sub-id="shared-services"]',e=>e.click());
     await wait(settings,async()=>!(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||graph.instagram.com^'));

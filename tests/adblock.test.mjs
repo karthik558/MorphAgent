@@ -97,3 +97,30 @@ test('new tracking, video ad and strict service domains follow their owning swit
     assert.ok(blocked({},domain));assert.ok(!blocked({filtersState:state('shared-services',false)},domain));
   }
 });
+
+test('expanded ad and telemetry coverage respects independent filter controls', () => {
+  for (const domain of ['admob.googleapis.com','ads.tritondigital.com','adsrvr.org','adtago.s3.amazonaws.com']) {
+    assert.ok(blocked({},domain));
+    assert.ok(!blocked({filtersState:state('ads',false)},domain));
+    assert.ok(blocked({trackersBlockEnabled:false},domain));
+  }
+  for (const domain of ['cdn.mxpnl.com','sstats.adobe.com','va.vercel-scripts.com','stats.wp.com']) {
+    assert.ok(blocked({},domain));
+    assert.ok(!blocked({trackersBlockEnabled:false},domain));
+    assert.ok(blocked({filtersState:state('ads',false)},domain));
+  }
+  for (const host of ['facebook.com','www.facebook.com','spotify.com','vid.vidyard.com','redditstatic.com','s3.amazonaws.com','ebay.es','imdb.com','itch.io','wayfair.com']) assert.ok(!blocked({},host),host);
+});
+test('local analytics and advertisement scripts have bounded paths and category ownership', () => {
+  for (const path of ['/analytics.js','/js/analytics.min.js?v=1']) {
+    const url='https://example.com'+path;
+    assert.ok(scriptBlocked(url));
+    assert.ok(!scriptBlocked(url,{trackersBlockEnabled:false}));
+    assert.ok(!scriptBlocked(url,{adBlockEnabled:false}));
+    assert.ok(!scriptBlocked(url,{adBlockNetworkEnabled:false}));
+    assert.ok(scriptBlocked(url,{filtersState:state('ads',false)}));
+  }
+  assert.ok(scriptBlocked('https://example.com/js/advertisement.js'));
+  assert.ok(!scriptBlocked('https://example.com/js/advertisement.js',{filtersState:state('ads',false)}));
+  for(const path of ['/analytics.json','/myanalytics.js','/app.js?file=/analytics.js','/analytics.js/helper.js']) assert.ok(!scriptBlocked('https://example.com'+path),path);
+});
