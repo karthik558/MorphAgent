@@ -5,7 +5,7 @@
 > **Modern User Agent & Anti-Fingerprinting Suite for Chrome, Edge & Firefox**
 > Manifest V3 for Chromium and Firefox with configurable privacy protections
 
-![Version](https://img.shields.io/badge/version-4.8.2-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-5.0.0-blue.svg?style=flat-square)
 ![Chrome](https://img.shields.io/badge/Chrome-Manifest_V3-green.svg?style=flat-square)
 ![Firefox](https://img.shields.io/badge/Firefox-Manifest_V3-orange.svg?style=flat-square)
 ![Profiles](https://img.shields.io/badge/profiles-130+-black.svg?style=flat-square)
@@ -73,6 +73,14 @@ MorphAgent is available on the official Mozilla Firefox Add-ons store.
 MorphAgent is a professional-grade browser spoofing and anti-fingerprinting extension engineered for Chromium (Chrome, Edge, Brave, Opera, Vivaldi) and Firefox. It provides zero-latency request header interception via Manifest V3 DeclarativeNetRequest dynamic rules, alongside 10 advanced JavaScript stealth matrix protections.
 
 ---
+
+## What's New in Version 5.0.0
+
+1. **Quick setups.** Save a named device, location, shield, and hardware combination on the advanced page, then apply it from the popup.
+2. **Site rules and groups.** A website pattern of `*` covers every site. A rule for one site overrides `*` there. Site groups share one identity across several domains.
+3. **Steady hardware.** CPU and RAM follow the profile, including 64-core and 128-core choices and RAM up to 128 GB. Reported memory stays on a fixed step. A site keeps that identity until you rotate it.
+4. **Shield modes.** Balanced keeps the current filters. Strict also hides social widgets, notices, and shared services. The detailed switches stay on the advanced page.
+5. **Current Mac desktops.** MacBook Pro, MacBook Air, and a touch-screen MacBook Pro are in the desktop list.
 
 ## What's New in Version 4.8.2
 

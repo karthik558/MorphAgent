@@ -1,6 +1,8 @@
 // Pure rule builder shared by the MV3 background engine and regression tests.
 export function siteDomain(value) {
-  let input = String(value || '').trim().toLowerCase().replace(/^\*:\/\//, 'https://');
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === '*') return '*';
+  let input = raw.replace(/^\*:\/\//, 'https://');
   try {
     if (input.includes('://')) input = new URL(input).hostname;
   } catch { return null; }
@@ -45,22 +47,28 @@ export function buildUARules({ enabled, ua, websiteRules = [], blockList = [], w
   const allowed = listMode === 'whitelist' ? domains(whiteList) : null;
   if (allowed && !allowed.length) return [];
   const siteRules = websiteRules.map(rule => ({ ...rule, domain: siteDomain(rule.website) })).filter(rule => rule.domain);
+  const wildcard = siteRules.find(rule => rule.domain === '*');
+  const specificRules = siteRules.filter(rule => rule.domain !== '*');
   const baseExcluded = [...excluded];
-  excluded.push(...siteRules.filter(rule => rule.uaSpoofEnabled === false).map(rule => rule.domain));
+  excluded.push(...specificRules.filter(rule => rule.uaSpoofEnabled === false).map(rule => rule.domain));
   const condition = {
     excludedRequestDomains: [...new Set(excluded)],
     // DNR excludes main_frame when resourceTypes is omitted.
     resourceTypes: ['main_frame', 'sub_frame', 'stylesheet', 'script', 'image', 'font', 'object', 'xmlhttprequest', 'ping', 'csp_report', 'media', 'websocket', 'other']
   };
   if (allowed) condition.requestDomains = allowed;
-  const rules = [{ id: 1, priority: 1, action: { type: 'modifyHeaders', requestHeaders: withAcceptLanguage(ua, acceptLanguage) }, condition }];
-  siteRules.forEach((rule, index) => {
+  const baseUA = wildcard && wildcard.uaSpoofEnabled !== false ? (wildcard.userAgent || ua) : ua;
+  const rules = [];
+  if (!wildcard || wildcard.uaSpoofEnabled !== false) {
+    rules.push({ id: 1, priority: 1, action: { type: 'modifyHeaders', requestHeaders: withAcceptLanguage(baseUA, acceptLanguage) }, condition });
+  }
+  specificRules.forEach((rule, index) => {
     if (rule.uaSpoofEnabled === false) return;
     const requestDomains = allowedDomains(rule.domain, allowed);
     if (!requestDomains.length) return;
     rules.push({ id: 100000 + index, priority: 10000 - index,
       action: { type: 'modifyHeaders', requestHeaders: withAcceptLanguage(rule.userAgent || ua, acceptLanguage) },
-      condition: { ...condition, excludedRequestDomains:[...baseExcluded, ...siteRules.slice(0,index).map(site=>site.domain)], requestDomains } });
+      condition: { ...condition, excludedRequestDomains:[...baseExcluded, ...specificRules.slice(0,index).map(site=>site.domain)], requestDomains } });
   });
   return rules;
 }
@@ -71,12 +79,13 @@ export function buildScriptRules({ enabled, websiteRules = [], blockList = [], w
   const allowed = listMode === 'whitelist' ? domains(whiteList) : null;
   if (allowed && !allowed.length) return [];
   const excluded = ['proxyium.com', ...exclusions, ...(listMode === 'blacklist' ? domains(blockList) : [])];
-  const sites = websiteRules.map(rule => ({...rule, domain: siteDomain(rule.website)})).filter(rule => rule.domain);
+  const sites = websiteRules.map(rule => ({...rule, domain: siteDomain(rule.website)})).filter(rule => rule.domain && rule.domain !== '*');
+  const wildcard = websiteRules.map(rule => ({...rule, domain: siteDomain(rule.website)})).find(rule => rule.domain === '*');
   const rules = [];
   const makeRule = (id, condition) => ({id, priority: 1, action: {type: 'modifyHeaders', responseHeaders: [
     {header: 'Content-Security-Policy', operation: 'append', value: "script-src 'none'; script-src-elem 'none'; script-src-attr 'none'; worker-src 'none'"}
   ]}, condition: {...condition, resourceTypes: ['main_frame', 'sub_frame']}});
-  if (enabled) rules.push(makeRule(200000, {
+  if (enabled || (wildcard && wildcard.jsBlocked)) rules.push(makeRule(200000, {
     ...(allowed ? {requestDomains: allowed} : {}),
     excludedRequestDomains: [...new Set([...excluded, ...sites.filter(rule => !rule.jsBlocked).map(rule => rule.domain)])]
   }));

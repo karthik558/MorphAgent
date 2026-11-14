@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const browserSelect = document.getElementById('browserSelect');
   const profileSelect = document.getElementById('profileSelect');
   const touchPointsInput = document.getElementById('touchPoints');
+  const ruleCoresSelect = document.getElementById('ruleCores');
+  const ruleMemorySelect = document.getElementById('ruleMemory');
+  const groupNameInput = document.getElementById('groupName');
+  const groupSitesInput = document.getElementById('groupSites');
+  const addGroupBtn = document.getElementById('addGroupBtn');
+  const siteGroupList = document.getElementById('site-group-list');
+  const setupNameInput = document.getElementById('setupName');
+  const saveSetupBtn = document.getElementById('saveSetupBtn');
+  const setupList = document.getElementById('setup-list');
   const jsBlockRuleCheckbox = document.getElementById('jsBlockRule');
   const jsProtectRuleCheckbox = document.getElementById('jsProtectRule');
   const mediaQueryRuleCheckbox = document.getElementById('mediaQueryRule');
@@ -134,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   let websiteRules = [];
+  let siteGroups = [];
   let activeSiteHost = '';
   let blockList = [];
   let whiteList = [];
@@ -193,7 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'customHardwareCores',
       'customDeviceMemory',
       'selectedUA',
-      'customUA'
+      'customUA',
+      'setups',
+      'activeSetupId'
     ], (result) => {
       const res = result || {};
       const enabled = res.hardwareHarmonizeEnabled !== false;
@@ -201,6 +213,127 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hwCoresSelect) hwCoresSelect.value = res.customHardwareCores || 'auto';
       if (hwMemorySelect) hwMemorySelect.value = res.customDeviceMemory || 'auto';
       updateHarmonizationPreviews(res);
+      renderSetups(res.setups, res.activeSetupId);
+    });
+  }
+
+  function hardwareLabel(cores, memory) {
+    const coreText = !cores || cores === 'auto' ? 'Auto CPU' : `${cores} cores`;
+    const memoryText = !memory || memory === 'auto' ? 'Auto RAM' : `${memory} GB`;
+    return `${coreText} · ${memoryText}`;
+  }
+
+  function renderSetups(list, activeId) {
+    if (!setupList) return;
+    const setups = Array.isArray(list) ? list : [];
+    const currentId = activeId !== undefined ? String(activeId || '') : (setupList.dataset.activeId || '');
+    setupList.dataset.activeId = currentId;
+    setupList.innerHTML = setups.map(item => {
+      const active = String(item.id) === currentId;
+      return `<div class="saved-row${active ? ' is-active' : ''}"><div class="saved-copy"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(hardwareLabel(item.customHardwareCores, item.customDeviceMemory))}</span></div><div class="saved-actions"><button type="button" class="btn btn-outline" data-use-setup="${item.id}"${active ? ' disabled' : ''}>${active ? 'In use' : 'Use'}</button><button type="button" class="btn btn-outline" data-setup-id="${item.id}">Remove</button></div></div>`;
+    }).join('');
+    setupList.querySelectorAll('[data-use-setup]').forEach(button => {
+      button.addEventListener('click', () => applySetup(setups.find(item => String(item.id) === button.dataset.useSetup)));
+    });
+    setupList.querySelectorAll('[data-setup-id]').forEach(button => {
+      button.addEventListener('click', () => {
+        const api = window.morphApi || window.browser || window.chrome;
+        api.storage.local.get(['setups', 'activeSetupId'], res => {
+          const next = (res.setups || []).filter(item => String(item.id) !== button.dataset.setupId);
+          const activeSetupId = String(res.activeSetupId) === button.dataset.setupId ? '' : res.activeSetupId;
+          api.storage.local.set({ setups: next, activeSetupId }, () => renderSetups(next, activeSetupId));
+        });
+      });
+    });
+  }
+
+  function applySetup(setup) {
+    if (!setup) return;
+    const api = window.morphApi || window.browser || window.chrome;
+    const cores = setup.customHardwareCores || 'auto';
+    const memory = setup.customDeviceMemory || 'auto';
+    const payload = {
+      activeSetupId: setup.id,
+      customHardwareCores: cores,
+      customDeviceMemory: memory,
+      touchSpoofEnabled: !!setup.touchSpoofEnabled,
+      maxTouchPoints: setup.maxTouchPoints || 0,
+      geoSpoofEnabled: !!setup.geoSpoofEnabled,
+      geoPresetValue: setup.geoPresetValue || '',
+      geoCoords: setup.geoCoords || null,
+      adBlockEnabled: setup.adBlockEnabled !== false,
+      shieldMode: setup.shieldMode || 'balanced'
+    };
+    if (setup.selectedUA) payload.selectedUA = setup.selectedUA;
+    if (setup.uiState) payload.uiState = setup.uiState;
+    api.storage.local.set(payload, () => {
+      if (hwCoresSelect) hwCoresSelect.value = cores;
+      if (hwMemorySelect) hwMemorySelect.value = memory;
+      updateHarmonizationPreviews();
+      api.storage.local.get('setups', res => renderSetups(res.setups, setup.id));
+      showStatus(`Using ${setup.name}`);
+    });
+  }
+
+  function renderGroups() {
+    if (!siteGroupList) return;
+    siteGroupList.innerHTML = (siteGroups || []).map(group => `<div class="saved-row"><div class="saved-copy"><strong>${escapeHtml(group.name)}</strong><span>${escapeHtml((group.websites || []).join(', '))}</span></div><div class="saved-actions"><button type="button" class="btn btn-outline" data-group-id="${group.id}">Remove</button></div></div>`).join('');
+    siteGroupList.querySelectorAll('[data-group-id]').forEach(button => {
+      button.addEventListener('click', () => {
+        siteGroups = siteGroups.filter(group => String(group.id) !== button.dataset.groupId);
+        saveSettings();
+        renderGroups();
+      });
+    });
+  }
+
+  if (addGroupBtn) {
+    addGroupBtn.addEventListener('click', () => {
+      const name = groupNameInput ? groupNameInput.value.trim() : '';
+      const websites = (groupSitesInput ? groupSitesInput.value : '').split(/[\s,]+/).map(site => site.trim().toLowerCase().replace(/^\*\./, '')).filter(Boolean);
+      const userAgent = customUaText ? customUaText.value.trim() : '';
+      if (!name || !websites.length || !userAgent) { showStatus('Enter a group name, domains, and a user agent', 'error'); return; }
+      if (websites.some(site => site === '*' || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(site))) { showStatus('Use real domains in a group', 'error'); return; }
+      siteGroups.push({
+        id: Date.now(), name, websites, userAgent,
+        touchPoints: parseInt(touchPointsInput.value, 10) || 0,
+        hardwareCores: ruleCoresSelect ? ruleCoresSelect.value : 'auto',
+        deviceMemory: ruleMemorySelect ? ruleMemorySelect.value : 'auto'
+      });
+      if (groupNameInput) groupNameInput.value = '';
+      if (groupSitesInput) groupSitesInput.value = '';
+      saveSettings();
+      renderGroups();
+    });
+  }
+
+  if (saveSetupBtn) {
+    saveSetupBtn.addEventListener('click', () => {
+      const name = setupNameInput ? setupNameInput.value.trim() : '';
+      if (!name) { showStatus('Enter a setup name', 'error'); return; }
+      const api = window.morphApi || window.browser || window.chrome;
+      api.storage.local.get(['setups', 'selectedUA', 'uiState', 'touchSpoofEnabled', 'maxTouchPoints', 'geoSpoofEnabled', 'geoPresetValue', 'geoCoords', 'adBlockEnabled', 'shieldMode', 'customHardwareCores', 'customDeviceMemory'], res => {
+        const setups = (Array.isArray(res.setups) ? res.setups : []).filter(item => item.name !== name);
+        setups.push({
+          id: Date.now(), name,
+          selectedUA: res.selectedUA || '',
+          uiState: res.uiState || null,
+          touchSpoofEnabled: !!res.touchSpoofEnabled,
+          maxTouchPoints: res.maxTouchPoints || 0,
+          geoSpoofEnabled: !!res.geoSpoofEnabled,
+          geoPresetValue: res.geoPresetValue || '',
+          geoCoords: res.geoCoords || null,
+          adBlockEnabled: res.adBlockEnabled !== false,
+          shieldMode: res.shieldMode || 'balanced',
+          customHardwareCores: hwCoresSelect ? hwCoresSelect.value : (res.customHardwareCores || 'auto'),
+          customDeviceMemory: hwMemorySelect ? hwMemorySelect.value : (res.customDeviceMemory || 'auto')
+        });
+        api.storage.local.set({ setups: setups.slice(-20) }, () => {
+          if (setupNameInput) setupNameInput.value = '';
+          renderSetups(setups.slice(-20));
+          showStatus('Setup saved');
+        });
+      });
     });
   }
 
@@ -210,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const enabled = hwHarmonizeToggle ? hwHarmonizeToggle.checked : (settings.hardwareHarmonizeEnabled !== false);
     const coresVal = hwCoresSelect ? hwCoresSelect.value : (settings.customHardwareCores || 'auto');
     const memVal = hwMemorySelect ? hwMemorySelect.value : (settings.customDeviceMemory || 'auto');
-    const ua = settings.selectedUA || settings.customUA || (customUaInput ? customUaInput.value : '') || navigator.userAgent;
+    const ua = settings.selectedUA || settings.customUA || (customUaText ? customUaText.value : '') || navigator.userAgent;
 
     let detectedArch = 'x86_64 (Windows NT)';
     let defaultCores = 8;
@@ -397,7 +530,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (advWebrtcLeakToggle) advWebrtcLeakToggle.checked = webrtcPreventLeakEnabled;
       if (advRemoveXClientDataToggle) advRemoveXClientDataToggle.checked = removeXClientDataEnabled;
 
-      if (filtersLastCheckedTag) filtersLastCheckedTag.textContent = 'Bundled rules · updated with extension releases';
+      if (filtersLastCheckedTag) {
+        fetch(browser.runtime.getURL('rules/counts.json')).then(response => response.json()).then(counts => {
+          filtersLastCheckedTag.textContent = `Bundled lists · ${counts.generatedAt || 'packaged'} · ${(counts.total || 0).toLocaleString()} rules`;
+        }).catch(() => { filtersLastCheckedTag.textContent = 'Bundled rules · updated with extension releases'; });
+      }
 
       // Update DNS Dropdown
       if (advDnsSelect) advDnsSelect.value = dnsProvider;
@@ -1387,8 +1524,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hwCoresSelect) {
       hwCoresSelect.addEventListener('change', (e) => {
         const browser = window.morphApi || window.browser || window.chrome;
-        browser.storage.local.set({ customHardwareCores: e.target.value }, () => {
+        browser.storage.local.set({ customHardwareCores: e.target.value, activeSetupId: '' }, () => {
+          if (setupList) setupList.dataset.activeId = '';
           updateHarmonizationPreviews();
+          browser.storage.local.get('setups', res => renderSetups(res.setups, ''));
           showStatus(`Hardware concurrency set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' Cores'}`);
         });
       });
@@ -1396,8 +1535,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hwMemorySelect) {
       hwMemorySelect.addEventListener('change', (e) => {
         const browser = window.morphApi || window.browser || window.chrome;
-        browser.storage.local.set({ customDeviceMemory: e.target.value }, () => {
+        browser.storage.local.set({ customDeviceMemory: e.target.value, activeSetupId: '' }, () => {
+          if (setupList) setupList.dataset.activeId = '';
           updateHarmonizationPreviews();
+          browser.storage.local.get('setups', res => renderSetups(res.setups, ''));
           showStatus(`Device memory set to ${e.target.value === 'auto' ? 'Auto-Harmonized' : e.target.value + ' GB'}`);
         });
       });
@@ -1818,14 +1959,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadSettings() {
     const browser = window.morphApi || window.browser || window.chrome;
     if (!browser || !browser.storage || !browser.storage.sync) return;
-    browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode'], (result) => {
+    browser.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'customLocations', 'listMode', 'siteGroups'], (result) => {
       const res = result || {};
       websiteRules = res.websiteRules || [];
+      siteGroups = res.siteGroups || [];
       blockList = res.blockList || [];
       whiteList = res.whiteList || [];
       customLocations = res.customLocations || [];
       listMode = res.listMode || 'blacklist';
       renderRules();
+      renderGroups();
       renderBlockList();
       renderLocations();
       refreshActiveSiteChip();
@@ -1833,32 +1976,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function refreshActiveSiteChip() {
+    const chip = document.getElementById('site-chip');
     const label = document.getElementById('site-chip-label');
-    const clear = document.getElementById('site-chip-clear');
     const api = window.morphApi || window.browser || window.chrome;
-    if (!label || !api || !api.tabs) return;
+    const hide = () => { activeSiteHost = ''; if (chip) chip.hidden = true; };
+    if (!chip || !label || !api || !api.tabs) { hide(); return; }
     api.tabs.query({ currentWindow: true }).then(tabs => {
       const site = (tabs || [])
         .filter(tab => /^https?:/i.test(tab.url || '') && !/proxyium\.com/i.test(tab.url || ''))
         .sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
       let hostname = '';
       try { hostname = site ? new URL(site.url).hostname : ''; } catch { hostname = ''; }
-      if (!hostname || !hostname.includes('.')) {
-        activeSiteHost = '';
-        label.textContent = 'Open a website to see whether it uses a site profile';
-        if (clear) clear.hidden = true;
-        return;
-      }
-      const siteRule = (websiteRules || []).some(rule => rule.website === hostname);
+      const siteRule = hostname && (websiteRules || []).some(rule => rule.website === hostname);
+      if (!siteRule) { hide(); return; }
       activeSiteHost = hostname;
-      label.textContent = siteRule ? `${hostname} · site profile` : `${hostname} · global profile`;
+      label.textContent = `${hostname} has its own profile`;
       label.title = label.textContent;
-      if (clear) clear.hidden = !siteRule;
-    }).catch(() => {
-      activeSiteHost = '';
-      label.textContent = 'Open a website to see whether it uses a site profile';
-      if (clear) clear.hidden = true;
-    });
+      chip.hidden = false;
+    }).catch(hide);
   }
 
   const siteChipClear = document.getElementById('site-chip-clear');
@@ -1876,6 +2011,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const browser = window.morphApi || window.browser || window.chrome;
     browser.storage.sync.set({
       websiteRules: (websiteRules || []).filter(r => r && r.website && !r.website.includes('proxyium.com')),
+      siteGroups: siteGroups || [],
       blockList: blockList,
       whiteList: whiteList,
       customLocations: customLocations,
@@ -2074,11 +2210,11 @@ document.addEventListener('DOMContentLoaded', () => {
   profileSelect.addEventListener('change', (e) => {
     const val = e.target.value;
     if (val === 'custom') {
-      customUaInput.style.display = 'block';
+      customUaInput.hidden = false;
       customUaText.value = '';
       touchPointsInput.value = 0;
     } else if (val !== '') {
-      customUaInput.style.display = 'none';
+      customUaInput.hidden = true;
       const variants = profileSelect.activeVariants;
       if (variants && variants[parseInt(val)]) {
         const variant = variants[parseInt(val)];
@@ -2086,7 +2222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         touchPointsInput.value = variant.touchPoints || 0;
       }
     } else {
-      customUaInput.style.display = 'none';
+      customUaInput.hidden = true;
     }
   });
 
@@ -2124,12 +2260,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const hardwareCores = ruleCoresSelect ? ruleCoresSelect.value : 'auto';
+    const deviceMemory = ruleMemorySelect ? ruleMemorySelect.value : 'auto';
     const rule = {
       id: editingRule ? editingRule.id : Date.now(),
-      website: website,
+      website: website === '*' ? '*' : website,
       userAgent: userAgent,
       touchPoints: touchPoints,
       touchSpoofEnabled: touchPoints > 0,
+      hardwareCores,
+      deviceMemory,
       jsBlocked: jsBlockRuleCheckbox.checked,
       jsProtected: jsProtectRuleCheckbox.checked,
       mediaQuerySpoofEnabled: mediaQueryRuleCheckbox ? mediaQueryRuleCheckbox.checked : false,
@@ -2163,6 +2303,8 @@ document.addEventListener('DOMContentLoaded', () => {
     profileSelect.disabled = true;
     customUaText.value = '';
     touchPointsInput.value = '0';
+    if (ruleCoresSelect) ruleCoresSelect.value = 'auto';
+    if (ruleMemorySelect) ruleMemorySelect.value = 'auto';
     jsBlockRuleCheckbox.checked = false;
     jsProtectRuleCheckbox.checked = false;
     if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = false;
@@ -2173,7 +2315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     geoLngRuleInput.value = '';
     geoCoordsGroupDiv.style.display = 'none';
     geoCustomCoordsDiv.style.display = 'none';
-    customUaInput.style.display = 'none';
+    customUaInput.hidden = true;
 
     saveSettings();
     renderRules();
@@ -2184,6 +2326,8 @@ document.addEventListener('DOMContentLoaded', () => {
     editingRule = rule;
     websiteUrlInput.value = rule.website;
     touchPointsInput.value = rule.touchPoints || 0;
+    if (ruleCoresSelect) ruleCoresSelect.value = rule.hardwareCores || 'auto';
+    if (ruleMemorySelect) ruleMemorySelect.value = rule.deviceMemory || 'auto';
     jsBlockRuleCheckbox.checked = !!rule.jsBlocked;
     jsProtectRuleCheckbox.checked = !!rule.jsProtected;
     if (mediaQueryRuleCheckbox) mediaQueryRuleCheckbox.checked = !!rule.mediaQuerySpoofEnabled;
@@ -2215,7 +2359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     profileSelect.disabled = true;
 
     customUaText.value = rule.userAgent;
-    customUaInput.style.display = 'block';
+    customUaInput.hidden = false;
 
     addRuleBtn.innerHTML = '<span class="icon">✓</span> Update Rule';
     websiteUrlInput.focus();
@@ -2549,7 +2693,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${rule.jsProtected ? '&#10003; Yes' : 'No'}</td>
         <td>${rule.geoSpoofEnabled ? '&#10003; Yes' : 'No'}</td>
         <td>
-          <div style="display:flex;gap:8px;">
+          <div class="rule-actions">
             <button class="btn btn-outline edit-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule='${escapeHtml(JSON.stringify(rule))}'>Edit</button>
             <button class="btn btn-danger-outline delete-btn" style="height:24px;font-size:10px;padding:4px 8px;" data-rule-id="${rule.id}">Delete</button>
           </div>
@@ -2779,7 +2923,7 @@ document.addEventListener('DOMContentLoaded', () => {
       customUaText.value = '';
       jsBlockRuleCheckbox.checked = false;
       jsProtectRuleCheckbox.checked = false;
-      customUaInput.style.display = 'none';
+      customUaInput.hidden = true;
       addRuleBtn.innerHTML = '<span class="icon">+</span> Add Rule';
 
       saveSettings();

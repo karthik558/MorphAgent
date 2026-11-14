@@ -835,58 +835,73 @@
           </div>
         </div>
         <div class="section-body">
-          <div class="site-chip" id="site-chip">
-            <span id="site-chip-label">Open a website to see whether it uses a site profile</span>
-            <button type="button" class="btn btn-outline" id="site-chip-clear" hidden>Use global</button>
+          <div class="site-chip" id="site-chip" hidden>
+            <span id="site-chip-label"></span>
+            <button type="button" class="btn btn-outline" id="site-chip-clear">Use global</button>
           </div>
-          <div class="form-row">
+          <div class="rules-form">
             <div class="input-group">
               <label for="websiteUrl">WEBSITE URL OR PATTERN</label>
-              <input type="text" id="websiteUrl" class="custom-input" placeholder="e.g., google.com or *.example.com">
+              <input type="text" id="websiteUrl" class="custom-input" placeholder="example.com, *.example.com, or * for every site">
             </div>
-            <div class="input-group" style="flex: 2;">
+            <div class="input-group">
               <label>CUSTOM USER AGENT</label>
-              <div style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="responsive-row">
-                  <div class="select-wrapper" style="flex: 1;">
-                    <select id="categorySelect" class="custom-select">
-                      <option value="">Category...</option>
-                    </select>
-                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
-                  <div class="select-wrapper" style="flex: 1;">
-                    <select id="platformSelect" class="custom-select" disabled>
-                      <option value="">Platform...</option>
-                    </select>
-                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
+              <div class="rules-grid">
+                <div class="select-wrapper">
+                  <select id="categorySelect" class="custom-select">
+                    <option value="">Category...</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
-                <div class="responsive-row">
-                  <div class="select-wrapper" style="flex: 1;">
-                    <select id="browserSelect" class="custom-select" disabled>
-                      <option value="">Browser...</option>
-                    </select>
-                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
-                  <div class="select-wrapper" style="flex: 1;">
-                    <select id="profileSelect" class="custom-select" disabled>
-                      <option value="">Device...</option>
-                      <option value="custom">Custom String...</option>
-                    </select>
-                    <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
+                <div class="select-wrapper">
+                  <select id="platformSelect" class="custom-select" disabled>
+                    <option value="">Platform...</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="select-wrapper">
+                  <select id="browserSelect" class="custom-select" disabled>
+                    <option value="">Browser...</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="select-wrapper">
+                  <select id="profileSelect" class="custom-select" disabled>
+                    <option value="">Device...</option>
+                    <option value="custom">Custom String...</option>
+                  </select>
+                  <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
               </div>
             </div>
-            <div class="input-group">
-              <label for="touchPoints">TOUCH POINTS</label>
-              <input type="number" id="touchPoints" class="custom-input" min="0" max="20" value="0" placeholder="0">
+            <div class="custom-ua-input" id="customUaInput" hidden>
+              <div class="input-group">
+                <label for="customUaText">CUSTOM USER AGENT STRING</label>
+                <textarea id="customUaText" class="custom-input" placeholder="Enter custom user agent string..." rows="3"></textarea>
+              </div>
             </div>
-          </div>
-          <div class="custom-ua-input" id="customUaInput" style="display: none; margin-top: 10px;">
-            <div class="input-group">
-              <label for="customUaText">CUSTOM USER AGENT STRING</label>
-              <textarea id="customUaText" class="custom-input" placeholder="Enter custom user agent string..." style="height: 60px; resize: none;"></textarea>
+            <div class="rules-grid">
+              <div class="input-group">
+                <label for="touchPoints">TOUCH POINTS</label>
+                <input type="number" id="touchPoints" class="custom-input" min="0" max="20" value="0" placeholder="0">
+              </div>
+              <div class="input-group">
+                <label for="ruleCores">CPU CORES</label>
+                <select id="ruleCores" class="custom-select">
+                  <option value="auto">Auto</option>
+                  <option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option>
+                  <option value="10">10</option><option value="12">12</option><option value="16">16</option><option value="24">24</option>
+                  <option value="32">32</option><option value="64">64</option><option value="128">128</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="ruleMemory">RAM (GB)</label>
+                <select id="ruleMemory" class="custom-select">
+                  <option value="auto">Auto</option>
+                  <option value="2">2</option><option value="4">4</option><option value="8">8</option><option value="16">16</option>
+                  <option value="32">32</option><option value="64">64</option><option value="128">128</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="input-group" style="width: 100%; margin-top: 4px;">
@@ -957,24 +972,39 @@
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; margin-top: 14px; margin-bottom: 20px;">
-            <button class="btn btn-solid" id="addRuleBtn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add Rule
-            </button>
+          <p class="feature-desc">A pattern of * applies to every website. A rule for one site overrides * on that site only.</p>
+          <div class="rules-form">
+            <div class="rules-grid">
+              <div class="input-group">
+                <label for="groupName">SITE GROUP</label>
+                <input type="text" id="groupName" class="custom-input" placeholder="Group name, such as Shopping">
+              </div>
+              <div class="input-group">
+                <label for="groupSites">DOMAINS IN THIS GROUP</label>
+                <input type="text" id="groupSites" class="custom-input" placeholder="shop.example, store.example">
+              </div>
+            </div>
+            <div class="rules-actions">
+              <button type="button" class="btn btn-outline" id="addGroupBtn">Save group</button>
+              <button class="btn btn-solid" id="addRuleBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Rule
+              </button>
+            </div>
+            <div id="site-group-list" class="saved-list"></div>
           </div>
 
           <div class="table-container">
-            <table class="custom-table" style="margin-top: 10px;">
+            <table class="custom-table rules-table">
               <thead>
                 <tr>
-                  <th style="width: 25%">WEBSITE</th>
-                  <th style="width: 25%">USER AGENT</th>
-                  <th style="width: 10%">TOUCH</th>
-                  <th style="width: 10%">BLOCK JS</th>
-                  <th style="width: 10%">PROTECT JS</th>
-                  <th style="width: 10%">GEO SPOOF</th>
-                  <th style="width: 10%">ACTIONS</th>
+                  <th>WEBSITE</th>
+                  <th>USER AGENT</th>
+                  <th>TOUCH</th>
+                  <th>BLOCK JS</th>
+                  <th>PROTECT JS</th>
+                  <th>GEO</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody id="rulesItems">
@@ -1009,8 +1039,19 @@
               </label>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
-              Harmonizes reported CPU cores (<code>navigator.hardwareConcurrency</code>) and RAM (<code>navigator.deviceMemory</code>) with your spoofed device architecture to bypass anti-bot consistency heuristics.
+              Reported CPU cores and RAM follow the active profile. RAM stays on a steady step, 2 through 128 GB, so it does not change between page loads. These controls are the detailed version of the popup profile.
             </p>
+            <p class="feature-desc">Name the CPU and RAM below, then press Use on a saved setup to switch to it.</p>
+            <div class="rules-grid">
+              <div class="input-group">
+                <label for="setupName">SAVE THIS SETUP</label>
+                <input type="text" id="setupName" class="custom-input" placeholder="Setup name, such as Work">
+              </div>
+              <div class="rules-actions">
+                <button type="button" class="btn btn-outline" id="saveSetupBtn">Save setup</button>
+              </div>
+            </div>
+            <div id="setup-list" class="saved-list"></div>
             <div class="form-row" style="margin-bottom: 0;">
               <div class="input-group">
                 <label for="hwCoresSelect">CPU CORES (HARDWARE CONCURRENCY)</label>
@@ -1024,6 +1065,8 @@
                   <option value="16">16 Cores (Desktop Workstation)</option>
                   <option value="24">24 Cores (Pro Workstation)</option>
                   <option value="32">32 Cores (Server / Extreme Rig)</option>
+                  <option value="64">64 Cores (High-core workstation)</option>
+                  <option value="128">128 Cores (Many-core server)</option>
                 </select>
               </div>
               <div class="input-group">
@@ -1036,6 +1079,8 @@
                   <option value="12">12 GB (High-end Android Flagship)</option>
                   <option value="16">16 GB (Standard Desktop / Pro Laptop)</option>
                   <option value="32">32 GB (Workstation / Gaming Rig)</option>
+                  <option value="64">64 GB (Studio / Server)</option>
+                  <option value="128">128 GB (Large workstation)</option>
                 </select>
               </div>
             </div>

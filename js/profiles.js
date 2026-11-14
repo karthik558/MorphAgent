@@ -513,6 +513,41 @@ const profiles = {
       macos: {
         name: 'macOS',
         variants: [
+          {
+            name: 'MacBook Pro 16-inch (M5, macOS 27)',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 27_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36',
+            touchPoints: 0,
+            cores: 16,
+            memory: 64
+          },
+          {
+            name: 'MacBook Pro 14-inch (M5, macOS 27)',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 27_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36',
+            touchPoints: 0,
+            cores: 12,
+            memory: 32
+          },
+          {
+            name: 'MacBook Air 15-inch (M5, macOS 27)',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 27_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Safari/605.1.15',
+            touchPoints: 0,
+            cores: 10,
+            memory: 16
+          },
+          {
+            name: 'MacBook Air 13-inch (M5, macOS 27)',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 27_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Safari/605.1.15',
+            touchPoints: 0,
+            cores: 10,
+            memory: 16
+          },
+          {
+            name: 'MacBook Pro 14-inch Touch (M5, macOS 27)',
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 27_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36',
+            touchPoints: 5,
+            cores: 12,
+            memory: 32
+          },
           // Latest Safari versions for macOS (2026)
           {
             name: 'Safari 27.0 (macOS Redwood M5)',

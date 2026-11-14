@@ -71,13 +71,15 @@
     'webrtcPreventLeakEnabled',
     'removeXClientDataEnabled',
     'identityBundle',
-    'customCosmeticRules'
+    'customCosmeticRules',
+    'siteIdentities'
   ]).then((settings) => {
-    return api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules']).then((syncResult) => {
+    return api.storage.sync.get(['blockList', 'whiteList', 'listMode', 'websiteRules', 'siteGroups']).then((syncResult) => {
       const blockList = syncResult.blockList || [];
       const whiteList = syncResult.whiteList || [];
       const listMode = syncResult.listMode || 'blacklist';
       const websiteRules = syncResult.websiteRules || [];
+      const siteGroups = syncResult.siteGroups || [];
       const currentHostname = window.location.hostname;
 
       let inBlacklist = false;
@@ -115,23 +117,36 @@
         settings.mediaQuerySpoofEnabled = false;
         settings.timingShieldEnabled = false;
       } else {
-        // Apply website rules if we are spoofing
-        for (const rule of websiteRules) {
-          const rulePattern = rule.website || '';
-          if (rulePattern && matchesSite(currentHostname, rulePattern)) {
-            settings.selectedUA = rule.userAgent || settings.selectedUA;
-            settings.uaSpoofEnabled = settings.uaSpoofEnabled !== false && rule.uaSpoofEnabled !== false;
-            settings.maxTouchPoints = rule.touchPoints || 0;
-            settings.touchSpoofEnabled = rule.touchSpoofEnabled !== undefined ? !!rule.touchSpoofEnabled : false;
-            settings.jsBlockEnabled = !!rule.jsBlocked;
-            settings.jsProtectEnabled = !!rule.jsProtected;
-            settings.mediaQuerySpoofEnabled = !!rule.mediaQuerySpoofEnabled;
-            settings.timingShieldEnabled = !!rule.timingShieldEnabled;
-            settings.geoSpoofEnabled = !!rule.geoSpoofEnabled;
-            settings.geoCoords = rule.geoCoords || settings.geoCoords;
-            break;
-          }
+        const rule = pickSiteRule(websiteRules, siteGroups, currentHostname);
+        if (rule) {
+          settings.selectedUA = rule.userAgent || settings.selectedUA;
+          settings.uaSpoofEnabled = settings.uaSpoofEnabled !== false && rule.uaSpoofEnabled !== false;
+          settings.maxTouchPoints = rule.touchPoints || 0;
+          settings.touchSpoofEnabled = rule.touchSpoofEnabled !== undefined ? !!rule.touchSpoofEnabled : false;
+          settings.jsBlockEnabled = !!rule.jsBlocked;
+          settings.jsProtectEnabled = !!rule.jsProtected;
+          settings.mediaQuerySpoofEnabled = !!rule.mediaQuerySpoofEnabled;
+          settings.timingShieldEnabled = !!rule.timingShieldEnabled;
+          settings.geoSpoofEnabled = !!rule.geoSpoofEnabled;
+          settings.geoCoords = rule.geoCoords || settings.geoCoords;
+          if (rule.hardwareCores && rule.hardwareCores !== 'auto') settings.customHardwareCores = rule.hardwareCores;
+          if (rule.deviceMemory && rule.deviceMemory !== 'auto') settings.customDeviceMemory = rule.deviceMemory;
         }
+        const stable = settings.siteIdentities && settings.siteIdentities[currentHostname];
+        if (stable && stable.ua === settings.selectedUA && settings.identityBundle) {
+          settings.identityBundle = { ...settings.identityBundle, cores: stable.cores, memory: stable.memory, screen: stable.screen || settings.identityBundle.screen, webgl: stable.webgl || settings.identityBundle.webgl, webgpu: stable.webgpu || settings.identityBundle.webgpu };
+        } else if (settings.identityBundle && currentHostname.includes('.')) {
+          notifyExtension({ type: 'remember-identity', data: { host: currentHostname, bundle: {
+            ua: settings.selectedUA,
+            cores: settings.identityBundle.cores,
+            memory: settings.identityBundle.memory,
+            screen: settings.identityBundle.screen,
+            webgl: settings.identityBundle.webgl,
+            webgpu: settings.identityBundle.webgpu
+          } } });
+        }
+        if (settings.identityBundle && rule && rule.hardwareCores && rule.hardwareCores !== 'auto') settings.identityBundle.cores = Number(rule.hardwareCores);
+        if (settings.identityBundle && rule && rule.deviceMemory && rule.deviceMemory !== 'auto') settings.identityBundle.memory = Number(rule.deviceMemory);
       }
 
       const exceptions = (settings.temporaryExceptions || []).filter(e => (e.expiresAt === null || e.expiresAt > Date.now()) && matchesSite(currentHostname, e.domain));
@@ -151,6 +166,20 @@
     });
   }).catch(() => { stopPageWork(); });
   } catch { /* Reloading the extension leaves this page without storage until it refreshes. */ }
+
+  function pickSiteRule(rules, groups, hostname) {
+    let wildcard = null;
+    let specific = null;
+    for (const rule of rules || []) {
+      const pattern = String(rule.website || '').trim();
+      if (pattern === '*') { if (!wildcard) wildcard = rule; continue; }
+      if (pattern && matchesSite(hostname, pattern)) { specific = rule; break; }
+    }
+    if (specific) return specific;
+    const group = (groups || []).find(item => (item.websites || []).some(site => matchesSite(hostname, site)));
+    if (group) return { userAgent: group.userAgent, touchPoints: group.touchPoints || 0, touchSpoofEnabled: (group.touchPoints || 0) > 0, hardwareCores: group.hardwareCores, deviceMemory: group.deviceMemory, uaSpoofEnabled: true, jsProtected: true };
+    return wildcard;
+  }
 
   function stripTrackingParameters() {
     try {

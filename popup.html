@@ -20,7 +20,7 @@
         </div>
         <div class="title-group">
           <h1 class="title">MorphAgent</h1>
-          <span class="version-badge" id="version-badge">V4.8.2</span>
+          <span class="version-badge" id="version-badge">v5.0.0</span>
         </div>
       </div>
       <div class="header-actions">
@@ -48,6 +48,10 @@
         </button>
       </div>
     </header>
+    <div class="release-note" id="release-note" hidden>
+      <span>Version 5.0 adds setups, steadier site identity, and stricter shielding.</span>
+      <button type="button" id="release-note-dismiss">OK</button>
+    </div>
 
     <main class="main-content">
       <div class="threat-banner" id="threat-banner" style="display: none;">
@@ -369,6 +373,13 @@
                   <button type="button" class="shield-site-button" id="site-shield-toggle" disabled>Loading…</button>
                 </div>
                 <div class="domain-row">
+                  <label class="mini-label" for="shield-mode">Mode</label>
+                  <select id="shield-mode" class="custom-select" aria-label="Shield mode">
+                    <option value="balanced">Balanced</option>
+                    <option value="strict">Strict</option>
+                  </select>
+                </div>
+                <div class="domain-row">
                   <input type="text" id="domain-block-input" class="number-input" placeholder="Block a domain, example.com" aria-label="Domain to block">
                   <button type="button" class="shield-site-button" id="domain-block-btn">Block</button>
                 </div>
@@ -475,6 +486,12 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             APPLY SCOPE
             <span class="section-hint">Alt+Shift+M</span>
+          </div>
+          <div class="select-wrapper" style="margin-bottom: 8px;">
+            <select id="setup-select" class="custom-select" aria-label="Switch setup">
+              <option value="">Switch setup...</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
           <div class="action-buttons" style="margin-top: 0;">
             <button type="button" class="btn btn-solid" id="btn-current-tab">

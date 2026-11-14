@@ -697,8 +697,31 @@ input:checked + .toggle-slider:before {
 }
 
 .site-chip { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-main); min-width: 0; }
+.site-chip[hidden], #customUaInput[hidden], button[hidden] { display: none !important; }
 .site-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-secondary); }
 .site-chip .btn { flex-shrink: 0; height: 28px; font-size: 12px; padding: 4px 10px; }
+.rules-form { display: flex; flex-direction: column; gap: 14px; min-width: 0; max-width: 880px; }
+#section-rules .form-row, #section-rules .harmonize-box .rules-grid { max-width: 880px; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; min-width: 0; align-items: end; }
+.rules-form .input-group, .rules-grid .input-group, .rules-grid .select-wrapper { min-width: 0; flex: none; }
+.rules-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.rules-grid > .btn, .rules-grid > .rules-actions { align-self: end; justify-self: start; }
+.rules-table th:last-child, .rules-table td:last-child { width: 132px; }
+#customUaText { width: 100%; max-width: 100%; min-height: 72px; resize: vertical; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; box-sizing: border-box; }
+.saved-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+#setup-list.saved-list { gap: 12px; margin: 4px 0 18px; }
+.saved-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-card); min-width: 0; box-sizing: border-box; }
+.saved-row.is-active { border-color: var(--accent-red); box-shadow: inset 0 0 0 1px var(--accent-red); }
+.saved-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.saved-copy strong { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.saved-copy span { font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.saved-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-actions .btn { height: 28px; font-size: 12px; padding: 4px 10px; }
+.saved-actions .btn:disabled { opacity: 0.7; cursor: default; }
+.rules-table { min-width: 640px; }
+.rules-table td { overflow-wrap: anywhere; }
+.rule-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.section-body .feature-desc { margin: 0; }
 
 .btn-outline {
   background: transparent;

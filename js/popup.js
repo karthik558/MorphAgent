@@ -743,7 +743,7 @@ function startPopup() {
   let isInitialized = false;
 
   // Set version from manifest
-  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '4.8.2' };
+  const manifest = (browser.runtime && browser.runtime.getManifest) ? browser.runtime.getManifest() : { version: '5.0.0' };
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge && manifest.version) {
     versionBadge.textContent = 'v' + manifest.version;
@@ -1366,6 +1366,8 @@ function startPopup() {
         if (adblockToggle) {
           adblockToggle.checked = settings.adBlockEnabled !== false;
         }
+        const shieldModeSelect = document.getElementById('shield-mode');
+        if (shieldModeSelect) shieldModeSelect.value = settings.shieldMode === 'strict' ? 'strict' : 'balanced';
         if (dnsProviderSelect && settings.dnsProvider) {
           dnsProviderSelect.value = settings.dnsProvider;
           updateDnsUI(settings.dnsProvider);
@@ -1450,20 +1452,30 @@ function startPopup() {
     }
   }
 
+  let setupHardware = null;
   function identitySettings(ua) {
     const identity = globalThis.MorphIdentity;
     const bundle = identity && ua ? identity.buildBundle(ua, currentCategory || 'desktop') : null;
     if (!bundle) return {};
+    if (selectedProfile && selectedProfile.profile) {
+      if (selectedProfile.profile.cores) bundle.cores = selectedProfile.profile.cores;
+      if (selectedProfile.profile.memory) bundle.memory = selectedProfile.profile.memory;
+    }
+    const hardware = {};
+    if (setupHardware) {
+      const cores = setupHardware.cores || 'auto';
+      const memory = setupHardware.memory || 'auto';
+      if (cores !== 'auto') bundle.cores = Number(cores);
+      if (memory !== 'auto') bundle.memory = Number(memory);
+      hardware.customHardwareCores = cores;
+      hardware.customDeviceMemory = memory;
+      setupHardware = null;
+    }
     if (geoToggle && geoToggle.checked) {
       bundle.languages = null;
       bundle.acceptLanguage = '';
     }
-    return {
-      identityBundle: bundle,
-      hardwareHarmonizeEnabled: true,
-      customHardwareCores: bundle.cores,
-      customDeviceMemory: bundle.memory
-    };
+    return { identityBundle: bundle, ...hardware };
   }
 
   function saveSettings() {
@@ -1530,6 +1542,7 @@ function startPopup() {
         geoCoords,
         applyScope: 'all',
         adBlockEnabled: adblockToggle ? adblockToggle.checked : true,
+        shieldMode: document.getElementById('shield-mode') ? document.getElementById('shield-mode').value : 'balanced',
         dnsProvider: dnsProviderSelect ? dnsProviderSelect.value : 'adguard',
         dnsCustomEndpoint: dnsCustomEndpoint ? dnsCustomEndpoint.value.trim() : '',
         activeCategory: currentCategory || 'desktop',
@@ -1836,6 +1849,88 @@ function startPopup() {
       try { await loadCustomLocations(); } catch (error) { console.warn('Could not load custom locations:', error); }
       loadSettings();
     }, 50);
+  }
+
+  const shieldModeSelect = document.getElementById('shield-mode');
+  if (shieldModeSelect) {
+    shieldModeSelect.addEventListener('change', () => {
+      const strict = shieldModeSelect.value === 'strict';
+      browser.storage.local.set({
+        shieldMode: strict ? 'strict' : 'balanced',
+        filtersState: [
+          { id: 'ads', subfilters: [{ id: 'ads', enabled: true }] },
+          { id: 'privacy', subfilters: [{ id: 'trackers', enabled: true }] },
+          { id: 'security', subfilters: [{ id: 'miners', enabled: true }] },
+          { id: 'social', subfilters: [{ id: 'social', enabled: strict }] },
+          { id: 'annoyances', subfilters: [{ id: 'annoyances', enabled: strict }] },
+          { id: 'shared-services', subfilters: [{ id: 'shared-services', enabled: strict }] }
+        ]
+      });
+      if (browser.runtime && browser.runtime.sendMessage) {
+        const pending = browser.runtime.sendMessage({ type: 'reload-dnr-rules' });
+        if (pending && pending.catch) pending.catch(() => {});
+      }
+    });
+  }
+
+  const setupSelect = document.getElementById('setup-select');
+  function fillSetups(list) {
+    if (!setupSelect) return;
+    setupSelect.innerHTML = '<option value="">Switch setup...</option>';
+    (list || []).forEach(item => {
+      const option = document.createElement('option');
+      option.value = String(item.id);
+      const cores = !item.customHardwareCores || item.customHardwareCores === 'auto' ? 'Auto CPU' : `${item.customHardwareCores} cores`;
+      const memory = !item.customDeviceMemory || item.customDeviceMemory === 'auto' ? 'Auto RAM' : `${item.customDeviceMemory} GB`;
+      option.textContent = `${item.name} · ${cores} · ${memory}`;
+      setupSelect.appendChild(option);
+    });
+  }
+  if (browser.storage && browser.storage.local) {
+    browser.storage.local.get(['setups', 'seenRelease'], res => {
+      fillSetups(res.setups);
+      const note = document.getElementById('release-note');
+      if (note && res.seenRelease !== '5.0.0') note.hidden = false;
+    });
+  }
+  const dismissRelease = document.getElementById('release-note-dismiss');
+  if (dismissRelease) {
+    dismissRelease.addEventListener('click', () => {
+      const note = document.getElementById('release-note');
+      if (note) note.hidden = true;
+      browser.storage.local.set({ seenRelease: '5.0.0' });
+    });
+  }
+  if (setupSelect) {
+    setupSelect.addEventListener('change', () => {
+      const id = setupSelect.value;
+      if (!id) return;
+      browser.storage.local.get('setups', res => {
+        const setup = (res.setups || []).find(item => String(item.id) === id);
+        setupSelect.value = '';
+        if (!setup) return;
+        if (setup.uiState && setup.uiState.category) {
+          const { category, platform, browserType, profileIndex } = setup.uiState;
+          selectCategory(category);
+          if (platform) {
+            currentPlatform = platform;
+            platformSelect.value = platform;
+            updateBrowserOptions();
+            if (browserType) { currentBrowser = browserType; browserSelect.value = browserType; }
+            populateProfiles(category, platform, browserType || null);
+            if (profileIndex !== null && profileIndex !== undefined) selectProfile(category, platform, profileIndex, browserType || null, setup.selectedUA || '');
+          }
+        }
+        if (setup.selectedUA) customUAInput.value = setup.selectedUA;
+        if (touchToggle) { touchToggle.checked = !!setup.touchSpoofEnabled; if (touchControls) touchControls.style.display = touchToggle.checked ? 'block' : 'none'; }
+        if (touchPointsInput) touchPointsInput.value = setup.maxTouchPoints || 0;
+        if (geoToggle) geoToggle.checked = !!setup.geoSpoofEnabled;
+        if (adblockToggle) adblockToggle.checked = setup.adBlockEnabled !== false;
+        if (shieldModeSelect) shieldModeSelect.value = setup.shieldMode === 'strict' ? 'strict' : 'balanced';
+        setupHardware = { cores: setup.customHardwareCores, memory: setup.customDeviceMemory };
+        if (isInitialized) saveSettings();
+      });
+    });
   }
 
   const domainBlockBtn = document.getElementById('domain-block-btn');

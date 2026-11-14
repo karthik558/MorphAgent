@@ -1,6 +1,6 @@
 import {siteDomain} from './network-rules.mjs';
-export const localKeys = ('selectedUA uaSpoofEnabled maxTouchPoints touchSpoofEnabled jsBlockEnabled jsProtectEnabled geoSpoofEnabled geoPresetValue geoCoords geoTimezone geoLocale activeCategory uiState theme ghostModeEnabled ghostInterval proxyConfig hardwareHarmonizeEnabled customHardwareCores customDeviceMemory autoHarmonizeTzEnabled adBlockEnabled dnsProvider dnsCustomEndpoint adBlockCosmeticEnabled adBlockAntiAdblockEnabled filtersState adBlockNetworkEnabled adBlockWhitelist trackersBlockEnabled removeTrackingParamsEnabled hideSearchQueriesEnabled sendDntGpcEnabled webrtcPreventLeakEnabled removeXClientDataEnabled identityBundle forkedProfiles customCosmeticRules').split(' ');
-export const syncKeys = ['websiteRules','blockList','whiteList','listMode','customLocations'];
+export const localKeys = ('selectedUA uaSpoofEnabled maxTouchPoints touchSpoofEnabled jsBlockEnabled jsProtectEnabled geoSpoofEnabled geoPresetValue geoCoords geoTimezone geoLocale activeCategory uiState theme ghostModeEnabled ghostInterval proxyConfig hardwareHarmonizeEnabled customHardwareCores customDeviceMemory autoHarmonizeTzEnabled adBlockEnabled dnsProvider dnsCustomEndpoint adBlockCosmeticEnabled adBlockAntiAdblockEnabled filtersState adBlockNetworkEnabled adBlockWhitelist trackersBlockEnabled removeTrackingParamsEnabled hideSearchQueriesEnabled sendDntGpcEnabled webrtcPreventLeakEnabled removeXClientDataEnabled identityBundle forkedProfiles customCosmeticRules setups siteIdentities shieldMode seenRelease').split(' ');
+export const syncKeys = ['websiteRules','blockList','whiteList','listMode','customLocations','siteGroups'];
 const object = v => v && typeof v === 'object' && !Array.isArray(v);
 function coordinates(v) {
   return object(v) && Number.isFinite(v.lat) && Math.abs(v.lat) <= 90 && Number.isFinite(v.lng) && Math.abs(v.lng) <= 180;
@@ -11,6 +11,14 @@ export function validateConfiguration(input) {
   for (const key of Object.keys(input)) if (![...syncKeys,'globalSettings','version','exportedAt'].includes(key)) throw Error(`Unknown settings field: ${key}`);
   for (const key of syncKeys) if (key in input) data[key] = structuredClone(input[key]);
   if (data.listMode && !['blacklist','whitelist'].includes(data.listMode)) throw Error('Invalid access control mode.');
+  if (data.siteGroups) {
+    if (!Array.isArray(data.siteGroups) || data.siteGroups.length > 30) throw Error('Invalid site groups.');
+    for (const group of data.siteGroups) {
+      if (!object(group) || typeof group.name !== 'string' || group.name.length > 40 || !Array.isArray(group.websites) || !group.websites.length || group.websites.length > 40) throw Error('Invalid site group.');
+      if (group.websites.some(site => !siteDomain(site) || site === '*')) throw Error('Site groups need real domains.');
+      if (group.userAgent && (typeof group.userAgent !== 'string' || group.userAgent.length > 2048)) throw Error('Invalid site group user agent.');
+    }
+  }
   for (const key of ['websiteRules','blockList','whiteList','customLocations']) {
     if (!(key in data)) continue;
     if (!Array.isArray(data[key]) || data[key].length > 500) throw Error(`Invalid ${key} list (maximum 500).`);
@@ -35,7 +43,12 @@ export function validateConfiguration(input) {
     if (['geoPresetValue','geoTimezone','geoLocale','activeCategory','theme','dnsProvider','dnsCustomEndpoint'].includes(key) && typeof value !== 'string') throw Error(`Invalid ${key}.`);
     if (key.endsWith('Enabled') && typeof value !== 'boolean') throw Error(`${key} must be a boolean.`);
     if (key === 'geoCoords' && value !== null && !coordinates(value)) throw Error('Latitude must be −90…90 and longitude −180…180.');
-    if (['maxTouchPoints','ghostInterval','customHardwareCores','customDeviceMemory'].includes(key) && (!Number.isFinite(Number(value)) || Number(value) < (key === 'maxTouchPoints' ? 0 : 1) || Number(value) > (key === 'maxTouchPoints' ? 20 : 1440))) throw Error(`Invalid ${key}.`);
+    if (['maxTouchPoints','ghostInterval'].includes(key) && (!Number.isFinite(Number(value)) || Number(value) < (key === 'maxTouchPoints' ? 0 : 1) || Number(value) > (key === 'maxTouchPoints' ? 20 : 1440))) throw Error(`Invalid ${key}.`);
+    if (['customHardwareCores','customDeviceMemory'].includes(key) && value !== 'auto' && value !== null && (!Number.isFinite(Number(value)) || Number(value) < 1 || Number(value) > 256)) throw Error(`Invalid ${key}.`);
+    if (key === 'shieldMode' && !['balanced','strict'].includes(value)) throw Error('Invalid shield mode.');
+    if (key === 'seenRelease' && (typeof value !== 'string' || value.length > 20)) throw Error('Invalid release marker.');
+    if (key === 'setups' && (!Array.isArray(value) || value.length > 20 || value.some(item => !object(item) || typeof item.name !== 'string' || item.name.length > 40))) throw Error('Invalid setups.');
+    if (key === 'siteIdentities' && (!object(value) || Object.keys(value).length > 200)) throw Error('Invalid saved identities.');
     if (key === 'selectedUA' && (typeof value !== 'string' || value.length > 2048 || /[\r\n]/.test(value))) throw Error('Invalid user agent.');
     if (key === 'geoTimezone' && value && value !== 'auto') { try {new Intl.DateTimeFormat('en', {timeZone:value});} catch {throw Error('Invalid timezone.');} }
     if (key === 'adBlockWhitelist' && (!Array.isArray(value) || value.some(v => !siteDomain(v)))) throw Error('Invalid filter exceptions.');

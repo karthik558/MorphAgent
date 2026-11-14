@@ -10,6 +10,7 @@ const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undef
 const UA_HEADER = 'User-Agent';
 let cachedUA = typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 let websiteRules = [];
+let siteGroups = [];
 let blockList = [];
 let whiteList = [];
 let listMode = 'blacklist';
@@ -376,7 +377,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Load settings from storage
 async function loadSettings() {
   try {
-    const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode']);
+    const syncData = await api.storage.sync.get(['websiteRules', 'blockList', 'whiteList', 'listMode', 'siteGroups']);
     const localData = await api.storage.local.get([
       'selectedUA', 'jsBlockEnabled', 'jsProtectEnabled', 'uaSpoofEnabled', 'activeCategory',
       'adBlockEnabled', 'adBlockNetworkEnabled', 'dnsProvider', 'dnsCustomEndpoint', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
@@ -387,6 +388,7 @@ async function loadSettings() {
     if (syncData.websiteRules && syncData.websiteRules.length !== websiteRules.length) {
       api.storage.sync.set({ websiteRules });
     }
+    siteGroups = Array.isArray(syncData.siteGroups) ? syncData.siteGroups : [];
     blockList = syncData.blockList || [];
     whiteList = syncData.whiteList || [];
     listMode = syncData.listMode || 'blacklist';
@@ -469,6 +471,7 @@ api.storage.onChanged.addListener((changes, areaName) => {
       websiteRules = (changes.websiteRules.newValue || []).filter(r => r && r.website && !r.website.includes('proxyium.com'));
       jsBlockedSites = websiteRules.filter(r => r.jsBlocked).map(r => r.website);
     }
+    if (changes.siteGroups) siteGroups = changes.siteGroups.newValue || [];
     if (changes.blockList) {
       blockList = changes.blockList.newValue || [];
     }
@@ -564,6 +567,20 @@ api.storage.onChanged.addListener((changes, areaName) => {
 });
 
 // Match URL against pattern
+function ruleForHost(hostname, url) {
+  let wildcard = null;
+  let specific = null;
+  for (const rule of websiteRules) {
+    const pattern = String(rule.website || '').trim();
+    if (pattern === '*') { if (!wildcard) wildcard = rule; continue; }
+    if (matchesPattern(hostname, pattern) || matchesPattern(url, pattern)) { specific = rule; break; }
+  }
+  if (specific) return specific;
+  const group = siteGroups.find(item => (item.websites || []).some(site => matchesPattern(hostname, site)));
+  if (group) return group;
+  return wildcard;
+}
+
 function matchesPattern(url, pattern) {
   if (!pattern) return false;
   const regexPattern = pattern
@@ -606,11 +623,8 @@ function getUserAgentForUrl(url) {
       }
     }
 
-    for (const rule of websiteRules) {
-      if (matchesPattern(hostname, rule.website) || matchesPattern(url, rule.website)) {
-        return rule.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : cachedUA);
-      }
-    }
+    const rule = ruleForHost(hostname, url);
+    if (rule) return rule.userAgent || cachedUA;
 
     return cachedUA;
   } catch (error) {
@@ -843,6 +857,17 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     api.storage.local.set({ adBlockStats, recentBlocks });
     sendResponse({ success: true });
     return true;
+  } else if (message.type === 'remember-identity' && message.data && message.data.host && message.data.bundle) {
+    const host = String(message.data.host || '');
+    if (!host.includes('.') || host.length > 253) { sendResponse({ success: false }); return true; }
+    api.storage.local.get('siteIdentities').then(res => {
+      const current = res.siteIdentities && typeof res.siteIdentities === 'object' ? res.siteIdentities : {};
+      const keys = Object.keys(current);
+      if (!(host in current) && keys.length >= 200) delete current[keys[0]];
+      current[host] = message.data.bundle;
+      return api.storage.local.set({ siteIdentities: current });
+    }).then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
+    return true;
   } else if (message.type === 'rotate-identity') {
     rotateIdentity().then(picked => sendResponse(picked || { success: false }));
     return true;
@@ -987,7 +1012,8 @@ function applyRotatedProfile(picked, tab) {
     identityBundle,
     hardwareHarmonizeEnabled: true,
     customHardwareCores: identityBundle ? identityBundle.cores : null,
-    customDeviceMemory: identityBundle ? identityBundle.memory : null
+    customDeviceMemory: identityBundle ? identityBundle.memory : null,
+    siteIdentities: {}
   }).then(() => {
     cachedUA = picked.ua;
     activeCategory = picked.category;

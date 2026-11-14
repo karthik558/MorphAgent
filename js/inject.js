@@ -247,6 +247,9 @@
         if (s.customDeviceMemory && s.customDeviceMemory !== 'auto') {
           memory = Number(s.customDeviceMemory) || memory;
         }
+        const snap = (value, steps) => steps.reduce((best, item) => Math.abs(item - value) < Math.abs(best - value) ? item : best, steps[0]);
+        cores = snap(cores, [2, 4, 6, 8, 10, 12, 16, 24, 32, 64, 128]);
+        memory = snap(memory, [2, 4, 8, 16, 32, 64, 128]);
 
         Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { get: () => cores, configurable: true });
         Object.defineProperty(Navigator.prototype, 'deviceMemory', { get: () => memory, configurable: true });
