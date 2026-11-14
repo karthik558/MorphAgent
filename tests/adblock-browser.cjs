@@ -86,11 +86,19 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
     for (const path of ['/ads.js','/js/widget/ads.js?test=1','/js/pagead.js','/ads/index.js','/ad/add.js']) {
       const url=root+path;assert.equal(await loadScript(url),'blocked',path);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT');
     }
+    for (const ext of ['png','gif','swf']) {
+      const url=root+'/banners/pr_advertising_ads_banner.'+ext;
+      assert.equal(await fixture.evaluate(url=>fetch(url).then(()=>false,()=>true),url),true);
+      assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT');
+    }
     for (const path of ['/index.js','/add.js','/downloads.js']) assert.equal(await loadScript(root+path),'loaded',path);
     for (const domain of ['ads.reddit.com','sub.ads.reddit.com','ads-dev.pinterest.com','advertising.twitter.com','ads.facebook.com','affiliationjs.s3.amazonaws.com','ads.google.com','crypto-loot.org']) {
       const url=`https://${domain}/morph-filter-fixture.js`;
       assert.equal(await loadScript(url),'blocked',domain);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT',domain);
     }
+    // Strict service blocking is on by default; verify the explicit opt-out first.
+    await settings.$eval('[data-sub-id="shared-services"]',e=>e.click());
+    await wait(settings,async()=>!(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||graph.instagram.com^'));
     await settings.$eval('[data-sub-id="shared-services"]',e=>e.click());
     await wait(settings,async()=>(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||graph.instagram.com^'));
     for (const domain of ['redirector.googlevideo.com','graph.facebook.com','graph.instagram.com','i.instagram.com','ssl.p.jwpcdn.com']) {
@@ -111,6 +119,19 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
     await settings.evaluate(()=>chrome.runtime.sendMessage({type:'reload-dnr-rules'}));
     assert.equal(await loadScript(root+'/pagead.js'),'blocked');
     console.log('PASS: real DNR domain/subdomain blocking, bounded script paths, safe app scripts, shared-service toggle and site exceptions');
+    await settings.evaluate(async () => {
+      const filtersState = MorphAgentAdBlock.DEFAULT_FILTER_CATEGORIES.map(c=>({...c,subfilters:c.subfilters.map(sub=>({...sub,enabled:false}))}));
+      await chrome.storage.local.set({filtersState,adBlockEnabled:false,adBlockNetworkEnabled:false,trackersBlockEnabled:false,adBlockWhitelist:['keep.example']});
+    });
+    await settings.$eval('#maximumBlockingBtn',button=>button.click());
+    await wait(settings,()=>document.getElementById('statusMessage').innerText.includes('Maximum blocking enabled'));
+    const maximum = await settings.evaluate(()=>chrome.storage.local.get(['filtersState','adBlockEnabled','adBlockNetworkEnabled','trackersBlockEnabled','adBlockWhitelist']));
+    assert.ok(maximum.adBlockEnabled && maximum.adBlockNetworkEnabled && maximum.trackersBlockEnabled);
+    assert.ok(maximum.filtersState.every(c=>c.subfilters.every(sub=>sub.enabled)));
+    assert.deepEqual(maximum.adBlockWhitelist,['keep.example']);
+    const strictUrl='https://consent.cookiebot.com/morph-filter-fixture.js';
+    assert.equal(await loadScript(strictUrl),'blocked');assert.equal(failures.get(strictUrl),'net::ERR_BLOCKED_BY_CLIENT');
+    console.log('PASS: Maximum blocking enables every filter and preserves site exceptions');
     const response = await settings.evaluate(() => chrome.runtime.sendMessage({type:'check-filter-updates'}));
     assert.equal(response.success, true);
     assert.equal(response.rulesCount, await settings.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length));

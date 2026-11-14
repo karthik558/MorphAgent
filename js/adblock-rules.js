@@ -84,6 +84,17 @@
   const AD_TRACKER_DOMAINS = [
     // Dedicated advertising hosts (domain rules also cover their subdomains).
     'ads.reddit.com',
+    'connatix.com',
+    'fls-na.amazon.com',
+    'ad.mail.ru',
+    'target.my.com',
+    'tags.crwdcntrl.net',
+    'trackcmp.net',
+    'fwmrm.net',
+    'imasdk.googleapis.com',
+    'bat.bing.com',
+    'posthog.com',
+    'logx.optimizely.com',
     'ads-dev.pinterest.com',
     'advertising.twitter.com',
     'ads.facebook.com',
@@ -603,21 +614,26 @@
 
   // Each visible switch owns a real bundled group, not a remote subscription.
   const TRACKER_DOMAINS = AD_TRACKER_DOMAINS.filter(domain =>
-    /analytics|tracking|telemetry|metrics|metrika|sentry|bugsnag|hotjar|clarity|segment|mixpanel|amplitude|chartbeat|newrelic|nr-data|mouseflow|fullstory|logrocket|posthog|fingerprint|scorecard|quantserve|quantcount|statcounter|heapanalytics|google.*tagmanager/.test(domain));
+    /analytics|tracking|telemetry|metrics|metrika|sentry|bugsnag|hotjar|clarity|segment|mixpanel|amplitude|chartbeat|newrelic|nr-data|mouseflow|fullstory|logrocket|posthog|fingerprint|scorecard|quantserve|quantcount|statcounter|heapanalytics|google.*tagmanager|bat[.]bing[.]com|logx[.]optimizely[.]com|crwdcntrl|trackcmp/.test(domain));
   const MINER_DOMAINS = ['coinhive.com', 'crypto-loot.com', 'crypto-loot.org', 'webminepool.com', 'jsecoin.com', 'minr.pw', 'coin-have.com', 'authedmine.com', 'mineralt.io'];
   const AD_DOMAINS = [...new Set(AD_TRACKER_DOMAINS)].filter(domain => !TRACKER_DOMAINS.includes(domain) && !MINER_DOMAINS.includes(domain));
   // Match script path components, never filenames embedded in query strings.
   // Generic app filenames are only blocked inside an explicit ad directory.
   const AD_SCRIPT_CONDITIONS = [
     { regexFilter: '^https?://[^/?#]+/([^?#]*/)?(ads|pagead|adsbygoogle|show_ads)([.]min)?[.]js([?#]|$)', resourceTypes: ['script'] },
-    { regexFilter: '^https?://[^/?#]+/([^?#]*/)?(ad|ads|advertising|pagead)/([^?#]*/)?(index|add)([.]min)?[.]js([?#]|$)', resourceTypes: ['script'] }
+    { regexFilter: '^https?://[^/?#]+/([^?#]*/)?(ad|ads|advertising|pagead)/([^?#]*/)?(index|add)([.]min)?[.]js([?#]|$)', resourceTypes: ['script'] },
+    // Ad-named banner assets, including fetch probes and legacy Flash files.
+    ...['pr_advertising_ads_banner', 'advertising_ads_banner', 'ad_banner', 'ads_banner'].map(name => ({
+      regexFilter: `^https?://[^?#]+/${name}[.](png|gif|jpg|jpeg|webp|avif|swf)([?#]|$)`,
+      resourceTypes: ['image', 'object', 'xmlhttprequest', 'other']
+    }))
   ];
   const FILTER_GROUPS = {
     ads: { domains: AD_DOMAINS, selectors: COSMETIC_AD_SELECTORS, conditions: AD_SCRIPT_CONDITIONS },
-    trackers: { domains: [...new Set(TRACKER_DOMAINS)], selectors: [] },
+    trackers: { domains: [...new Set(TRACKER_DOMAINS)], selectors: [], conditions: [{urlFilter:'||vk.com/rtrg^',resourceTypes:['script','image','xmlhttprequest','ping','other']}] },
     miners: { domains: MINER_DOMAINS, selectors: [] },
     social: { domains: [], selectors: COSMETIC_SOCIAL_SELECTORS },
-    'shared-services': { domains: ['redirector.googlevideo.com', 'graph.facebook.com', 'graph.instagram.com', 'i.instagram.com', 'ssl.p.jwpcdn.com'], selectors: [] },
+    'shared-services': { domains: ['redirector.googlevideo.com', 'graph.facebook.com', 'graph.instagram.com', 'i.instagram.com', 'ssl.p.jwpcdn.com', 'linksynergy.com', 'skimresources.com', 'bnc.lt', 'dpbolvw.net', 'awin1.com', 'impactradius-event.com', 'anrdoezrs.net', 'tkqlhce.com', 'sdk.privacy-center.org', 'consent.cookiebot.com', 'app.usercentrics.eu', 'geolocation.onetrust.com', 'cdn.privacy-mgmt.com', 'consent.trustarc.com', 'cdn.cookielaw.org', 'privacyportal.onetrust.com', 'cookiebot.com', 'cmp.osano.com', 'shareasale.com', 'prf.hn', 't.pepperjamnetwork.com', 'go.redirectingat.com', 'cdn.optimizely.com', 'api.optimizely.com', 'cdn.onesignal.com', 'api.onesignal.com', 'customer.io', 'www.cj.com'], selectors: [] },
     annoyances: { domains: [], selectors: COSMETIC_ANNOYANCE_SELECTORS }
   };
   const DEFAULT_FILTER_CATEGORIES = [
@@ -642,8 +658,8 @@
       ]
     },
     {
-      id: 'shared-services', name: 'Shared video and social services', description: 'Optional strict host blocking; may break playback, feeds, embeds and login', subfilters: [
-        { id: 'shared-services', name: 'Block shared video and social APIs', desc: 'Blocks Google Video redirector, Facebook/Instagram APIs and the JW Player CDN. Off by default to preserve website functionality.', enabled: false }
+      id: 'shared-services', name: 'Strict service blocking', description: 'Blocks shared video/social APIs, affiliate redirects and consent services; may break site features', subfilters: [
+        { id: 'shared-services', name: 'Block shared, affiliate and consent services', desc: 'Maximum host blocking. May break playback, login, shopping links and consent dialogs. Disable this group or pause the site if needed.', enabled: true }
       ]
     },
     {

@@ -300,7 +300,11 @@ The bundled ad filter covers `ads.reddit.com`, `ads-dev.pinterest.com`, `adverti
 
 MV3 network rules block script requests for `ads.js`, `pagead.js`, `adsbygoogle.js`, and `show_ads.js`, including `.min.js` variants and query strings. `index.js` and `add.js` are blocked only inside `ad`, `ads`, `advertising`, or `pagead` directories. Generic application scripts and parent cloud-service domains remain available. These rules follow the ad/network switches and site exceptions.
 
-For stricter host blocking, open **Advanced Settings → Filters → Shared video and social services** and enable **Block shared video and social APIs**. This optional group blocks `redirector.googlevideo.com`, `graph.facebook.com`, `graph.instagram.com`, `i.instagram.com`, and `ssl.p.jwpcdn.com`, including subdomains. It is off by default because those hosts also provide normal video playback, feeds, embeds, and login functionality.
+For full bundled coverage, open **Advanced Settings → Secure DNS & AdBlock → Filters** and click **Maximum blocking**. This enables the network and cosmetic engines, tracking protection, and every bundled filter. Existing site exceptions remain active. Reload the website after changing filters.
+
+**Strict service blocking** now defaults to enabled for fresh filter configurations. It covers shared video/social APIs, affiliate redirects, consent managers, experimentation and messaging services. Existing saved choices are respected; Maximum blocking explicitly enables them for upgraded installations. This setting can break playback, feeds, login, shopping links and consent dialogs. Disable the strict group or pause protection for an affected site if needed.
+
+Banner assets with explicit ad filenames (including PNG, GIF, and SWF) are blocked at the network layer, including when fetched by JavaScript. Ordinary banner/header images remain available. New video-ad and analytics domains include Connatix, FreeWheel, Google's IMA SDK, Bing conversion tracking, and PostHog. Rules apply across websites rather than changing test scores or bypassing the test logic.
 
 Host-reachability test scores are not proof of comprehensive ad blocking: failed DNS/network requests can count as blocked, and shared service hosts can count as failures even when ad-specific filtering works. The browser regression suite checks `net::ERR_BLOCKED_BY_CLIENT` for the added hosts and scripts, as well as filter controls and site exceptions.
 

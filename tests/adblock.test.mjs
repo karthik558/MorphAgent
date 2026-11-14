@@ -31,10 +31,10 @@ test('cosmetic filters obey master, category and optional widget settings', () =
   assert.ok(!cosmeticSelectors({}, 'www.google.com.evil.test').includes('#tads'));
   assert.ok(!cosmeticSelectors({filtersState: state('ads', false)}, 'www.google.com').includes('#tads'));
 });
-test('network rules have unique IDs and preserve shared video and social APIs', () => {
+test('network rules have unique IDs and shared services can be allowed', () => {
   const all = rules();
   assert.equal(new Set(all.map(rule => rule.id)).size, all.length);
-  for (const domain of ['redirector.googlevideo.com', 'graph.facebook.com', 'i.instagram.com', 'ssl.p.jwpcdn.com']) assert.ok(!blocked({}, domain));
+  for (const domain of ['redirector.googlevideo.com', 'graph.facebook.com', 'i.instagram.com', 'ssl.p.jwpcdn.com']) assert.ok(!blocked({filtersState:state('shared-services',false)}, domain));
   assert.ok(!all.some(rule => rule.condition.urlFilter === '*/banners/*'));
 });
 test('legacy reference catalogs and malformed saved state use bundled defaults', () => {
@@ -62,9 +62,10 @@ test('ad scripts compile to bounded MV3 script rules controlled by the ads switc
   }
   for (const url of ['https://example.com/index.js','https://example.com/add.js','https://example.com/downloads.js','https://example.com/ads.json','https://example.com/app.js?file=/ads.js','https://example.com/ads.js/helper.js']) assert.ok(!scriptBlocked(url),url);
 });
-test('shared media and social hosts require the explicit compatibility-breaking filter', () => {
+test('strict services default to blocking and can be explicitly disabled', () => {
   for (const host of ['redirector.googlevideo.com','graph.facebook.com','graph.instagram.com','i.instagram.com','ssl.p.jwpcdn.com']) {
-    assert.ok(!blocked({},host));
+    assert.ok(blocked({},host));
+    assert.ok(!blocked({filtersState:state('shared-services',false)},host));
     assert.ok(blocked({filtersState:state('shared-services',true)},host),host);
     assert.ok(!blocked({adBlockEnabled:false,filtersState:state('shared-services',true)},host));
   }
@@ -74,4 +75,25 @@ test('filter catalog exposes each switch exactly once with a boolean default', (
   const switches = defaults.flatMap(category => category.subfilters);
   assert.equal(new Set(switches.map(sub => sub.id)).size, switches.length);
   assert.ok(switches.every(sub => typeof sub.enabled === 'boolean' && !sub.subfilters));
+});
+
+test('ad-named banner downloads are blocked without matching generic images', () => {
+  const matching = url => rules().filter(r => r.action.type === 'block' && r.condition.regexFilter && new RegExp(r.condition.regexFilter,'i').test(url));
+  for (const ext of ['png','gif','swf']) {
+    const found = matching(`https://example.com/banners/pr_advertising_ads_banner.${ext}?v=1`);
+    assert.equal(found.length,1);
+    assert.ok(found[0].condition.resourceTypes.includes('xmlhttprequest'));
+  }
+  for (const path of ['/banners/header.png','/photos/photo.jpg','/image.png?name=ad_banner.png']) assert.equal(matching('https://example.com'+path).length,0);
+});
+test('new tracking, video ad and strict service domains follow their owning switches', () => {
+  for (const domain of ['connatix.com','fwmrm.net','imasdk.googleapis.com']) {
+    assert.ok(blocked({},domain));assert.ok(!blocked({filtersState:state('ads',false)},domain));
+  }
+  for (const domain of ['bat.bing.com','posthog.com','logx.optimizely.com']) {
+    assert.ok(blocked({},domain));assert.ok(!blocked({trackersBlockEnabled:false},domain));
+  }
+  for (const domain of ['linksynergy.com','consent.cookiebot.com','sdk.privacy-center.org']) {
+    assert.ok(blocked({},domain));assert.ok(!blocked({filtersState:state('shared-services',false)},domain));
+  }
 });

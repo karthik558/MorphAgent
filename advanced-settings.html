@@ -523,6 +523,7 @@
                 <h3 style="font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Filters</h3>
               </div>
               <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-outline" id="maximumBlockingBtn" title="Enable all bundled filters; shared services may stop working">Maximum blocking</button>
                 <button class="btn btn-outline" title="Reapply the bundled rules" id="checkFilterUpdatesBtn" style="height: 30px; font-size: 11px; padding: 4px 12px;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="filterUpdateSpinner"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                   Reapply filters
@@ -531,7 +532,7 @@
               </div>
             </div>
 
-            <p class="feature-desc">These bundled filters control network blocking and page element hiding. Changes apply to open pages. Lists update with extension releases; remote subscriptions and custom rules are not supported.</p>
+            <p class="feature-desc">These bundled filters control network blocking and page element hiding. Maximum blocking enables every filter, including shared services; playback, login, consent dialogs and shopping links may stop working. Site exceptions are preserved. Changes apply to open pages. Lists update with extension releases; remote subscriptions and custom rules are not supported.</p>
             <!-- Search Filters -->
             <div class="filter-search-container">
               <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

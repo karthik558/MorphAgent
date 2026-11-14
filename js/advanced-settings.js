@@ -1200,6 +1200,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupEventListeners() {
+    document.getElementById('maximumBlockingBtn')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        initFiltersState(null);
+        userFiltersState.forEach(category => category.subfilters.forEach(sub => sub.enabled = true));
+        await browser.storage.local.set({filtersState:userFiltersState, adBlockEnabled:true, adBlockNetworkEnabled:true,
+          adBlockCosmeticEnabled:true, adBlockAntiAdblockEnabled:true, trackersBlockEnabled:true});
+        const result = await browser.runtime.sendMessage({type:'reload-dnr-rules'});
+        if (!result?.success) throw new Error(result?.error || 'Network rules could not be updated');
+        loadDnsAndAdBlockSettings();
+        renderFilterCategories(filterSearchQuery);
+        showStatus('Maximum blocking enabled. Site exceptions remain active. Reload websites to retest.');
+      } catch (error) {showStatus(error.message, 'error');}
+      finally {button.disabled = false;}
+    });
+
     // Theme toggle
     if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
 
