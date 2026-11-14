@@ -82,6 +82,15 @@
 
   // Bundled Ad, Tracking, Telemetry & Fingerprinting Domain List
   const AD_TRACKER_DOMAINS = [
+    // Dedicated advertising hosts (domain rules also cover their subdomains).
+    'ads.reddit.com',
+    'ads-dev.pinterest.com',
+    'advertising.twitter.com',
+    'ads.facebook.com',
+    'affiliationjs.s3.amazonaws.com',
+    'ads.google.com',
+    'hotjar-analytics.com',
+    'crypto-loot.org',
     // --- Google Ads, DoubleClick, Syndication & Telemetry ---
     'doubleclick.net',
     'googlesyndication.com',
@@ -396,7 +405,7 @@
     'static.klaviyo.com'
   ];
 
-  // Specific generic script patterns blocked by DNR (e.g. inline ad loaders, trackers)
+  // Legacy webRequest patterns. MV3 uses the bounded script conditions below.
   const SCRIPT_BLOCK_PATTERNS = [
     '*ads.js*',
     '*pagead.js*',
@@ -595,35 +604,57 @@
   // Each visible switch owns a real bundled group, not a remote subscription.
   const TRACKER_DOMAINS = AD_TRACKER_DOMAINS.filter(domain =>
     /analytics|tracking|telemetry|metrics|metrika|sentry|bugsnag|hotjar|clarity|segment|mixpanel|amplitude|chartbeat|newrelic|nr-data|mouseflow|fullstory|logrocket|posthog|fingerprint|scorecard|quantserve|quantcount|statcounter|heapanalytics|google.*tagmanager/.test(domain));
-  const MINER_DOMAINS = ['coinhive.com', 'crypto-loot.com', 'webminepool.com', 'jsecoin.com', 'minr.pw', 'coin-have.com', 'authedmine.com', 'mineralt.io'];
+  const MINER_DOMAINS = ['coinhive.com', 'crypto-loot.com', 'crypto-loot.org', 'webminepool.com', 'jsecoin.com', 'minr.pw', 'coin-have.com', 'authedmine.com', 'mineralt.io'];
   const AD_DOMAINS = [...new Set(AD_TRACKER_DOMAINS)].filter(domain => !TRACKER_DOMAINS.includes(domain) && !MINER_DOMAINS.includes(domain));
+  // Match script path components, never filenames embedded in query strings.
+  // Generic app filenames are only blocked inside an explicit ad directory.
+  const AD_SCRIPT_CONDITIONS = [
+    { regexFilter: '^https?://[^/?#]+/([^?#]*/)?(ads|pagead|adsbygoogle|show_ads)([.]min)?[.]js([?#]|$)', resourceTypes: ['script'] },
+    { regexFilter: '^https?://[^/?#]+/([^?#]*/)?(ad|ads|advertising|pagead)/([^?#]*/)?(index|add)([.]min)?[.]js([?#]|$)', resourceTypes: ['script'] }
+  ];
   const FILTER_GROUPS = {
-    ads: { domains: AD_DOMAINS, selectors: COSMETIC_AD_SELECTORS },
+    ads: { domains: AD_DOMAINS, selectors: COSMETIC_AD_SELECTORS, conditions: AD_SCRIPT_CONDITIONS },
     trackers: { domains: [...new Set(TRACKER_DOMAINS)], selectors: [] },
     miners: { domains: MINER_DOMAINS, selectors: [] },
     social: { domains: [], selectors: COSMETIC_SOCIAL_SELECTORS },
+    'shared-services': { domains: ['redirector.googlevideo.com', 'graph.facebook.com', 'graph.instagram.com', 'i.instagram.com', 'ssl.p.jwpcdn.com'], selectors: [] },
     annoyances: { domains: [], selectors: COSMETIC_ANNOYANCE_SELECTORS }
   };
   const DEFAULT_FILTER_CATEGORIES = [
-    { id: 'adblocking', name: 'Ad blocking', description: 'Bundled ad domains and page elements', subfilters: [
-      { id: 'ads', name: 'Ads and sponsored content', desc: 'Network ads and cosmetic filters, including Google and YouTube ad elements', enabled: true }
-    ] },
-    { id: 'privacy', name: 'Privacy', description: 'Bundled analytics protection', subfilters: [
-      { id: 'trackers', name: 'Analytics and trackers', desc: 'Known tracking domains; also requires Block trackers above', enabled: true }
-    ] },
-    { id: 'security', name: 'Security', description: 'Bundled mining domain protection', subfilters: [
-      { id: 'miners', name: 'Cryptomining domains', desc: 'Blocks known in-browser mining services', enabled: true }
-    ] },
-    { id: 'social', name: 'Social widgets', description: 'Optional page element hiding', subfilters: [
-      { id: 'social', name: 'Social sharing widgets', desc: 'Hide embedded Like and Share widgets', enabled: false }
-    ] },
-    { id: 'annoyances', name: 'Annoyances', description: 'Optional page element hiding', subfilters: [
-      { id: 'annoyances', name: 'Cookie notices and newsletter popups', desc: 'Hides notices without granting consent; some pages may remain locked', enabled: false }
-    ] }
+    {
+      id: 'adblocking', name: 'Ad blocking', description: 'Bundled ad domains and page elements', subfilters: [
+        { id: 'ads', name: 'Ads and sponsored content', desc: 'Network ads and cosmetic filters, including Google and YouTube ad elements', enabled: true }
+      ]
+    },
+    {
+      id: 'privacy', name: 'Privacy', description: 'Bundled analytics protection', subfilters: [
+        { id: 'trackers', name: 'Analytics and trackers', desc: 'Known tracking domains; also requires Block trackers above', enabled: true }
+      ]
+    },
+    {
+      id: 'security', name: 'Security', description: 'Bundled mining domain protection', subfilters: [
+        { id: 'miners', name: 'Cryptomining domains', desc: 'Blocks known in-browser mining services', enabled: true }
+      ]
+    },
+    {
+      id: 'social', name: 'Social widgets', description: 'Optional page element hiding', subfilters: [
+        { id: 'social', name: 'Social sharing widgets', desc: 'Hide embedded Like and Share widgets', enabled: false }
+      ]
+    },
+    {
+      id: 'shared-services', name: 'Shared video and social services', description: 'Optional strict host blocking; may break playback, feeds, embeds and login', subfilters: [
+        { id: 'shared-services', name: 'Block shared video and social APIs', desc: 'Blocks Google Video redirector, Facebook/Instagram APIs and the JW Player CDN. Off by default to preserve website functionality.', enabled: false }
+      ]
+    },
+    {
+      id: 'annoyances', name: 'Annoyances', description: 'Optional page element hiding', subfilters: [
+        { id: 'annoyances', name: 'Cookie notices and newsletter popups', desc: 'Hides notices without granting consent; some pages may remain locked', enabled: false }
+      ]
+    }
   ];
   for (const cat of DEFAULT_FILTER_CATEGORIES) for (const sub of cat.subfilters) {
     const group = FILTER_GROUPS[sub.id];
-    sub.rulesCount = group.domains.length + group.selectors.length;
+    sub.rulesCount = group.domains.length + group.selectors.length + (group.conditions?.length || 0);
   }
   function filterEnabled(state, id) {
     const defaults = DEFAULT_FILTER_CATEGORIES.flatMap(cat => cat.subfilters);
@@ -756,6 +787,9 @@
       for (const domain of group.domains) rules.push({
         id: id++, priority: 2, action: { type: 'block' },
         condition: { urlFilter: `||${domain}^`, resourceTypes }
+      });
+      for (const condition of group.conditions || []) rules.push({
+        id: id++, priority: 2, action: { type: 'block' }, condition: { ...condition }
       });
     }
 

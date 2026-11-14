@@ -294,6 +294,16 @@ Presets, backups, and exceptions stay in local extension storage. Site rule sett
 
 Chromium acceptance tests cover the new UI workflows, timed exception expiry, preset rollback, client hints, zero touch points, daylight-saving offsets, location watch cancellation, startup GPS failure, battery API, and proxy/WebRTC policy. Firefox runtime, remote proxy services, every website, and worker/iframe fingerprint surfaces are not certified by these tests.
 
+### Ad-domain and script coverage
+
+The bundled ad filter covers `ads.reddit.com`, `ads-dev.pinterest.com`, `advertising.twitter.com`, `ads.facebook.com`, `affiliationjs.s3.amazonaws.com`, and `ads.google.com`, including their subdomains. The mining filter also covers `crypto-loot.org` (the reported `crypto-loot.orgsvg` appears to include a copied SVG label).
+
+MV3 network rules block script requests for `ads.js`, `pagead.js`, `adsbygoogle.js`, and `show_ads.js`, including `.min.js` variants and query strings. `index.js` and `add.js` are blocked only inside `ad`, `ads`, `advertising`, or `pagead` directories. Generic application scripts and parent cloud-service domains remain available. These rules follow the ad/network switches and site exceptions.
+
+For stricter host blocking, open **Advanced Settings → Filters → Shared video and social services** and enable **Block shared video and social APIs**. This optional group blocks `redirector.googlevideo.com`, `graph.facebook.com`, `graph.instagram.com`, `i.instagram.com`, and `ssl.p.jwpcdn.com`, including subdomains. It is off by default because those hosts also provide normal video playback, feeds, embeds, and login functionality.
+
+Host-reachability test scores are not proof of comprehensive ad blocking: failed DNS/network requests can count as blocked, and shared service hosts can count as failures even when ad-specific filtering works. The browser regression suite checks `net::ERR_BLOCKED_BY_CLIENT` for the added hosts and scripts, as well as filter controls and site exceptions.
+
 ### Ad-blocking regression checks
 
 Run `npm test` for rule and compatibility tests. With Puppeteer available, run `CHROME_PATH=/path/to/chrome node tests/adblock-browser.cjs` for isolated Chromium UI and local-page acceptance checks. The browser check does not certify live YouTube coverage or Firefox runtime behavior.

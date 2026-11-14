@@ -5,7 +5,7 @@ const path = require('node:path');
 const puppeteer = require('puppeteer');
 const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100, timeout: 10000});
 (async () => {
-  const server = http.createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><body><div class="ad-banner">Ad</div><p id="content">Article</p><div class="cookie-banner">Consent</div>'); });
+  const server = http.createServer((req, res) => { if (req.url.split('?')[0].endsWith('.js')) {res.setHeader('Content-Type','application/javascript');res.end('window.adScriptExecutions = (window.adScriptExecutions || 0) + 1;');return;} res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><body><div class="ad-banner">Ad</div><p id="content">Article</p><div class="cookie-banner">Consent</div>'); });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
@@ -75,6 +75,42 @@ const wait = (page, predicate) => page.waitForFunction(predicate, {polling: 100,
     await youtube.evaluate(() => { delete document.body.dataset.skipped; });
     await new Promise(resolve => setTimeout(resolve, 1100));
     assert.equal(await youtube.$eval('body', e => e.dataset.skipped), undefined);
+    // Exercise actual script requests: error must be DNR blocking, not DNS/CORS failure.
+    const failures = new Map();
+    fixture.on('requestfailed', request => failures.set(request.url(),request.failure()?.errorText));
+    const loadScript = url => fixture.evaluate(url => new Promise(resolve => {
+      const script=document.createElement('script');script.src=url;
+      script.onload=()=>{script.remove();resolve('loaded');};script.onerror=()=>{script.remove();resolve('blocked');};document.head.append(script);
+    }),url);
+    const root=`http://127.0.0.1:${server.address().port}`;
+    for (const path of ['/ads.js','/js/widget/ads.js?test=1','/js/pagead.js','/ads/index.js','/ad/add.js']) {
+      const url=root+path;assert.equal(await loadScript(url),'blocked',path);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT');
+    }
+    for (const path of ['/index.js','/add.js','/downloads.js']) assert.equal(await loadScript(root+path),'loaded',path);
+    for (const domain of ['ads.reddit.com','sub.ads.reddit.com','ads-dev.pinterest.com','advertising.twitter.com','ads.facebook.com','affiliationjs.s3.amazonaws.com','ads.google.com','crypto-loot.org']) {
+      const url=`https://${domain}/morph-filter-fixture.js`;
+      assert.equal(await loadScript(url),'blocked',domain);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT',domain);
+    }
+    await settings.$eval('[data-sub-id="shared-services"]',e=>e.click());
+    await wait(settings,async()=>(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||graph.instagram.com^'));
+    for (const domain of ['redirector.googlevideo.com','graph.facebook.com','graph.instagram.com','i.instagram.com','ssl.p.jwpcdn.com']) {
+      const url=`https://${domain}/morph-filter-fixture.js`;
+      assert.equal(await loadScript(url),'blocked',domain);assert.equal(failures.get(url),'net::ERR_BLOCKED_BY_CLIENT',domain);
+    }
+    await settings.$eval('[data-sub-id="shared-services"]',e=>e.click());
+    await wait(settings,async()=>!(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.urlFilter==='||graph.instagram.com^'));
+    await toggleAds();
+    await wait(settings,async()=>!(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.regexFilter));
+    assert.equal(await loadScript(root+'/ads.js'),'loaded');
+    await toggleAds();
+    await wait(settings,async()=>(await chrome.declarativeNetRequest.getDynamicRules()).some(r=>r.condition.regexFilter));
+    await settings.evaluate(()=>chrome.storage.local.set({adBlockWhitelist:['127.0.0.1']}));
+    await settings.evaluate(()=>chrome.runtime.sendMessage({type:'reload-dnr-rules'}));
+    assert.equal(await loadScript(root+'/pagead.js'),'loaded');
+    await settings.evaluate(()=>chrome.storage.local.set({adBlockWhitelist:[]}));
+    await settings.evaluate(()=>chrome.runtime.sendMessage({type:'reload-dnr-rules'}));
+    assert.equal(await loadScript(root+'/pagead.js'),'blocked');
+    console.log('PASS: real DNR domain/subdomain blocking, bounded script paths, safe app scripts, shared-service toggle and site exceptions');
     const response = await settings.evaluate(() => chrome.runtime.sendMessage({type:'check-filter-updates'}));
     assert.equal(response.success, true);
     assert.equal(response.rulesCount, await settings.evaluate(async () => (await chrome.declarativeNetRequest.getDynamicRules()).length));
