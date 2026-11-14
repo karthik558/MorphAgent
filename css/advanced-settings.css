@@ -1867,7 +1867,15 @@ html.light-mode .mode-tab.active {
   }
 }
 
-.tools-grid {display:grid;gap:12px;padding:20px;}
-.tools-grid pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:480px;overflow:auto;font-size:13px;}
-.tools-grid input,.tools-grid select {width:100%;max-width:100%;padding:10px;color:var(--text-primary);background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;}
-.tools-grid button {margin:3px;}
+/* Privacy tools reuse the settings header, card, form and button styles. */
+.privacy-tools-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.privacy-tool-card { margin-top: 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.privacy-tool-card h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); text-transform: uppercase; letter-spacing: .5px; }
+.privacy-tool-card .feature-desc { margin: 0; }
+.privacy-tool-card .input-group { min-width: 0; flex: none; }
+.privacy-tool-card .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); }
+.privacy-tool-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.privacy-tool-actions .btn { white-space: normal; }
+.privacy-tool-results { grid-column: 1 / -1; }
+.privacy-tool-output { margin: 0; padding: 12px; min-width: 0; max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--font-mono); color: var(--text-secondary); background: var(--bg-main); border: 1px solid var(--border-light); border-radius: var(--radius-sm); }
+@media (max-width: 1100px) { .privacy-tools-layout { grid-template-columns: minmax(0, 1fr); } }
