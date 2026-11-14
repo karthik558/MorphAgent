@@ -511,6 +511,11 @@
     '.ads-holder',
     '.advert',
     '.ad-zone',
+    'ins.adsbygoogle',
+    '.pub_300x250',
+    '.pub_728x90',
+    '#adbanner',
+    '.ad-label',
 
     // Recommendation & Native Content Feed Ads
     '.taboola-ad',

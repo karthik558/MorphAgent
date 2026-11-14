@@ -1060,6 +1060,11 @@ function startPopup() {
     profileSelect.value = resolvedIndex;
   }
 
+  function normalizeHost(value) {
+    const domain = String(value || '').trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0].replace(/^\*\./, '').replace(/\.$/, '');
+    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain) && !domain.includes('..') ? domain : '';
+  }
+
   // Event Listeners for selects
   platformSelect.addEventListener('change', (e) => {
     const platform = e.target.value;
@@ -1831,6 +1836,60 @@ function startPopup() {
       try { await loadCustomLocations(); } catch (error) { console.warn('Could not load custom locations:', error); }
       loadSettings();
     }, 50);
+  }
+
+  const domainBlockBtn = document.getElementById('domain-block-btn');
+  const domainBlockInput = document.getElementById('domain-block-input');
+  if (domainBlockBtn && domainBlockInput) {
+    domainBlockBtn.addEventListener('click', () => {
+      const website = normalizeHost(domainBlockInput.value);
+      if (!website) { showStatus('Enter a domain'); return; }
+      browser.storage.sync.get(['blockList', 'whiteList'], (result) => {
+        const blockList = (result && result.blockList) || [];
+        if (blockList.some(item => item.website === website)) { showStatus('Already blocked'); return; }
+        if (blockList.length >= 500) { showStatus('Block list is full'); return; }
+        blockList.push({ id: Date.now(), website, created: new Date().toISOString() });
+        const whiteList = ((result && result.whiteList) || []).filter(item => item.website !== website);
+        browser.storage.sync.set({ blockList, whiteList }, () => {
+          domainBlockInput.value = '';
+          showStatus('Saved');
+        });
+      });
+    });
+  }
+
+  const popupExport = document.getElementById('popup-export');
+  const popupImport = document.getElementById('popup-import');
+  const popupImportFile = document.getElementById('popup-import-file');
+  if (popupExport) {
+    popupExport.addEventListener('click', async () => {
+      const { snapshot } = await import('./configuration.mjs');
+      const settings = await snapshot(browser);
+      settings.exportedAt = new Date().toISOString();
+      const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `morphagent-settings-${settings.exportedAt.slice(0, 10)}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showStatus('Saved');
+    });
+  }
+  if (popupImport && popupImportFile) {
+    popupImport.addEventListener('click', () => popupImportFile.click());
+    popupImportFile.addEventListener('change', () => {
+      const file = popupImportFile.files && popupImportFile.files[0];
+      popupImportFile.value = '';
+      if (!file) return;
+      if (file.size > 1024 * 1024) { showStatus('File is too large'); return; }
+      file.text().then(async text => {
+        const { applyConfiguration } = await import('./configuration.mjs');
+        await applyConfiguration(browser, JSON.parse(text));
+        showStatus('Saved');
+        loadSettings();
+      }).catch(error => showStatus(error.message || 'Import failed'));
+    });
   }
 
   // Start the extension

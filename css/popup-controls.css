@@ -30,3 +30,9 @@
 .block-log-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .block-log-row button { border: 0; background: transparent; color: var(--accent-red); font-size: 11px; font-weight: 600; cursor: pointer; }
 .section-inline-btn { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; }
+.domain-row, .backup-row { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; }
+.domain-row input { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-secondary); }
+.domain-row input { background: var(--bg-main); border: 1px solid var(--border-light); border-radius: var(--radius-sm); color: var(--text-primary); padding: 6px 8px; }
+.section-hint { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 10px; font-weight: 600; color: var(--text-tertiary); }
+.backup-row .btn { flex: 1; }
+.action-buttons .backup-row { grid-column: span 2; }

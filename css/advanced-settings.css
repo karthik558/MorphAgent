@@ -1,77 +1,4 @@
-/* Advanced Settings - MorphAgent Modern Neon Red & High-Contrast Design */
-
-:root {
-  /* DARK MODE (Default) */
-  --bg-main: #0f0f0f;
-  --bg-card: #161616;
-  --bg-hover: #1f1f1f;
-  --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  
-  --accent-red: #dc0000;
-  --accent-red-hover: #b80000;
-  --accent-red-glow: none;
-  --accent-red-soft: rgba(255, 9, 5, 0.15);
-  --accent-green: #10b981;
-  
-  --border-light: #2a2a2a;
-  --border-focus: #444444;
-  --border-danger: rgba(255, 9, 5, 0.3);
-  
-  --icon-bg: #1c1c1c;
-  
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --ease: cubic-bezier(0.25, 1, 0.5, 1);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-html.light-mode, body.light-mode {
-  /* LIGHT MODE (Clean, High-Contrast & Modern) */
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
-  
-  --accent-red: #dc0000;
-  --accent-red-hover: #b80000;
-  --accent-red-glow: none;
-  --accent-red-soft: rgba(255, 9, 5, 0.12);
-  --accent-green: #10b981;
-  
-  --border-light: #e2e8f0;
-  --border-focus: #cbd5e1;
-  --border-danger: rgba(255, 9, 5, 0.25);
-  
-  --icon-bg: #f1f5f9;
-}
-
-html.dark-mode, body.dark-mode {
-  /* DARK MODE */
-  --bg-main: #0f0f0f;
-  --bg-card: #161616;
-  --bg-hover: #1f1f1f;
-  --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  
-  --accent-red: #dc0000;
-  --accent-red-hover: #b80000;
-  --accent-red-glow: none;
-  --accent-red-soft: rgba(255, 9, 5, 0.15);
-  --accent-green: #10b981;
-  
-  --border-light: #2a2a2a;
-  --border-focus: #444444;
-  --border-danger: rgba(255, 9, 5, 0.3);
-  
-  --icon-bg: #1c1c1c;
-}
+/* Advanced settings layout. Colors live in tokens.css. */
 
 /* Reset & Base */
 *, *::before, *::after {
@@ -768,6 +695,10 @@ input:checked + .toggle-slider:before {
   background: var(--accent-red-hover);
   box-shadow: 0 4px 12px rgba(255, 9, 5, 0.35);
 }
+
+.site-chip { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-main); min-width: 0; }
+.site-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-secondary); }
+.site-chip .btn { flex-shrink: 0; height: 28px; font-size: 12px; padding: 4px 10px; }
 
 .btn-outline {
   background: transparent;

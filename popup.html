@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MorphAgent</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/popup.css">
   <link rel="stylesheet" href="css/refinements.css">
   <link rel="stylesheet" href="css/select-controls.css">
@@ -133,7 +134,7 @@
         <div class="form-section">
           <div class="section-label">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            FEATURES
+            IDENTITY
           </div>
 
           <div class="features-list">
@@ -299,6 +300,16 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            SHIELD
+            <span class="section-hint">Alt+Shift+P</span>
+          </div>
+          <div class="features-list">
 
             <!-- DNS provider reference -->
             <div class="feature-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
@@ -357,6 +368,10 @@
                   <span id="shield-site-name">Current website</span>
                   <button type="button" class="shield-site-button" id="site-shield-toggle" disabled>Loading…</button>
                 </div>
+                <div class="domain-row">
+                  <input type="text" id="domain-block-input" class="number-input" placeholder="Block a domain, example.com" aria-label="Domain to block">
+                  <button type="button" class="shield-site-button" id="domain-block-btn">Block</button>
+                </div>
                 <div class="shield-counts" id="shield-counts">
                   <span id="count-ads">Ads 0</span>
                   <span id="count-trackers">Trackers 0</span>
@@ -370,6 +385,15 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            NETWORK
+          </div>
+          <div class="features-list">
 
             <!-- Proxyium Web Proxy Tunnel -->
             <div class="feature-row tunnel-feature-row">
@@ -450,6 +474,7 @@
           <div class="section-label">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             APPLY SCOPE
+            <span class="section-hint">Alt+Shift+M</span>
           </div>
           <div class="action-buttons" style="margin-top: 0;">
             <button type="button" class="btn btn-solid" id="btn-current-tab">
@@ -460,6 +485,11 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
               All Tabs
             </button>
+            <div class="backup-row">
+              <button type="button" class="btn btn-ghost" id="popup-export">Export</button>
+              <button type="button" class="btn btn-ghost" id="popup-import">Import</button>
+              <input type="file" id="popup-import-file" accept=".json" hidden>
+            </div>
             <button type="button" class="btn btn-ghost btn-full" id="reset-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               Reset All Settings

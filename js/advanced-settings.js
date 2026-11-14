@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   let websiteRules = [];
+  let activeSiteHost = '';
   let blockList = [];
   let whiteList = [];
   let listMode = 'blacklist';
@@ -1827,6 +1828,47 @@ document.addEventListener('DOMContentLoaded', () => {
       renderRules();
       renderBlockList();
       renderLocations();
+      refreshActiveSiteChip();
+    });
+  }
+
+  function refreshActiveSiteChip() {
+    const label = document.getElementById('site-chip-label');
+    const clear = document.getElementById('site-chip-clear');
+    const api = window.morphApi || window.browser || window.chrome;
+    if (!label || !api || !api.tabs) return;
+    api.tabs.query({ currentWindow: true }).then(tabs => {
+      const site = (tabs || [])
+        .filter(tab => /^https?:/i.test(tab.url || '') && !/proxyium\.com/i.test(tab.url || ''))
+        .sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+      let hostname = '';
+      try { hostname = site ? new URL(site.url).hostname : ''; } catch { hostname = ''; }
+      if (!hostname || !hostname.includes('.')) {
+        activeSiteHost = '';
+        label.textContent = 'Open a website to see whether it uses a site profile';
+        if (clear) clear.hidden = true;
+        return;
+      }
+      const siteRule = (websiteRules || []).some(rule => rule.website === hostname);
+      activeSiteHost = hostname;
+      label.textContent = siteRule ? `${hostname} · site profile` : `${hostname} · global profile`;
+      label.title = label.textContent;
+      if (clear) clear.hidden = !siteRule;
+    }).catch(() => {
+      activeSiteHost = '';
+      label.textContent = 'Open a website to see whether it uses a site profile';
+      if (clear) clear.hidden = true;
+    });
+  }
+
+  const siteChipClear = document.getElementById('site-chip-clear');
+  if (siteChipClear) {
+    siteChipClear.addEventListener('click', () => {
+      if (!activeSiteHost) return;
+      websiteRules = (websiteRules || []).filter(rule => rule.website !== activeSiteHost);
+      saveSettings();
+      renderRules();
+      refreshActiveSiteChip();
     });
   }
 
@@ -2681,44 +2723,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function exportSettings() {
+  async function exportSettings() {
     const browser = window.morphApi || window.browser || window.chrome;
-    const localKeys = [
-      'selectedUA', 'uaSpoofEnabled', 'maxTouchPoints', 'touchSpoofEnabled',
-      'jsBlockEnabled', 'jsProtectEnabled', 'geoSpoofEnabled', 'geoPresetValue',
-      'geoCoords', 'geoTimezone', 'geoLocale', 'activeCategory', 'uiState', 'theme',
-      'ghostModeEnabled', 'ghostInterval', 'proxyConfig',
-      'hardwareHarmonizeEnabled', 'customHardwareCores', 'customDeviceMemory',
-      'autoHarmonizeTzEnabled', 'adBlockEnabled', 'dnsProvider', 'dnsCustomEndpoint',
-      'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockStats',
-      'filtersState', 'adBlockNetworkEnabled', 'adBlockWhitelist', 'trackersBlockEnabled', 'removeTrackingParamsEnabled',
-      'hideSearchQueriesEnabled', 'sendDntGpcEnabled', 'webrtcPreventLeakEnabled', 'removeXClientDataEnabled'
-    ];
+    const { snapshot } = await import('./configuration.mjs');
+    const settings = await snapshot(browser);
+    settings.exportedAt = new Date().toISOString();
 
-    browser.storage.local.get(localKeys, (localResult) => {
-      const settings = {
-        websiteRules: websiteRules,
-        blockList: blockList,
-        whiteList: whiteList,
-        listMode: listMode,
-        customLocations: customLocations,
-        globalSettings: localResult,
-        exportedAt: new Date().toISOString(),
-        version: '1.2'
-      };
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `morphagent-settings-${settings.exportedAt.slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
-      const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `morphagent-settings-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      showStatus('Settings exported successfully!');
-    });
+    showStatus('Settings exported successfully!');
   }
 
   function importSettings(event) {
