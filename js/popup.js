@@ -763,10 +763,6 @@ function startPopup() {
   // Use new profiles structure or fall back to legacy
   const profilesData = window.profiles || window.profilesStructured || {};
 
-  // Debug: Log the loaded profiles data
-  console.log('Loaded profiles data:', profilesData);
-  console.log('Available categories:', Object.keys(profilesData));
-
   // Fallback for profiles if new structure isn't available
   if (typeof profiles === 'undefined' && typeof profilesStructured !== 'undefined') {
     // Use the legacy structured profiles
@@ -1018,25 +1014,39 @@ function startPopup() {
     });
   }
 
-  function selectProfile(category, platform, index, browserType = null) {
-    let variants = profileSelect.activeVariants;
+  function profilesFor(category, platform, browserType) {
+    const base = (profilesData[category] && profilesData[category].platforms[platform] && profilesData[category].platforms[platform].variants) || [];
+    const forks = forkedProfiles.filter(item => item.category === category && item.platform === platform);
+    const combined = base.concat(forks);
+    if (!browserType || browserType === 'all') return combined;
+    return filterProfilesByBrowser(combined, browserType);
+  }
 
-    if (!variants || !variants[index]) {
-      if (profilesData[category] && profilesData[category].platforms[platform]) {
-        variants = profilesData[category].platforms[platform].variants;
-        if (browserType && browserType !== 'all') {
-          variants = filterProfilesByBrowser(variants, browserType);
-        }
-      }
-    }
-
-    const profile = variants ? variants[index] : null;
+  function selectProfile(category, platform, index, browserType = null, fallbackUA = '') {
+    const numericIndex = typeof index === 'number' ? index : parseInt(index, 10);
+    let variants = profileSelect.activeVariants || profilesFor(category, platform, browserType);
+    let resolvedIndex = numericIndex;
+    let profile = Number.isInteger(resolvedIndex) ? variants[resolvedIndex] : null;
     if (!profile) {
-      console.warn('Profile not found at index:', index);
-      return;
+      const full = profilesFor(category, platform, null);
+      const fromFull = Number.isInteger(resolvedIndex) ? full[resolvedIndex] : null;
+      const wanted = fallbackUA || (customUAInput && customUAInput.value.trim()) || '';
+      const byUA = wanted ? (variants.find(item => item.ua === wanted) || full.find(item => item.ua === wanted)) : null;
+      profile = fromFull || byUA || null;
+      if (!profile) return;
+      if (!variants.includes(profile)) {
+        currentBrowser = null;
+        if (browserSelect) browserSelect.value = 'all';
+        populateProfiles(category, platform, null);
+        variants = profileSelect.activeVariants || full;
+        browserType = null;
+      }
+      resolvedIndex = variants.findIndex(item => item === profile || (item.name === profile.name && item.ua === profile.ua));
+      if (resolvedIndex < 0) return;
+      profile = variants[resolvedIndex];
     }
 
-    selectedProfile = { category, platform, index, profile, browserType };
+    selectedProfile = { category, platform, index: resolvedIndex, profile, browserType };
 
     // Update UI
     customUAInput.value = profile.ua;
@@ -1047,9 +1057,7 @@ function startPopup() {
     if (browserType) {
       browserSelect.value = browserType;
     }
-    profileSelect.value = index;
-
-    console.log('Selected profile:', profile.name, 'UA:', profile.ua);
+    profileSelect.value = resolvedIndex;
   }
 
   // Event Listeners for selects
@@ -1198,7 +1206,7 @@ function startPopup() {
         }
         populateProfiles(category, platform, browserType || null);
         if (profileIndex !== null && profileIndex !== undefined) {
-          selectProfile(category, platform, profileIndex, browserType || null);
+          selectProfile(category, platform, profileIndex, browserType || null, rule.userAgent || '');
         }
       }
     } else {
@@ -1281,7 +1289,7 @@ function startPopup() {
             }
             populateProfiles(category, platform, browserType || null);
             if (profileIndex !== null && profileIndex !== undefined) {
-              selectProfile(category, platform, profileIndex, browserType || null);
+              selectProfile(category, platform, profileIndex, browserType || null, settings.selectedUA || '');
             }
           }
         } else {

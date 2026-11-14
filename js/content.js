@@ -12,11 +12,37 @@
     return !!domain && (hostname === domain || hostname.endsWith('.' + domain));
   }
 
+  // A reload drops this page's extension APIs until the tab itself reloads.
+  function extensionAlive() {
+    try { return !!(api.runtime && api.runtime.id); } catch { return false; }
+  }
+
+  function stopPageWork() {
+    if (cosmeticObserver) cosmeticObserver.disconnect();
+    cosmeticObserver = null;
+    clearTimeout(cosmeticTimer);
+    clearInterval(videoTimer);
+  }
+
+  function notifyExtension(message) {
+    if (!extensionAlive()) { stopPageWork(); return; }
+    try {
+      const pending = api.runtime.sendMessage(message);
+      if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+    } catch { stopPageWork(); }
+  }
+
+  let protectionSettings = {};
+  let cosmeticObserver = null;
+  let cosmeticTimer = null;
+  let videoTimer = null;
+  let countedAds = new WeakSet();
+
   // Preemptively inject cosmetic stylesheet at document_start for instant zero-flicker ad suppression
   // Wait for stored preferences before applying cosmetic filtering.
 
   // Retrieve settings and initialize stealth suite
-  api.storage.local.get([
+  try { api.storage.local.get([
     'temporaryExceptions',
     'selectedUA',
     'uaSpoofEnabled',
@@ -123,9 +149,8 @@
 
 
     });
-  }).catch(err => {
-    console.warn('[MorphAgent 4.8.2] Storage access error:', err);
-  });
+  }).catch(() => { stopPageWork(); });
+  } catch { /* Reloading the extension leaves this page without storage until it refreshes. */ }
 
   function stripTrackingParameters() {
     try {
@@ -149,12 +174,6 @@
     } catch (e) { }
   }
 
-  let protectionSettings = {};
-  let cosmeticObserver = null;
-  let cosmeticTimer = null;
-  let videoTimer = null;
-  let countedAds = new WeakSet();
-
   function applyProtection(settings) {
     protectionSettings = { ...protectionSettings, ...settings };
     const options = protectionSettings;
@@ -177,6 +196,7 @@
       // Independent rules keep an unsupported selector from invalidating the rest.
       style.textContent = selectors.map(selector => `${selector} { display: none !important; }`).join('\n');
       const scan = () => {
+        if (!extensionAlive()) { stopPageWork(); return; }
         if (!style.isConnected) (document.head || document.documentElement)?.appendChild(style);
         let count = 0;
         for (const selector of selectors) {
@@ -186,7 +206,7 @@
             }
           } catch { /* Browser may not support every cosmetic selector. */ }
         }
-        if (count) api.runtime.sendMessage({ type: 'log-ad-blocked', data: { domain: location.hostname, count, isTracker: false } }).catch(() => {});
+        if (count) notifyExtension({ type: 'log-ad-blocked', data: { domain: location.hostname, count, isTracker: false } });
       };
       scan();
       cosmeticObserver = new MutationObserver(() => {
@@ -212,35 +232,37 @@
     }
   }
 
-  api.storage.onChanged.addListener((changes, area) => {
-    if (area !== 'local') return;
-    const keys = ['adBlockEnabled', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockWhitelist', 'filtersState', 'removeTrackingParamsEnabled', 'customCosmeticRules'];
-    if (!keys.some(key => key in changes)) return;
-    const updated = {};
-    for (const key of keys) if (key in changes) updated[key] = changes[key].newValue;
-    applyProtection(updated);
-  });
-
-  if (api.runtime && api.runtime.onMessage) {
-    api.runtime.onMessage.addListener((message) => {
-      if (message.type === 'update-settings' && message.data) {
-        window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(message.data) }));
-      }
-      if (message.type === 'pick-element' && window.top === window) {
-        startElementPicker();
-      }
+  try {
+    api.storage.onChanged.addListener((changes, area) => {
+      try {
+        if (!extensionAlive()) { stopPageWork(); return; }
+        if (area !== 'local') return;
+        const keys = ['adBlockEnabled', 'adBlockCosmeticEnabled', 'adBlockAntiAdblockEnabled', 'adBlockWhitelist', 'filtersState', 'removeTrackingParamsEnabled', 'customCosmeticRules'];
+        if (!keys.some(key => key in changes)) return;
+        const updated = {};
+        for (const key of keys) if (key in changes) updated[key] = changes[key].newValue;
+        applyProtection(updated);
+      } catch { stopPageWork(); }
     });
-  }
+  } catch { /* The extension was reloaded before this page could subscribe. */ }
+
+  try {
+    if (extensionAlive() && api.runtime.onMessage) {
+      api.runtime.onMessage.addListener((message) => {
+        if (message.type === 'update-settings' && message.data) {
+          window.dispatchEvent(new CustomEvent('morph-agent-update', { detail: JSON.stringify(message.data) }));
+        }
+        if (message.type === 'pick-element' && window.top === window) {
+          startElementPicker();
+        }
+      });
+    }
+  } catch { /* Messaging is unavailable after an extension reload. */ }
 
   // Telemetry Bridge: Listen for threats detected by inject.js and forward to background script
   window.addEventListener('morph-threat-detected', (e) => {
     if (e.detail && e.detail.type) {
-      try {
-        api.runtime.sendMessage({
-          type: 'log-threat',
-          data: e.detail
-        });
-      } catch (err) { }
+      notifyExtension({ type: 'log-threat', data: e.detail });
     }
   });
 
@@ -299,7 +321,7 @@
       event.stopPropagation();
       const selector = selectorFor(event.target);
       stop();
-      if (selector) api.runtime.sendMessage({ type: 'save-cosmetic-rule', data: { domain: location.hostname, selector } }).catch(() => {});
+      if (selector) notifyExtension({ type: 'save-cosmetic-rule', data: { domain: location.hostname, selector } });
     };
     const cancel = event => { if (event.key === 'Escape') stop(); };
     document.addEventListener('mousemove', move, true);

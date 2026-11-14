@@ -47,7 +47,7 @@ test('UI Firefox adapter supports both Promise and callback callers', async () =
   assert.equal(value.saved, true);
 });
 test('extension pages contain no CSP-blocked inline scripts or event handlers', () => {
-  for (const page of ['popup.html', 'advanced-settings.html', 'js/advanced-settings.js']) {
+  for (const page of ['popup.html', 'advanced-settings.html', 'spoof_test.html', 'js/advanced-settings.js']) {
     const source = fs.readFileSync(page, 'utf8');
     assert.ok(!/\son\w+\s*=/i.test(source));
     assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(source));
